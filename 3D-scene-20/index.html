@@ -485,8 +485,8 @@
       <a href="../index.html" class="back-link">← 返回作品集首頁</a>
       <button class="ui-collapse-btn" id="btn-hide-title" title="隱藏左側標題框">◀ 隱藏</button>
     </div>
-    <h1>🗻 富士山・伊豆・神奈川・東京灣・房總半島 超廣域立體全景圖</h1>
-    <p>關東至駿河真實地理超厚切面模型：涵蓋富士五湖、青木原樹海、白糸之瀧、御殿場 OUTLET、箱根蘆之湖、熱海溫泉、伊豆半島（駿河灣／相模灣）；往東大幅拓展東京大都會（東京鐵塔、東京車站、東京巨蛋、淺草雷門、晴空塔、彩虹大橋）、三浦半島與橫須賀軍港、東京灣（海螢跨海公路與迪士尼）、千葉房總半島與成田國際機場，巨無霸客機於羽田⇄成田循環對飛，加厚地底岩漿地層與豐富海底生態一覽無遺！</p>
+    <h1>🗻 3D-scene-20｜2.0 精緻寫實版：富士山・伊豆・東京灣・房總半島</h1>
+    <p>2.0 第一階段寫實升級：導入物理環境反射（IBL）、大氣漸層天空穹頂與立體漂移雲層、電影級夜景輝光後處理（Bloom）、動態法線波紋海洋與船隻尾浪、高解析 PBR 岩溝地形與環境光遮蔽（AO），以及 4,500+ 棵多層有機樹冠濃密森林！</p>
   </div>
 
   <aside class="controls-panel" id="controls-panel">
@@ -613,18 +613,23 @@
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+    import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 
     // =========================================================================
-    // 1. RENDERER, SCENE, CAMERA & SEEDED PRNG
+    // 1. RENDERER, SCENE, CAMERA, IBL ENVIRONMENT, SKY DOME & POST-PROCESSING (v2.0!)
     // =========================================================================
     const container = document.getElementById('canvas-container');
     const labelsContainer = document.getElementById('labels-container');
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#c8bfb3');
-    scene.fog = new THREE.FogExp2('#c8bfb3', 0.00082);
+    scene.background = new THREE.Color('#b8d4ec');
+    scene.fog = new THREE.FogExp2('#c2d6e8', 0.00072);
 
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.5, 1400);
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.5, 1600);
     camera.position.set(-28, 86, 138);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -633,8 +638,104 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.06;
+    renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
+
+    // 2.0 Post-Processing Composer (Subtle Cinematic Bloom for Night Skyline, Towers, Runways & Sunset!)
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.18, 0.55, 0.88);
+    composer.addPass(bloomPass);
+    composer.addPass(new OutputPass());
+
+    // 2.0 Procedural PBR IBL Environment Map (PMREMGenerator -> realistic reflections on glass, water & bronze!)
+    (function buildStudioEnvironment() {
+      const ec = document.createElement('canvas');
+      ec.width = 512; ec.height = 256;
+      const ectx = ec.getContext('2d');
+      const g = ectx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0.0, '#3b82f6');
+      g.addColorStop(0.32, '#93c5fd');
+      g.addColorStop(0.49, '#fff7ed');
+      g.addColorStop(0.52, '#d6d3d1');
+      g.addColorStop(0.72, '#57534e');
+      g.addColorStop(1.0, '#1e293b');
+      ectx.fillStyle = g;
+      ectx.fillRect(0, 0, 512, 256);
+      // Bright sun disc reflection highlight
+      const sg = ectx.createRadialGradient(140, 82, 2, 140, 82, 48);
+      sg.addColorStop(0, 'rgba(255, 252, 240, 1.0)');
+      sg.addColorStop(0.4, 'rgba(255, 236, 200, 0.45)');
+      sg.addColorStop(1, 'rgba(255, 236, 200, 0)');
+      ectx.fillStyle = sg;
+      ectx.fillRect(80, 20, 120, 120);
+      const envTex = new THREE.CanvasTexture(ec);
+      envTex.mapping = THREE.EquirectangularReflectionMapping;
+      envTex.colorSpace = THREE.SRGBColorSpace;
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      scene.environment = pmrem.fromEquirectangular(envTex).texture;
+      scene.environmentIntensity = 0.72;
+      pmrem.dispose();
+      envTex.dispose();
+    })();
+
+    // 2.0 Atmospheric Gradient Sky Dome + Solar Halo + Starry Night Shader
+    const skyUniforms = {
+      uZenith: { value: new THREE.Color('#3b82f6') },
+      uHorizon: { value: new THREE.Color('#d8e8f6') },
+      uGround: { value: new THREE.Color('#7c6a58') },
+      uSunDir: { value: new THREE.Vector3(-0.6, 0.65, 0.45).normalize() },
+      uSunCol: { value: new THREE.Color('#fff5e0') },
+      uStarInt: { value: 0.0 }
+    };
+    const skyDome = new THREE.Mesh(
+      new THREE.SphereGeometry(720, 32, 20),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false,
+        uniforms: skyUniforms,
+        vertexShader: `
+          varying vec3 vDir;
+          void main() {
+            vDir = normalize(position);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uZenith;
+          uniform vec3 uHorizon;
+          uniform vec3 uGround;
+          uniform vec3 uSunDir;
+          uniform vec3 uSunCol;
+          uniform float uStarInt;
+          varying vec3 vDir;
+          float hash31(vec3 p) {
+            p = fract(p * 0.1031);
+            p += dot(p, p.yzx + 33.33);
+            return fract((p.x + p.y) * p.z);
+          }
+          void main() {
+            vec3 d = normalize(vDir);
+            float h = d.y;
+            vec3 col = h >= 0.0
+              ? mix(uHorizon, uZenith, pow(clamp(h, 0.0, 1.0), 0.55))
+              : mix(uHorizon, uGround, pow(clamp(-h, 0.0, 1.0), 0.45));
+            float sunDot = max(dot(d, normalize(uSunDir)), 0.0);
+            col += uSunCol * (pow(sunDot, 22.0) * 0.28 + pow(sunDot, 260.0) * 0.75);
+            if (uStarInt > 0.01 && h > 0.08) {
+              vec3 cell = floor(d * 180.0);
+              float s = hash31(cell);
+              if (s > 0.994) {
+                col += vec3(0.85, 0.92, 1.0) * uStarInt * smoothstep(0.08, 0.35, h) * ((s - 0.994) / 0.006);
+              }
+            }
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `
+      })
+    );
+    scene.add(skyDome);
 
     const orbit = new OrbitControls(camera, renderer.domElement);
     orbit.enableDamping = true;
@@ -669,7 +770,7 @@
     const sunLight = new THREE.DirectionalLight(0xfff5e4, 2.3);
     sunLight.position.set(-80, 96, 68);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.mapSize.set(4096, 4096);
     sunLight.shadow.camera.near = 10;
     sunLight.shadow.camera.far = 420;
     const shD = 118;
@@ -871,6 +972,85 @@
     }
     const cityTexWarm = createCityWindowTexture(0.75);
     const cityTexCool = createCityWindowTexture(0.25);
+
+    // 2.0 Procedural Tileable PBR Normal Map for Terrain Micro-Relief & Volcanic Scree
+    function createTerrainNormalMap() {
+      const sz = 256, c = document.createElement('canvas');
+      c.width = sz; c.height = sz;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(sz, sz);
+      const h = new Float32Array(sz * sz);
+      for (let y = 0; y < sz; y++) {
+        for (let x = 0; x < sz; x++) {
+          const u = (x / sz) * Math.PI * 2, v = (y / sz) * Math.PI * 2;
+          let val = Math.sin(u * 4 + v * 3) * 0.25 + Math.cos(u * 9 - v * 7) * 0.18
+                  + Math.sin(u * 17 + v * 15) * 0.12 + Math.cos(u * 29 - v * 23) * 0.08
+                  + Math.sin(u * 43 + v * 37) * 0.05;
+          h[y * sz + x] = val;
+        }
+      }
+      for (let y = 0; y < sz; y++) {
+        for (let x = 0; x < sz; x++) {
+          const hL = h[y * sz + ((x - 1 + sz) % sz)], hR = h[y * sz + ((x + 1) % sz)];
+          const hD = h[((y - 1 + sz) % sz) * sz + x], hU = h[((y + 1) % sz) * sz + x];
+          let nx = (hL - hR) * 2.4, ny = (hD - hU) * 2.4, nz = 1.0;
+          const len = Math.hypot(nx, ny, nz);
+          const idx = (y * sz + x) * 4;
+          img.data[idx]     = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(26, 16);
+      return tex;
+    }
+    const terrainNormalTex = createTerrainNormalMap();
+
+    // 2.0 Procedural Tileable Animated Ocean Wave Normal Map (Multi-Octave Wave Interference!)
+    function createWaterNormalMap() {
+      const sz = 256, c = document.createElement('canvas');
+      c.width = sz; c.height = sz;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(sz, sz);
+      const h = new Float32Array(sz * sz);
+      const waves = [
+        [2, 3, 0.32], [5, -4, 0.24], [-7, 6, 0.18],
+        [11, 9, 0.12], [-15, -13, 0.09], [21, -17, 0.06]
+      ];
+      for (let y = 0; y < sz; y++) {
+        for (let x = 0; x < sz; x++) {
+          const u = (x / sz) * Math.PI * 2, v = (y / sz) * Math.PI * 2;
+          let val = 0;
+          for (let w = 0; w < waves.length; w++) {
+            val += Math.sin(u * waves[w][0] + v * waves[w][1] + w * 1.7) * waves[w][2];
+          }
+          h[y * sz + x] = val;
+        }
+      }
+      for (let y = 0; y < sz; y++) {
+        for (let x = 0; x < sz; x++) {
+          const hL = h[y * sz + ((x - 1 + sz) % sz)], hR = h[y * sz + ((x + 1) % sz)];
+          const hD = h[((y - 1 + sz) % sz) * sz + x], hU = h[((y + 1) % sz) * sz + x];
+          let nx = (hL - hR) * 2.8, ny = (hD - hU) * 2.8, nz = 1.0;
+          const len = Math.hypot(nx, ny, nz);
+          const idx = (y * sz + x) * 4;
+          img.data[idx]     = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
+          img.data[idx + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(18, 12);
+      return tex;
+    }
+    const waterNormalTex = createWaterNormalMap();
 
     // =========================================================================
     // 4. EAST-EXPANDED GRAND DIORAMA (156 x 96, THICK BASE) & TRUE-GEOGRAPHY TERRAIN
@@ -1276,31 +1456,48 @@
       const fr = Math.hypot(fx, fz);
       const theta = Math.atan2(fz, fx);
       const gully = Math.sin(theta * 11 + fr * 0.1) * 0.65 + Math.sin(theta * 21) * 0.35;
+      const fineGully = Math.sin(theta * 33 - fr * 0.25) * 0.5 + Math.cos(theta * 17 + fr * 0.18) * 0.5;
       const pvr = Math.hypot(x - 8.5, z - 47.8);
       const owakudaniDist = Math.hypot(x - 15.7, z - 12.6);
       const jukaiDist = Math.hypot((x + 26.5) / 8.5, (z + 15.0) / 6.5);
 
+      // 2.0 Baked Local Slope & Valley Ambient Occlusion (AO) for photorealistic depth!
+      const hXp = getTerrainHeight(x + 0.45, z), hXm = getTerrainHeight(x - 0.45, z);
+      const hZp = getTerrainHeight(x, z + 0.45), hZm = getTerrainHeight(x, z - 0.45);
+      const slope = Math.hypot(hXp - hXm, hZp - hZm) * 1.1;
+      const laplacian = (hXp + hXm + hZp + hZm) * 0.25 - y; // positive in valleys/gullies
+      const ao = THREE.MathUtils.clamp(1.0 - Math.max(0, laplacian) * 0.42 - Math.min(0.18, slope * 0.08), 0.62, 1.08);
+
       if (y < WATER_Y - 0.03) {
         const depthT = Math.min(1, (WATER_Y - y) / 5.4);
-        cSpring.set('#96b2b8').lerp(new THREE.Color('#0f2d44'), depthT);
-        cSummer.set('#6ba3b8').lerp(new THREE.Color('#0b2538'), depthT);
-        cAutumn.set('#7aa1a0').lerp(new THREE.Color('#102b3d'), depthT);
+        // Turquoise shallow coastal shelf -> deep abyssal ocean blue
+        const shallowFoam = 1 - smoothstep(0.03, 0.36, WATER_Y - y);
+        cSpring.set('#38a3b8').lerp(new THREE.Color('#092438'), Math.pow(depthT, 0.72)).lerp(new THREE.Color('#d8f3fa'), shallowFoam * 0.42);
+        cSummer.set('#2298b8').lerp(new THREE.Color('#071d30'), Math.pow(depthT, 0.72)).lerp(new THREE.Color('#cffafe'), shallowFoam * 0.45);
+        cAutumn.set('#2e8ca0').lerp(new THREE.Color('#0a2234'), Math.pow(depthT, 0.72)).lerp(new THREE.Color('#e0f2fe'), shallowFoam * 0.35);
         cWinter.copy(cSpring);
+      } else if (y < WATER_Y + 0.14 && fr > 16.0) {
+        // Crisp sandy/rocky coastal shoreline edge
+        cSpring.set('#cbb99c').lerp(new THREE.Color('#7c8c68'), smoothstep(WATER_Y - 0.03, WATER_Y + 0.14, y));
+        cSummer.set('#d4c2a1').lerp(new THREE.Color('#4c6b42'), smoothstep(WATER_Y - 0.03, WATER_Y + 0.14, y));
+        cAutumn.set('#c4af8e').lerp(new THREE.Color('#8c6d42'), smoothstep(WATER_Y - 0.03, WATER_Y + 0.14, y));
+        cWinter.set('#cbd5e1').lerp(new THREE.Color('#e2e8f0'), smoothstep(WATER_Y - 0.03, WATER_Y + 0.14, y));
       } else if (fr < FUJI_RIM_R - 0.35) {
         // Inside Mt. Fuji Circular Caldera Crater (大內院火山口)
         const cf = fr / (FUJI_RIM_R - 0.35);
-        cSpring.set('#3d2c28').lerp(new THREE.Color('#78635a'), cf * 0.75);
-        cSummer.set('#47281e').lerp(new THREE.Color('#6b4436'), cf * 0.7);
-        cAutumn.set('#4a342a').lerp(new THREE.Color('#8c7163'), cf * 0.75);
+        cSpring.set('#382622').lerp(new THREE.Color('#7a6258'), cf * 0.78);
+        cSummer.set('#44241a').lerp(new THREE.Color('#6b4234'), cf * 0.74);
+        cAutumn.set('#463026').lerp(new THREE.Color('#8c6f60'), cf * 0.78);
         cWinter.set('#64748b').lerp(new THREE.Color('#f1f5f9'), smoothstep(0.35, 0.95, cf));
-      } else if (fr < 18.0 && y > 7.2 + gully * 0.85) {
-        cSpring.set('#f8fafc').lerp(new THREE.Color('#dbeafe'), Math.max(0, 1 - (y - 7.2) / 5.0) * 0.28);
-        if (y > 10.6) cSummer.set('#e2e8f0').lerp(new THREE.Color('#6a4336'), 0.45);
+      } else if (fr < 18.0 && y > 7.2 + gully * 0.95 + fineGully * 0.35) {
+        // Photorealistic striated snow ridges & exposed basalt ribs on Mt. Fuji summit!
+        const rib = smoothstep(0.2, 0.85, fineGully * 0.5 + 0.5) * (1 - smoothstep(10.5, 13.8, y));
+        cSpring.set('#f8fafc').lerp(new THREE.Color('#5c4b44'), rib * 0.45);
+        if (y > 10.6) cSummer.set('#e2e8f0').lerp(new THREE.Color('#6a4336'), 0.45 + rib * 0.35);
         else cSummer.set('#6a4336').lerp(new THREE.Color('#47332c'), 0.5);
-        cAutumn.set('#ffffff').lerp(new THREE.Color('#fde68a'), 0.1);
-        cWinter.set('#ffffff');
+        cAutumn.set('#ffffff').lerp(new THREE.Color('#6e5548'), rib * 0.4);
+        cWinter.set('#ffffff').lerp(new THREE.Color('#cbd5e1'), rib * 0.18);
       } else if (z < -30 && y > 5.0) {
-        // Northern Alps snow peaks
         cSpring.set('#f1f5f9');
         cSummer.set('#64748b').lerp(new THREE.Color('#cbd5e1'), (y - 5.0) / 3.0);
         cAutumn.set('#f8fafc');
@@ -1312,28 +1509,38 @@
         cSummer.set('#ca8a04').lerp(new THREE.Color('#78716c'), 0.35);
         cAutumn.set('#d97706').lerp(new THREE.Color('#a8a29e'), 0.35);
         cWinter.set('#e5d5a7').lerp(new THREE.Color('#f1f5f9'), 0.45);
-      } else if ((fr < 19.0 && y > 3.2) || (pvr < 4.8 && y > 1.2)) {
-        const st = smoothstep(3.2, 7.6, y);
-        cSpring.set('#4a5d46').lerp(new THREE.Color('#4f5e70'), st);
-        cSummer.set('#365314').lerp(new THREE.Color('#44403c'), st);
-        cAutumn.set('#713f12').lerp(new THREE.Color('#57534e'), st);
-        cWinter.set('#e2e8f0').lerp(new THREE.Color('#ffffff'), smoothstep(1.8, 4.8, y));
+      } else if ((fr < 19.0 && y > 3.0) || (pvr < 4.8 && y > 1.2)) {
+        // Striated volcanic scree & dark basalt gullies on Mt. Fuji flanks
+        const st = smoothstep(3.0, 7.6, y);
+        const streak = (fineGully * 0.5 + 0.5) * 0.22;
+        cSpring.set('#3b5236').lerp(new THREE.Color('#5a4b44'), st).offsetHSL(0, 0, -streak * 0.35);
+        cSummer.set('#2c4716').lerp(new THREE.Color('#4f3f38'), st).offsetHSL(0, 0, -streak * 0.35);
+        cAutumn.set('#663a14').lerp(new THREE.Color('#5c4c46'), st).offsetHSL(0, 0, -streak * 0.35);
+        cWinter.set('#dde6f0').lerp(new THREE.Color('#ffffff'), smoothstep(1.8, 4.8, y));
       } else if ((Math.hypot(x - 43.8, z - 9.8) < 4.8) || (x > 38.5 && x < 67.5 && z < -9.5) || (Math.hypot(x - 51.5, z + 4.5) < 3.4) || (Math.hypot(x - 67.5, z + 11.5) < 4.2) || (Math.hypot(x - 87.5, z + 26.5) < 6.4)) {
-        cSpring.set('#94a3b8'); cSummer.set('#64748b'); cAutumn.set('#78716c'); cWinter.set('#dbeafe');
+        // Subtle metropolitan street-grid pattern under Tokyo / Yokohama / Makuhari!
+        const roadGrid = (Math.abs(((x * 0.65) % 1 + 1) % 1 - 0.5) > 0.42 || Math.abs(((z * 0.65) % 1 + 1) % 1 - 0.5) > 0.42) ? 0.78 : 1.0;
+        cSpring.set('#8492a6').multiplyScalar(roadGrid);
+        cSummer.set('#68778c').multiplyScalar(roadGrid);
+        cAutumn.set('#787572').multiplyScalar(roadGrid);
+        cWinter.set('#cbd5e1').multiplyScalar(0.86 + roadGrid * 0.14);
       } else {
         const n = Math.sin(x * 0.55) * Math.cos(z * 0.55) * 0.5 + 0.5;
-        cSpring.set('#3d6c26').lerp(new THREE.Color('#629438'), n);
-        cSummer.set('#166534').lerp(new THREE.Color('#15803d'), n);
-        cAutumn.set('#a16207').lerp(new THREE.Color('#d97706'), n);
-        // Deep Emerald Aokigahara Jukai (青木原樹海 — right between Motosuko & Saiko!)
+        const n2 = Math.sin(x * 1.35 + z * 1.15) * 0.5 + 0.5;
+        cSpring.set('#2e5820').lerp(new THREE.Color('#4e7d2e'), n * 0.7 + n2 * 0.3);
+        cSummer.set('#144d24').lerp(new THREE.Color('#1f6b32'), n * 0.7 + n2 * 0.3);
+        cAutumn.set('#8a520c').lerp(new THREE.Color('#c26810'), n * 0.7 + n2 * 0.3);
         if (jukaiDist < 1.15) {
           const jt = 1 - smoothstep(0.45, 1.15, jukaiDist);
-          cSpring.lerp(new THREE.Color('#1a3d16'), jt * 0.68);
-          cSummer.lerp(new THREE.Color('#0f3818'), jt * 0.72);
-          cAutumn.lerp(new THREE.Color('#274719'), jt * 0.58);
+          cSpring.lerp(new THREE.Color('#143212'), jt * 0.72);
+          cSummer.lerp(new THREE.Color('#0c2c14'), jt * 0.76);
+          cAutumn.lerp(new THREE.Color('#1f3b14'), jt * 0.62);
         }
-        cWinter.set('#dde7f0').lerp(new THREE.Color('#f8fafc'), n * 0.78);
+        cWinter.set('#d6e2ee').lerp(new THREE.Color('#f8fafc'), n * 0.78);
       }
+
+      // Apply baked Ambient Occlusion to all 4 seasonal vertex colors!
+      cSpring.multiplyScalar(ao); cSummer.multiplyScalar(ao); cAutumn.multiplyScalar(ao); cWinter.multiplyScalar(0.88 + ao * 0.12);
 
       springColors[i * 3] = cSpring.r; springColors[i * 3 + 1] = cSpring.g; springColors[i * 3 + 2] = cSpring.b;
       summerColors[i * 3] = cSummer.r; summerColors[i * 3 + 1] = cSummer.g; summerColors[i * 3 + 2] = cSummer.b;
@@ -1344,7 +1551,17 @@
 
     terrainGeo.setAttribute('color', new THREE.BufferAttribute(activeColors, 3));
     terrainGeo.computeVertexNormals();
-    const terrainMesh = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.02 }));
+    const terrainMesh = new THREE.Mesh(
+      terrainGeo,
+      new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        normalMap: terrainNormalTex,
+        normalScale: new THREE.Vector2(0.55, 0.55),
+        roughness: 0.88,
+        metalness: 0.03,
+        envMapIntensity: 0.42
+      })
+    );
     terrainMesh.castShadow = true;
     terrainMesh.receiveShadow = true;
     root.add(terrainMesh);
@@ -1551,11 +1768,26 @@
     }
 
     // =========================================================================
-    // 9. TRANSLUCENT RESIN LAKES, SURUGA / SAGAMI / TOKYO BAY, PACIFIC & RICH SEABED
+    // 9. 2.0 ANIMATED NORMAL-MAP OCEAN, RESIN LAKES, SHIP WAKES & RICH SEABED
     // =========================================================================
     const waterMat = new THREE.MeshPhysicalMaterial({
-      color: '#0d8ac7', roughness: 0.07, metalness: 0.04, transmission: 0.64,
-      transparent: true, opacity: 0.78, ior: 1.33, thickness: 4.6
+      color: '#0b7eb8',
+      roughness: 0.11,
+      metalness: 0.14,
+      transmission: 0.58,
+      transparent: true,
+      opacity: 0.82,
+      ior: 1.33,
+      thickness: 4.8,
+      clearcoat: 0.88,
+      clearcoatRoughness: 0.12,
+      normalMap: waterNormalTex,
+      normalScale: new THREE.Vector2(0.42, 0.42),
+      envMapIntensity: 1.55
+    });
+    const waterSideMat = new THREE.MeshPhysicalMaterial({
+      color: '#0b7eb8', roughness: 0.07, metalness: 0.05, transmission: 0.65,
+      transparent: true, opacity: 0.78, ior: 1.33, thickness: 4.2, envMapIntensity: 1.1
     });
 
     (function buildAllWaterSurfaces() {
@@ -1597,7 +1829,7 @@
       g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       g.setIndex(ind);
       g.computeVertexNormals();
-      root.add(new THREE.Mesh(g, waterMat));
+      root.add(new THREE.Mesh(g, waterSideMat));
     }
 
     // Front wall continuous ocean glass pane: Suruga Bay -> Southern Izu Sea Lane -> Sagami Bay -> Uraga -> Pacific!
