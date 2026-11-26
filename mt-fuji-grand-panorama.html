@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>富士山廣域全景生態百景圖 (方圓100公里旗艦版) — 專業 3D 立體模型</title>
+  <style>
+    :root {
+      --bg-panel: rgba(13, 17, 26, 0.84);
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.14);
+      --accent: #38bdf8;
+      --accent-snow: #bae6fd;
+      --accent-warm: #fb923c;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #181716;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      font-size: 13px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Floating 3D Landmark Pins Layer */
+    #labels-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    .pin-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      color: #f8fafc;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .pin-label:hover {
+      background: rgba(56, 189, 248, 0.32);
+      border-color: #7dd3fc;
+    }
+
+    .pin-label::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      transform: translateX(-50%);
+      border-width: 5px 4px 0 4px;
+      border-style: solid;
+      border-color: rgba(255, 255, 255, 0.35) transparent transparent transparent;
+    }
+
+    /* Top-left Title Card */
+    .title-card {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      padding: 13px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      z-index: 20;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      max-width: 348px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .back-link:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+
+    .title-card h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 5px;
+      line-height: 1.35;
+    }
+
+    .title-card p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.52;
+    }
+
+    /* Right Control Panel */
+    .controls-panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 282px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .controls-panel::-webkit-scrollbar { width: 5px; }
+    .controls-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 4px; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .btn-group-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .btn-group-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .btn-grid-cams {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+
+    .btn {
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 11.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .btn.left-align {
+      justify-content: flex-start;
+      padding: 7px 8px;
+    }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.55);
+    }
+
+    .btn.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.85);
+      color: #e0f2fe;
+      font-weight: 600;
+    }
+
+    .btn.snow-btn.active {
+      background: rgba(186, 230, 253, 0.26);
+      border-color: #bae6fd;
+      color: #ffffff;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 2px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .statusbar {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 18px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .statusbar b { color: var(--text); font-weight: 600; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+
+  <div class="title-card">
+    <a href="./index.html" class="back-link">← 返回作品集首頁</a>
+    <h1>🗻 富士山廣域全景生態百景圖 (方圓100公里旗艦版)</h1>
+    <p>整合 13 幅微縮模型精髓：富士山火山煙與登山道、南阿爾卑斯連峰、富士五湖、白糸之瀧、大涌谷纜車、水上鳥居與海賊船、露天雪猴溫泉、新幹線高架與隧道、富士急樂園、忍野八海、富士國際賽車場、駿河灣鯨豚海洋剖面、東京鐵塔與晴空塔、側火山岩漿庫與地底暗河。</p>
+  </div>
+
+  <aside class="controls-panel">
+    <div>
+      <div class="section-label">季節與雪景切換</div>
+      <div class="btn-group-2">
+        <button class="btn snow-btn active" data-season="spring">🌸 春櫻翠綠</button>
+        <button class="btn snow-btn" data-season="winter">❄️ 冬日雪景</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">日夜與赤富士光影</div>
+      <div class="btn-group-3">
+        <button class="btn active" data-time="day">☀️ 白晝</button>
+        <button class="btn" data-time="sunset">🌅 赤富士</button>
+        <button class="btn" data-time="night">🌙 璀璨夜景</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">廣域導覽視角（點擊平滑飛行）</div>
+      <div class="btn-grid-cams">
+        <button class="btn left-align active" data-cam="panorama">🗺️ 廣域百景全覽</button>
+        <button class="btn left-align" data-cam="fujiSummit">🗻 富士山與登山道</button>
+        <button class="btn left-align" data-cam="pagodaLakes">⛩️ 忠靈塔與五湖</button>
+        <button class="btn left-align" data-cam="onsenMonkeys">♨️ 雪猴露天溫泉</button>
+        <button class="btn left-align" data-cam="magmaVolcano">🌋 側火山岩漿剖面</button>
+        <button class="btn left-align" data-cam="shiraitoOwakudani">🚡 白糸瀧與大涌谷</button>
+        <button class="btn left-align" data-cam="ashiTorii">🚢 水上鳥居海賊船</button>
+        <button class="btn left-align" data-cam="speedwayShinkansen">🏎️ 賽車場與新幹線</button>
+        <button class="btn left-align" data-cam="oceanTokyo">🐳 駿河灣與東京塔</button>
+        <button class="btn left-align" data-cam="undergroundKoi">🧊 冰穴與地底暗河</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">展示互動選項</div>
+      <div class="toggle-row">
+        <label for="opt-labels">顯示 3D 地標導覽標籤</label>
+        <input type="checkbox" id="opt-labels" checked />
+      </div>
+      <div class="toggle-row">
+        <label for="opt-anim">動態列車／賽車／纜車／鯨豚</label>
+        <input type="checkbox" id="opt-anim" checked />
+      </div>
+      <div class="toggle-row">
+        <label for="opt-orbit">自動環繞展示</label>
+        <input type="checkbox" id="opt-orbit" />
+      </div>
+    </div>
+  </aside>
+
+  <div class="statusbar">
+    <span><b>左鍵拖曳</b> 自由旋轉</span>
+    <span><b>右鍵拖曳</b> 平移視野</span>
+    <span><b>滾輪</b> 遠近縮放</span>
+    <span><b>點擊地標標籤</b> 快速對焦</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. RENDERER, SCENE, CAMERA & SEEDED PRNG
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const labelsContainer = document.getElementById('labels-container');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#c8bfb3');
+    scene.fog = new THREE.FogExp2('#c8bfb3', 0.0024);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.5, 500);
+    camera.position.set(-34, 38, 58);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.06;
+    container.appendChild(renderer.domElement);
+
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.06;
+    orbit.maxPolarAngle = Math.PI / 2 - 0.015;
+    orbit.minDistance = 9;
+    orbit.maxDistance = 155;
+    orbit.target.set(0, 1.8, 1.5);
+
+    let seed = 20268888;
+    function rand() {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+    function randRange(a, b) {
+      return a + rand() * (b - a);
+    }
+    function smoothstep(e0, e1, x) {
+      const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
+      return t * t * (3 - 2 * t);
+    }
+    function gauss(x, z, cx, cz, rx, rz) {
+      const dx = (x - cx) / rx;
+      const dz = (z - cz) / rz;
+      return Math.exp(-(dx * dx + dz * dz));
+    }
+
+    // =========================================================================
+    // 2. LIGHTING RIG (DAY / AKA-FUJI SUNSET / NIGHT + WINTER TINT)
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x475569, 0.92);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfff5e4, 2.3);
+    sunLight.position.set(-48, 62, 38);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 185;
+    const shD = 44;
+    sunLight.shadow.camera.left = -shD;
+    sunLight.shadow.camera.right = shD;
+    sunLight.shadow.camera.top = shD;
+    sunLight.shadow.camera.bottom = -shD;
+    sunLight.shadow.bias = -0.00035;
+    scene.add(sunLight);
+
+    const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.65);
+    fillLight.position.set(45, 30, -35);
+    scene.add(fillLight);
+
+    // Cutaway point lights: Magma chamber, Underground Koi cave, Narusawa Ice Cave, Tokyo Bay
+    const magmaLight = new THREE.PointLight(0xff5500, 2.4, 20, 1.5);
+    magmaLight.position.set(-6.5, -2.5, 24.2);
+    scene.add(magmaLight);
+
+    const koiCaveLight = new THREE.PointLight(0x38bdf8, 1.6, 15, 1.5);
+    koiCaveLight.position.set(3.5, -3.2, 23.8);
+    scene.add(koiCaveLight);
+
+    const iceCaveLight = new THREE.PointLight(0x0ea5e9, 2.2, 16, 1.5);
+    iceCaveLight.position.set(31.5, -2.2, -16.0);
+    scene.add(iceCaveLight);
+
+    const tokyoGlowLight = new THREE.PointLight(0xf97316, 0.4, 26, 1.4);
+    tokyoGlowLight.position.set(27.5, 5.5, -12.0);
+    scene.add(tokyoGlowLight);
+
+    const nightEmissives = [];
+    const snowRoofMeshes = [];
+
+    // =========================================================================
+    // 3. PROCEDURAL HIGH-RES TEXTURES
+    // =========================================================================
+    function createSoftParticleTexture() {
+      const c = document.createElement('canvas');
+      c.width = 64;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      const g = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      g.addColorStop(0, 'rgba(255,255,255,1)');
+      g.addColorStop(0.45, 'rgba(255,255,255,0.65)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createWalnutTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#58341c';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 240; i++) {
+        const y = rand() * 512;
+        const h = 1 + rand() * 5;
+        ctx.fillStyle = rand() > 0.5 ? 'rgba(28, 14, 6, 0.25)' : 'rgba(128, 78, 42, 0.16)';
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= 512; x += 32) {
+          ctx.lineTo(x, y + Math.sin(x * 0.02 + i) * 3);
+        }
+        ctx.lineTo(512, y + h);
+        ctx.lineTo(0, y + h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createBrassPlaqueTexture() {
+      const c = document.createElement('canvas');
+      c.width = 960;
+      c.height = 190;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 960, 190);
+      grad.addColorStop(0, '#c8a253');
+      grad.addColorStop(0.5, '#f3d98b');
+      grad.addColorStop(1, '#b0893c');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 960, 190);
+
+      for (let y = 0; y < 190; y += 2) {
+        ctx.fillStyle = y % 4 === 0 ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.04)';
+        ctx.fillRect(0, y, 960, 1);
+      }
+
+      ctx.strokeStyle = '#5c4018';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(10, 10, 940, 170);
+
+      ctx.fillStyle = '#241708';
+      ctx.font = 'bold 42px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('富士山為中心方圓100公里：神聖之山與廣域生態百景', 480, 72);
+
+      ctx.fillStyle = '#3d2810';
+      ctx.font = '600 26px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+      ctx.fillText('五湖・白糸之瀧・大涌谷纜車・雪猴溫泉・賽車場・駿河灣與東京灣立體剖面模型', 480, 132);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createGeologyStrataTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 384;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#543a24';
+      ctx.fillRect(0, 0, 1024, 384);
+
+      const layers = [
+        { y0: 0, col: '#4a6029' },
+        { y0: 32, col: '#6c4b31' },
+        { y0: 95, col: '#4c3c34' },
+        { y0: 155, col: '#7d5d41' },
+        { y0: 215, col: '#3a3435' },
+        { y0: 285, col: '#292527' }
+      ];
+      layers.forEach((l, idx) => {
+        ctx.fillStyle = l.col;
+        ctx.beginPath();
+        ctx.moveTo(0, l.y0);
+        for (let x = 0; x <= 1024; x += 24) {
+          ctx.lineTo(x, l.y0 + Math.sin(x * 0.016 + idx * 1.5) * 12 + Math.cos(x * 0.04) * 4);
+        }
+        ctx.lineTo(1024, 384);
+        ctx.lineTo(0, 384);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // Subterranean blue groundwater aquifer band (伏流水層)
+      ctx.fillStyle = 'rgba(34, 211, 238, 0.38)';
+      ctx.beginPath();
+      ctx.moveTo(0, 205);
+      for (let x = 0; x <= 1024; x += 20) {
+        ctx.lineTo(x, 205 + Math.sin(x * 0.018) * 10);
+      }
+      for (let x = 1024; x >= 0; x -= 20) {
+        ctx.lineTo(x, 232 + Math.sin(x * 0.018) * 10);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Deep aquifer vein
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      for (let x = 0; x <= 1024; x += 16) {
+        const y = 332 + Math.cos(x * 0.015) * 10;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Rock & soil grain
+      for (let i = 0; i < 1800; i++) {
+        ctx.fillStyle = rand() > 0.5 ? 'rgba(255,235,205,0.09)' : 'rgba(12,8,6,0.22)';
+        ctx.beginPath();
+        ctx.arc(rand() * 1024, 24 + rand() * 345, 1 + rand() * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const particleTex = createSoftParticleTexture();
+    const walnutTex = createWalnutTexture();
+    const geologyTex = createGeologyStrataTexture();
+
+    // =========================================================================
+    // 4. EXPANDED DIORAMA FOOTPRINT (64 x 46) & UNIFIED TERRAIN MODEL
+    // =========================================================================
+    const W = 64; // x in [-32, +32]
+    const D = 46; // z in [-23, +23]
+    const BASE_Y = -5.6;
+    const WATER_Y = -0.25;
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    function getTerrainHeight(x, z) {
+      // Base rolling foothill elevation
+      let h = 0.55 + Math.sin(x * 0.16) * Math.cos(z * 0.16) * 0.16 + Math.sin(x * 0.42 + z * 0.35) * 0.06;
+
+      // 1. Central Hero: Mount Fuji at (-2.0, -3.5), Peak ~ 16.0
+      const fx = x + 2.0;
+      const fz = z + 3.5;
+      const fr = Math.hypot(fx, fz);
+      const theta = Math.atan2(fz, fx);
+      const fujiMask = 1 - smoothstep(11.5, 18.5, fr);
+      const gullies = (Math.sin(theta * 10 + fr * 0.12) * 0.38 + Math.sin(theta * 19 - fr * 0.16) * 0.18)
+        * smoothstep(1.2, 4.0, fr) * (1 - smoothstep(7.5, 14.5, fr));
+      let fujiH = 16.0 * Math.exp(-fr / 7.2) * fujiMask + gullies;
+      if (fr < 1.35) {
+        fujiH -= (1 - smoothstep(0.2, 1.35, fr)) * 0.95; // Summit crater!
+      }
+      h += fujiH;
+
+      // 2. Back-Left: Southern Japanese Alps (南阿爾卑斯連峰) x in [-31,-16], z in [-22,-13]
+      const alps = 7.8 * gauss(x, z, -24.5, -18.5, 4.6, 3.5)
+                 + 6.6 * gauss(x, z, -18.5, -19.0, 3.8, 3.2)
+                 + 5.8 * gauss(x, z, -28.5, -14.5, 3.5, 3.2);
+      const alpsRough = (Math.sin(x * 1.3 + z * 1.1) * 0.42 + Math.cos(x * 2.0 - z * 1.5) * 0.25)
+        * smoothstep(-13, -17, z) * smoothstep(-13, -19, x);
+      h += alps + alpsRough;
+
+      // 3. Chureito Pagoda Hill (-19.5, -10.5) & Snow Monkey Onsen Terrace (-27.5, -2.5)
+      h += 3.3 * gauss(x, z, -19.5, -10.5, 3.8, 3.2);
+      h += 1.55 * gauss(x, z, -27.5, -2.5, 3.8, 3.8);
+
+      // 4. Shiraito Falls Cliff Terrace (白糸之瀧) around (9.2, -6.2)
+      // Upper shelf dropping sharply into plunge pool at (9.5, -4.5)
+      h += 1.95 * gauss(x, z, 9.2, -7.8, 2.8, 2.0);
+      h -= 1.35 * gauss(x, z, 9.5, -4.4, 1.8, 1.4);
+
+      // 5. Hakone Owakudani Volcanic Mountain (16.5, -5.5) & Outer Rim
+      h += 4.6 * gauss(x, z, 17.2, -5.2, 3.6, 3.2);
+      h += 3.2 * gauss(x, z, 20.5, -8.5, 3.0, 3.0);
+
+      // 6. Front-Cutaway Sliced Parasitic Volcano Cone (寶永側火山剖面) right on front edge (-6.5, 22.8)!
+      const pvx = x + 6.5;
+      const pvz = z - 22.8;
+      const pvr = Math.hypot(pvx, pvz);
+      let pvH = 4.4 * Math.exp(-pvr / 2.6) * (1 - smoothstep(3.5, 5.8, pvr));
+      if (pvr < 0.65) pvH -= (1 - pvr / 0.65) * 0.55;
+      h += pvH;
+
+      // 7. Fuji Five Lakes (富士五湖)
+      // (a) Lake Kawaguchiko (front-left deep cutaway lake)
+      const kawa1 = gauss(x, z, -17.5, 13.5, 5.2, 4.8);
+      const kawa2 = gauss(x, z, -16.8, 21.8, 4.8, 3.4); // meets front cutaway z=+23!
+      const kawaNarrows = gauss(x, z, -18.0, 7.8, 2.4, 2.8);
+      const kawaMask = Math.min(1, kawa1 * 1.35 + kawa2 * 1.45 + kawaNarrows * 1.15);
+      h -= 3.1 * smoothstep(0.18, 0.72, kawaMask);
+      // Floating Ukimido Island inside Kawaguchiko (-15.5, 13.8)
+      h += 2.35 * gauss(x, z, -15.5, 13.8, 1.1, 0.95);
+
+      // (b) Lake Saiko (-15.5, -4.2), Shojiko (-21.0, 2.2), Motosuko (-26.8, 6.8)
+      h -= 2.1 * smoothstep(0.22, 0.75, gauss(x, z, -15.2, -4.2, 3.0, 2.2));
+      h -= 1.9 * smoothstep(0.25, 0.75, gauss(x, z, -21.2, 2.2, 2.2, 1.8));
+      h -= 2.2 * smoothstep(0.22, 0.75, gauss(x, z, -26.8, 6.8, 3.2, 2.6));
+
+      // (c) Lake Yamanaka (山中湖) back-right (9.5, -16.2)
+      h -= 2.2 * smoothstep(0.22, 0.75, gauss(x, z, 9.5, -16.2, 4.8, 3.0));
+
+      // (d) Lake Ashi (蘆之湖) mid-back-right (14.5, -12.0)
+      h -= 2.2 * smoothstep(0.22, 0.75, gauss(x, z, 14.8, -12.0, 3.8, 2.8));
+
+      // 8. Flat Graded Terrace for Fuji Speedway (15.8, 4.2)
+      const speedwayMask = gauss(x, z, 15.8, 4.2, 5.6, 4.2);
+      if (speedwayMask > 0.22) {
+        h = THREE.MathUtils.lerp(h, 0.95, smoothstep(0.22, 0.58, speedwayMask));
+      }
+
+      // 9. Suruga Bay & Tokyo Bay Wide Ocean Basin (駿河灣與東京灣廣域海洋剖面)
+      // Sweeps across front-right (x in [11.5, 32], z in [10.5, 23]) and up right coast (x in [24.5, 32], z in [-5, 23])
+      const surugaBay = gauss(x, z, 21.5, 18.5, 9.5, 6.8);
+      const sagamiBay = gauss(x, z, 29.5, 8.0, 5.8, 8.5);
+      const tokyoBayChannel = gauss(x, z, 29.8, -3.5, 3.6, 5.5);
+      const oceanMask = Math.min(1, surugaBay * 1.45 + sagamiBay * 1.4 + tokyoBayChannel * 1.25);
+      h -= 3.85 * smoothstep(0.18, 0.68, oceanMask);
+
+      // Tokyo Metropolis Peninsula Platform (x in [23.5, 31.8], z in [-22.5, -7.5])
+      if (x > 22.5 && z < -6.5) {
+        const cityPlat = smoothstep(22.5, 25.0, x) * smoothstep(-6.5, -9.5, z);
+        h = THREE.MathUtils.lerp(h, 0.68, cityPlat * 0.88);
+      }
+
+      return h;
+    }
+
+    // =========================================================================
+    // 5. GRAND WALNUT MUSEUM PLINTH, DESK & BRASS PLAQUE
+    // =========================================================================
+    const desk = new THREE.Mesh(
+      new THREE.BoxGeometry(170, 1.2, 130),
+      new THREE.MeshStandardMaterial({ map: walnutTex, color: '#9c6f49', roughness: 0.74 })
+    );
+    desk.position.set(0, -8.1, 0);
+    desk.receiveShadow = true;
+    root.add(desk);
+
+    const walnutMat = new THREE.MeshStandardMaterial({ map: walnutTex, color: '#7c4c29', roughness: 0.5, metalness: 0.06 });
+    const plinthLower = new THREE.Mesh(new THREE.BoxGeometry(W + 3.8, 1.5, D + 3.8), walnutMat);
+    plinthLower.position.set(0, -6.75, 0);
+    plinthLower.castShadow = true;
+    plinthLower.receiveShadow = true;
+    root.add(plinthLower);
+
+    const plinthUpper = new THREE.Mesh(new THREE.BoxGeometry(W + 1.4, 0.65, D + 1.4), walnutMat);
+    plinthUpper.position.set(0, -5.75, 0);
+    plinthUpper.castShadow = true;
+    plinthUpper.receiveShadow = true;
+    root.add(plinthUpper);
+
+    // Wide Brass Museum Plaque
+    const plaqueGroup = new THREE.Group();
+    plaqueGroup.position.set(0, -6.65, (D + 3.8) / 2 + 0.08);
+    root.add(plaqueGroup);
+
+    const plaqueBack = new THREE.Mesh(
+      new THREE.BoxGeometry(14.6, 2.1, 0.16),
+      new THREE.MeshStandardMaterial({ color: '#856224', metalness: 0.8, roughness: 0.28 })
+    );
+    plaqueGroup.add(plaqueBack);
+
+    const plaqueFront = new THREE.Mesh(
+      new THREE.PlaneGeometry(14.35, 1.92),
+      new THREE.MeshStandardMaterial({ map: createBrassPlaqueTexture(), metalness: 0.65, roughness: 0.28 })
+    );
+    plaqueFront.position.z = 0.09;
+    plaqueGroup.add(plaqueFront);
+
+    // =========================================================================
+    // 6. HIGH-RES TERRAIN WITH DUAL SEASON VERTEX COLORS (SPRING <-> WINTER SNOW)
+    // =========================================================================
+    const segX = 236;
+    const segZ = 170;
+    const terrainGeo = new THREE.PlaneGeometry(W, D, segX, segZ);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const tPos = terrainGeo.attributes.position;
+    const springColors = new Float32Array(tPos.count * 3);
+    const winterColors = new Float32Array(tPos.count * 3);
+    const activeColors = new Float32Array(tPos.count * 3);
+
+    const cSpring = new THREE.Color();
+    const cWinter = new THREE.Color();
+
+    for (let i = 0; i < tPos.count; i++) {
+      const x = tPos.getX(i);
+      const z = tPos.getZ(i);
+      const y = getTerrainHeight(x, z);
+      tPos.setY(i, y);
+
+      const fx = x + 2.0, fz = z + 3.5;
+      const fr = Math.hypot(fx, fz);
+      const theta = Math.atan2(fz, fx);
+      const gully = Math.sin(theta * 10 + fr * 0.12) * 0.65 + Math.sin(theta * 19) * 0.35;
+
+      const pvr = Math.hypot(x + 6.5, z - 22.8); // Parasitic front volcano
+      const owakudaniDist = Math.hypot(x - 16.8, z + 5.2); // Sulfur valley
+
+      if (y < WATER_Y - 0.03) {
+        // Underwater seabed / lakebed
+        const depthT = Math.min(1, (WATER_Y - y) / 3.0);
+        cSpring.set('#96b2b8').lerp(new THREE.Color('#1d4b66'), depthT);
+        cWinter.copy(cSpring);
+      } else if (fr < 14.5 && y > 6.8 + gully * 0.85) {
+        // Mt. Fuji permanent snowcap
+        cSpring.set('#f8fafc').lerp(new THREE.Color('#dbeafe'), Math.max(0, 1 - (y - 6.8) / 4.5) * 0.3);
+        cWinter.set('#ffffff');
+      } else if (x < -14 && z < -12 && y > 4.6) {
+        // Southern Alps snow peaks
+        cSpring.set('#f1f5f9');
+        cWinter.set('#ffffff');
+      } else if (pvr < 3.6 && y > 2.8) {
+        // Parasitic volcano snow rim
+        cSpring.set('#f1f5f9');
+        cWinter.set('#ffffff');
+      } else if (owakudaniDist < 2.8 && y > 2.2) {
+        // Owakudani sulfur yellow-ochre geothermal slope
+        cSpring.set('#d4b46a').lerp(new THREE.Color('#9ca3af'), 0.35);
+        cWinter.set('#e5d5a7').lerp(new THREE.Color('#f1f5f9'), 0.45);
+      } else if ((fr < 15.0 && y > 3.2) || (pvr < 4.5 && y > 1.2)) {
+        // Volcanic slate-basalt mid slopes
+        const st = smoothstep(3.2, 7.2, y);
+        cSpring.set('#4a5d46').lerp(new THREE.Color('#4f5e70'), st);
+        // In winter, Fuji's snowcap blankets all the way down the slopes!
+        cWinter.set('#e2e8f0').lerp(new THREE.Color('#ffffff'), smoothstep(1.8, 4.5, y));
+      } else if (x > 23.0 && z < -7.0) {
+        // Tokyo urban concrete apron
+        cSpring.set('#94a3b8');
+        cWinter.set('#dbeafe');
+      } else {
+        // Lush green plains, meadows & forests
+        const n = Math.sin(x * 0.65) * Math.cos(z * 0.65) * 0.5 + 0.5;
+        cSpring.set('#3d6c26').lerp(new THREE.Color('#629438'), n);
+        if (x > -4 && x < 7 && z > 8.5) {
+          cSpring.lerp(new THREE.Color('#294b1c'), 0.52); // Dense Aokigahara Jukai
+        }
+        // Winter snow blanket across foothills & plains with subtle frost-pine texture
+        cWinter.set('#dde7f0').lerp(new THREE.Color('#f8fafc'), n * 0.78);
+      }
+
+      springColors[i * 3] = cSpring.r;
+      springColors[i * 3 + 1] = cSpring.g;
+      springColors[i * 3 + 2] = cSpring.b;
+
+      winterColors[i * 3] = cWinter.r;
+      winterColors[i * 3 + 1] = cWinter.g;
+      winterColors[i * 3 + 2] = cWinter.b;
+
+      activeColors[i * 3] = cSpring.r;
+      activeColors[i * 3 + 1] = cSpring.g;
+      activeColors[i * 3 + 2] = cSpring.b;
+    }
+
+    terrainGeo.setAttribute('color', new THREE.BufferAttribute(activeColors, 3));
+    terrainGeo.computeVertexNormals();
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.86,
+      metalness: 0.02
+    });
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.castShadow = true;
+    terrainMesh.receiveShadow = true;
+    root.add(terrainMesh);
+
+    // =========================================================================
+    // 7. FOUR-SIDED GEOLOGICAL SKIRT + UNDERGROUND KOI CAVE & ICE CAVERN
+    // =========================================================================
+    function buildCutawaySkirt(axis, fixedVal, count, start, end, flipWinding, indentFn = null) {
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+      const rows = 16;
+
+      for (let i = 0; i <= count; i++) {
+        const u = i / count;
+        const coord = start + (end - start) * u;
+        const x = axis === 'z' ? coord : fixedVal;
+        const z = axis === 'z' ? fixedVal : coord;
+        const topY = getTerrainHeight(x, z);
+
+        for (let r = 0; r <= rows; r++) {
+          const v = r / rows;
+          const y = BASE_Y + (topY - BASE_Y) * v;
+          let wx = x, wz = z;
+          if (indentFn) {
+            const off = indentFn(coord, y);
+            if (axis === 'x') wx += off;
+            else wz += off;
+          }
+          positions.push(wx, y, wz);
+          uvs.push(u * 2.2, (y - BASE_Y) / 18.0);
+        }
+      }
+
+      const stride = rows + 1;
+      for (let i = 0; i < count; i++) {
+        for (let r = 0; r < rows; r++) {
+          const a = i * stride + r;
+          const b = (i + 1) * stride + r;
+          const c = (i + 1) * stride + (r + 1);
+          const d = i * stride + (r + 1);
+          if (!flipWinding) indices.push(a, b, c, a, c, d);
+          else indices.push(a, c, b, a, d, c);
+        }
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      map: geologyTex,
+      roughness: 0.9,
+      metalness: 0.03,
+      side: THREE.DoubleSide
+    });
+
+    // Front wall (z = +23): indent an underground river cave around x in [0.5, 6.8], y in [-4.9, -2.0]
+    function frontCaveIndent(x, y) {
+      if (x < 0.5 || x > 6.8 || y > -1.8 || y < -5.1) return 0;
+      const nx = (x - 3.65) / 3.15;
+      const ny = (y + 3.45) / 1.65;
+      const r = Math.hypot(nx, ny);
+      return r < 1 ? -2.2 * Math.cos(r * Math.PI * 0.5) : 0;
+    }
+
+    // Right wall (x = +32): indent Narusawa Ice Cavern around z in [-19.5, -13.0], y in [-4.8, -0.5]
+    function rightIceIndent(z, y) {
+      if (z < -19.5 || z > -13.0 || y > -0.4 || y < -5.0) return 0;
+      const nz = (z + 16.25) / 3.25;
+      const ny = (y + 2.7) / 2.3;
+      const r = Math.hypot(nz, ny);
+      return r < 1 ? -2.8 * Math.cos(r * Math.PI * 0.5) : 0;
+    }
+
+    const frontWall = new THREE.Mesh(buildCutawaySkirt('z', D / 2, segX, -W / 2, W / 2, false, frontCaveIndent), wallMat);
+    const backWall = new THREE.Mesh(buildCutawaySkirt('z', -D / 2, segX, -W / 2, W / 2, true), wallMat);
+    const leftWall = new THREE.Mesh(buildCutawaySkirt('x', -W / 2, segZ, -D / 2, D / 2, false), wallMat);
+    const rightWall = new THREE.Mesh(buildCutawaySkirt('x', W / 2, segZ, -D / 2, D / 2, true, rightIceIndent), wallMat);
+    [frontWall, backWall, leftWall, rightWall].forEach((w) => {
+      w.receiveShadow = true;
+      root.add(w);
+    });
+
+    const bottomBase = new THREE.Mesh(
+      new THREE.PlaneGeometry(W, D),
+      new THREE.MeshStandardMaterial({ color: '#261f1d', roughness: 0.95 })
+    );
+    bottomBase.rotation.x = Math.PI / 2;
+    bottomBase.position.y = BASE_Y;
+    root.add(bottomBase);
+
+    // =========================================================================
+    // 8. SLICED PARASITIC VOLCANO MAGMA CHAMBER, KOI CAVE & ICE CAVERN
+    // =========================================================================
+    const magmaMat = new THREE.MeshStandardMaterial({
+      color: '#ff4500',
+      emissive: new THREE.Color('#ff6a00'),
+      emissiveIntensity: 2.0,
+      roughness: 0.3
+    });
+
+    // Large glowing magma reservoir at (-6.5, -4.7, 23.04) + branching conduits up into the sliced cone!
+    const magmaChamber = new THREE.Mesh(new THREE.SphereGeometry(2.4, 18, 12), magmaMat);
+    magmaChamber.scale.set(1.75, 0.42, 0.18);
+    magmaChamber.position.set(-6.5, -4.65, D / 2 + 0.04);
+    root.add(magmaChamber);
+
+    function addMagmaBranch(pts, r) {
+      const c = new THREE.CatmullRomCurve3(pts);
+      root.add(new THREE.Mesh(new THREE.TubeGeometry(c, 24, r, 8, false), magmaMat));
+    }
+    // Central main conduit reaching right up to the parasitic crater rim!
+    addMagmaBranch([
+      new THREE.Vector3(-6.5, -4.6, D / 2 + 0.05),
+      new THREE.Vector3(-6.6, -1.8, D / 2 + 0.05),
+      new THREE.Vector3(-6.45, 1.2, D / 2 + 0.05),
+      new THREE.Vector3(-6.5, getTerrainHeight(-6.5, D / 2) - 0.05, D / 2 + 0.05)
+    ], 0.28);
+    // Left & Right magma dikes
+    addMagmaBranch([
+      new THREE.Vector3(-6.6, -2.2, D / 2 + 0.05),
+      new THREE.Vector3(-7.9, -0.4, D / 2 + 0.05),
+      new THREE.Vector3(-8.8, 1.1, D / 2 + 0.05)
+    ], 0.13);
+    addMagmaBranch([
+      new THREE.Vector3(-6.4, -1.5, D / 2 + 0.05),
+      new THREE.Vector3(-5.1, 0.2, D / 2 + 0.05),
+      new THREE.Vector3(-4.3, 1.5, D / 2 + 0.05)
+    ], 0.12);
+
+    // Subterranean Aquifer Waterfall & Underground Koi Lake (x in [1, 6.2], z = +22.2)
+    const caveWaterMat = new THREE.MeshStandardMaterial({
+      color: '#0ea5e9',
+      emissive: '#0284c7',
+      emissiveIntensity: 0.45,
+      roughness: 0.15
+    });
+    const cavePool = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.35, 1.8), caveWaterMat);
+    cavePool.position.set(3.65, -4.45, D / 2 - 0.85);
+    root.add(cavePool);
+
+    // Underground waterfall stream pouring into the subterranean pool
+    const caveFall = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.28, 2.5, 10),
+      new THREE.MeshStandardMaterial({ color: '#e0f2fe', emissive: '#38bdf8', emissiveIntensity: 0.6, transparent: true, opacity: 0.85 })
+    );
+    caveFall.position.set(3.65, -3.1, D / 2 - 0.85);
+    root.add(caveFall);
+
+    // Swimming Red-and-White Koi inside the underground cave pool
+    const caveKoi = [];
+    for (let i = 0; i < 5; i++) {
+      const k = new THREE.Mesh(
+        new THREE.ConeGeometry(0.1, 0.38, 6),
+        new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? '#f8fafc' : '#ef4444', emissive: '#fca5a5', emissiveIntensity: 0.25 })
+      );
+      k.rotation.z = -Math.PI / 2;
+      root.add(k);
+      caveKoi.push({ mesh: k, angle: i * 1.25, r: 0.6 + (i % 2) * 0.45 });
+    }
+
+    // Glowing Fungal Mycelium Rings & Exposed Roots under Aokigahara
+    const rootMat = new THREE.MeshStandardMaterial({ color: '#6d4728', roughness: 0.9 });
+    for (let rx = -2.5; rx <= 8.5; rx += 1.5) {
+      const ty = getTerrainHeight(rx, D / 2 - 0.05);
+      const rc = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(rx, ty - 0.05, D / 2 + 0.03),
+        new THREE.Vector3(rx + randRange(-0.35, 0.35), ty - 0.9, D / 2 + 0.04),
+        new THREE.Vector3(rx + randRange(-0.5, 0.5), ty - 1.75, D / 2 + 0.03)
+      ]);
+      root.add(new THREE.Mesh(new THREE.TubeGeometry(rc, 8, 0.045, 5, false), rootMat));
+    }
+
+    // Narusawa Ice Cavern (鳴澤冰穴) on Right-Back Wall (x = +31.2, z = -16.25)
+    const iceMat = new THREE.MeshPhysicalMaterial({
+      color: '#bae6fd',
+      emissive: new THREE.Color('#0284c7'),
+      emissiveIntensity: 0.85,
+      roughness: 0.12,
+      transmission: 0.55,
+      transparent: true,
+      opacity: 0.88
+    });
+    const iceCave = new THREE.Group();
+    iceCave.position.set(W / 2 - 0.9, -2.7, -16.25);
+    root.add(iceCave);
+
+    const iceFloor = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 5.2), iceMat);
+    iceFloor.position.set(-0.2, -1.85, 0);
+    iceCave.add(iceFloor);
+
+    for (let i = 0; i < 28; i++) {
+      const ih = randRange(0.6, 1.75);
+      const ic = new THREE.Mesh(new THREE.ConeGeometry(randRange(0.09, 0.24), ih, 6), iceMat);
+      const iz = randRange(-2.4, 2.4);
+      const ix = randRange(-0.9, 0.5);
+      if (i < 16) {
+        ic.rotation.x = Math.PI;
+        ic.position.set(ix, 1.85 - ih * 0.5, iz);
+      } else {
+        ic.position.set(ix, -1.7 + ih * 0.5, iz);
+      }
+      iceCave.add(ic);
+    }
+
+    // =========================================================================
+    // 9. TRANSLUCENT RESIN LAKES, SURUGA/TOKYO BAY CUTAWAY & MARINE LIFE
+    // =========================================================================
+    const waterMat = new THREE.MeshPhysicalMaterial({
+      color: '#0d8ac7',
+      roughness: 0.07,
+      metalness: 0.04,
+      transmission: 0.64,
+      transparent: true,
+      opacity: 0.78,
+      ior: 1.33,
+      thickness: 3.2
+    });
+
+    // Global clipped water surface across all 5 Fuji lakes + Suruga/Tokyo Bay
+    (function buildAllWaterSurfaces() {
+      const g = new THREE.PlaneGeometry(W, D, 160, 120);
+      g.rotateX(-Math.PI / 2);
+      const p = g.attributes.position;
+      const idx = g.index;
+      const valid = [];
+      for (let i = 0; i < idx.count; i += 3) {
+        const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
+        const ya = getTerrainHeight(p.getX(a), p.getZ(a));
+        const yb = getTerrainHeight(p.getX(b), p.getZ(b));
+        const yc = getTerrainHeight(p.getX(c), p.getZ(c));
+        if (ya < WATER_Y + 0.16 || yb < WATER_Y + 0.16 || yc < WATER_Y + 0.16) {
+          valid.push(a, b, c);
+        }
+      }
+      g.setIndex(valid);
+      g.computeVertexNormals();
+      const surf = new THREE.Mesh(g, waterMat);
+      surf.position.y = WATER_Y;
+      surf.receiveShadow = true;
+      root.add(surf);
+    })();
+
+    // Transparent Cutaway Resin Side Panes where water meets the Diorama Perimeter!
+    function buildWaterSidePane(axis, fixedCoord, start, end, steps, flip) {
+      const pos = [], ind = [];
+      for (let i = 0; i <= steps; i++) {
+        const c = start + (end - start) * (i / steps);
+        const x = axis === 'z' ? c : fixedCoord;
+        const z = axis === 'z' ? fixedCoord : c;
+        const bedY = Math.min(WATER_Y, getTerrainHeight(x, z));
+        const nx = axis === 'x' ? x + (fixedCoord > 0 ? 0.03 : -0.03) : x;
+        const nz = axis === 'z' ? z + (fixedCoord > 0 ? 0.03 : -0.03) : z;
+        pos.push(nx, bedY, nz, nx, WATER_Y, nz);
+      }
+      for (let i = 0; i < steps; i++) {
+        const a = i * 2, b = i * 2 + 1, c = i * 2 + 2, d = i * 2 + 3;
+        if (!flip) ind.push(a, c, d, a, d, b);
+        else ind.push(a, d, c, a, b, d);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setIndex(ind);
+      g.computeVertexNormals();
+      root.add(new THREE.Mesh(g, waterMat));
+    }
+
+    // Front wall water panes (Kawaguchiko left + Suruga Bay right)
+    buildWaterSidePane('z', D / 2, -24.5, -10.0, 90, false);
+    buildWaterSidePane('z', D / 2, 10.0, W / 2, 110, false);
+    // Right wall water pane (Suruga Bay -> Sagami Bay -> Tokyo Bay)
+    buildWaterSidePane('x', W / 2, -10.0, D / 2, 140, true);
+
+    // Underwater Hydrothermal Vent in Kawaguchiko (Image 10) + Swimming Fish
+    const ventCone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.65, 0.9, 10),
+      new THREE.MeshStandardMaterial({ color: '#3f3b3a', emissive: '#ff4500', emissiveIntensity: 0.65, roughness: 0.85 })
+    );
+    ventCone.position.set(-16.8, getTerrainHeight(-16.8, 21.2) + 0.35, 21.2);
+    root.add(ventCone);
+
+    const aquaticSwimmers = [];
+    // Kawaguchiko Koi & Trout
+    const fishPalette = ['#f97316', '#f8fafc', '#ef4444', '#fbbf24', '#38bdf8'];
+    for (let i = 0; i < 16; i++) {
+      const m = new THREE.Mesh(
+        new THREE.ConeGeometry(0.11, 0.42, 6),
+        new THREE.MeshStandardMaterial({ color: fishPalette[i % fishPalette.length], roughness: 0.35 })
+      );
+      m.rotation.z = -Math.PI / 2;
+      const cx = randRange(-20.5, -13.2);
+      const cz = randRange(15.5, 21.8);
+      root.add(m);
+      aquaticSwimmers.push({ mesh: m, cx, cz, y: randRange(-1.8, -0.6), r: randRange(0.5, 1.4), a: rand() * 6.28, s: randRange(0.6, 1.2) });
+    }
+
+    // Suruga Bay Whale, Tuna School & Leaping Dolphins!
+    const whale = new THREE.Group();
+    const wBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.42, 1.9, 8, 14),
+      new THREE.MeshStandardMaterial({ color: '#1e3a5f', roughness: 0.4 })
+    );
+    wBody.rotation.z = Math.PI / 2;
+    const wTail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.08, 0.95), new THREE.MeshStandardMaterial({ color: '#1e3a5f' }));
+    wTail.position.x = -1.25;
+    whale.add(wBody, wTail);
+    whale.position.set(22.5, -1.65, 19.5);
+    root.add(whale);
+
+    // 3 Jumping Dolphins along Suruga Bay surface
+    const dolphins = [];
+    const dolphinMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.25, metalness: 0.2 });
+    for (let i = 0; i < 3; i++) {
+      const d = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.55, 6, 10), dolphinMat);
+      d.rotation.z = Math.PI / 2;
+      root.add(d);
+      dolphins.push({ mesh: d, bx: 18.0 + i * 2.6, bz: 15.8 + i * 1.4, phase: i * 1.8 });
+    }
+
+    // Underwater corals & kelp along Suruga & Kawaguchiko cutaways
+    const coralPalette = ['#f97316', '#ec4899', '#10b981', '#eab308', '#a855f7'];
+    for (let i = 0; i < 36; i++) {
+      const isEast = i >= 16;
+      const cx = isEast ? randRange(14.5, 30.8) : randRange(-22.0, -12.5);
+      const cz = isEast ? randRange(12.5, 22.2) : randRange(16.0, 22.2);
+      const by = getTerrainHeight(cx, cz);
+      if (by < WATER_Y - 0.5) {
+        const cr = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(randRange(0.22, 0.45), 0),
+          new THREE.MeshStandardMaterial({ color: coralPalette[i % coralPalette.length], roughness: 0.8 })
+        );
+        cr.position.set(cx, by + 0.2, cz);
+        root.add(cr);
+      }
+    }
+
+    // =========================================================================
+    // 10. SIGNATURE LANDMARKS ACROSS ALL 13 IMAGES
+    // =========================================================================
+    const whiteMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.45 });
+    const slateRoofMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.6, metalness: 0.15 });
+    const vermilionMat = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.48 });
+    const snowCapMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.75, transparent: true, opacity: 0 });
+
+    function addSnowableRoof(parent, geo, baseMat, yPos, rotY = 0, scaleArr = [1, 1, 1]) {
+      const roof = new THREE.Mesh(geo, baseMat);
+      roof.position.y = yPos;
+      roof.rotation.y = rotY;
+      roof.scale.set(...scaleArr);
+      roof.castShadow = true;
+      parent.add(roof);
+
+      const snowOverlay = new THREE.Mesh(geo, snowCapMat);
+      snowOverlay.position.y = yPos + 0.035;
+      snowOverlay.rotation.y = rotY;
+      snowOverlay.scale.set(scaleArr[0] * 1.02, scaleArr[1] * 0.92, scaleArr[2] * 1.02);
+      parent.add(snowOverlay);
+      snowRoofMeshes.push(snowOverlay);
+    }
+
+    // --- A. Mt. Fuji Zigzag Climbing Trail & Mountain Huts (吉田登山道與山小屋) ---
+    const trailPts = [];
+    for (let s = 0; s <= 18; s++) {
+      const u = s / 18;
+      const zig = (s % 2 === 0 ? -1 : 1) * (1.2 - u * 0.85);
+      const tx = -2.0 + zig + u * 0.4;
+      const tz = 6.2 - u * 8.4; // climbs from south base z=6.2 up toward crater z=-2.2!
+      trailPts.push(new THREE.Vector3(tx, getTerrainHeight(tx, tz) + 0.08, tz));
+    }
+    const trailCurve = new THREE.CatmullRomCurve3(trailPts);
+    const trailMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(trailCurve, 64, 0.065, 5, false),
+      new THREE.MeshStandardMaterial({ color: '#d6cbb5', roughness: 0.9 })
+    );
+    root.add(trailMesh);
+
+    // Tiny mountain huts & climbers along the trail
+    const hutGlowMat = new THREE.MeshStandardMaterial({ color: '#fef3c7', emissive: '#f59e0b', emissiveIntensity: 0.25 });
+    nightEmissives.push({ mat: hutGlowMat, day: 0.2, sunset: 0.9, night: 2.0 });
+    [0.25, 0.5, 0.72].forEach((u) => {
+      const hp = trailCurve.getPointAt(u);
+      const hut = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.22), hutGlowMat);
+      hut.position.set(hp.x + 0.2, hp.y + 0.08, hp.z);
+      root.add(hut);
+    });
+
+    // --- B. Chureito 5-Story Pagoda & Stone Staircase (新倉山忠靈塔與石階參道) ---
+    const pagoda = new THREE.Group();
+    const pagX = -19.5, pagZ = -10.5;
+    pagoda.position.set(pagX, getTerrainHeight(pagX, pagZ) - 0.1, pagZ);
+    root.add(pagoda);
+
+    const pagGlow = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fde68a', emissiveIntensity: 0.1 });
+    nightEmissives.push({ mat: pagGlow, day: 0.08, sunset: 0.5, night: 1.4 });
+
+    for (let t = 0; t < 5; t++) {
+      const sc = 1 - t * 0.11;
+      const ty = 0.4 + t * 0.68;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.25 * sc, 0.46, 1.25 * sc), vermilionMat);
+      body.position.y = ty + 0.23;
+      body.castShadow = true;
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.95 * sc, 0.36, 1.29 * sc), pagGlow);
+      win.position.y = ty + 0.23;
+      pagoda.add(body, win);
+      addSnowableRoof(pagoda, new THREE.ConeGeometry(1.38 * sc, 0.38, 4), slateRoofMat, ty + 0.55, Math.PI / 4);
+    }
+    const sorin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.08, 1.2, 8), new THREE.MeshStandardMaterial({ color: '#fbbf24', metalness: 0.8 }));
+    sorin.position.y = 4.45;
+    pagoda.add(sorin);
+
+    // Stone Staircase leading up the hill
+    for (let s = 0; s < 10; s++) {
+      const sz = pagZ + 1.4 + s * 0.32;
+      const step = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.14, 0.3), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.85 }));
+      step.position.set(pagX + 0.4, getTerrainHeight(pagX + 0.4, sz) + 0.06, sz);
+      root.add(step);
+    }
+
+    // --- C. Steaming Outdoor Snow Monkey Onsen (雪猴露天溫泉) ---
+    const onsenGroup = new THREE.Group();
+    const onsX = -27.5, onsZ = -2.5;
+    onsenGroup.position.set(onsX, getTerrainHeight(onsX, onsZ), onsZ);
+    root.add(onsenGroup);
+
+    const onsenPool = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.85, 1.95, 0.22, 24),
+      new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.35, roughness: 0.15 })
+    );
+    onsenPool.scale.set(1.25, 1, 0.9);
+    onsenPool.position.y = 0.08;
+    onsenGroup.add(onsenPool);
+
+    const rockRimMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.9 });
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const rk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32, 0), rockRimMat);
+      rk.position.set(Math.cos(a) * 2.25, 0.18, Math.sin(a) * 1.65);
+      onsenGroup.add(rk);
+    }
+
+    // Bathing Snow Monkeys (日本雪猴) with pink faces!
+    const monkeyFur = new THREE.MeshStandardMaterial({ color: '#a88b73', roughness: 0.85 });
+    const monkeyFace = new THREE.MeshStandardMaterial({ color: '#fb7185', roughness: 0.65 });
+    for (const [mx, mz, my] of [[-0.7, 0.2, 0.12], [0.5, -0.3, 0.12], [1.6, 0.8, 0.32], [-1.5, -0.9, 0.32]]) {
+      const mk = new THREE.Group();
+      mk.position.set(mx, my, mz);
+      const mb = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), monkeyFur);
+      mb.position.y = 0.18;
+      const mh = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), monkeyFur);
+      mh.position.y = 0.42;
+      const mf = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), monkeyFace);
+      mf.position.set(0, 0.42, 0.09);
+      mk.add(mb, mh, mf);
+      onsenGroup.add(mk);
+    }
+
+    // --- D. Kawaguchiko Bridge, Floating Island Shrine (浮見堂) & Piers ---
+    const kBridge = new THREE.Mesh(
+      new THREE.BoxGeometry(4.8, 0.16, 0.55),
+      whiteMat
+    );
+    kBridge.position.set(-18.0, WATER_Y + 0.32, 7.8);
+    kBridge.rotation.y = 0.15;
+    kBridge.castShadow = true;
+    root.add(kBridge);
+
+    // Floating Island Pavilion (湖中浮見堂)
+    const ukimido = new THREE.Group();
+    ukimido.position.set(-15.5, getTerrainHeight(-15.5, 13.8), 13.8);
+    const ukiBody = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.45, 0.65), vermilionMat);
+    ukiBody.position.y = 0.22;
+    ukimido.add(ukiBody);
+    addSnowableRoof(ukimido, new THREE.ConeGeometry(0.68, 0.42, 6), slateRoofMat, 0.62);
+    root.add(ukimido);
+
+    // --- E. Shiraito Falls (白糸之瀧 — Multi-strand Silky Curtain Waterfall) ---
+    const fallsGroup = new THREE.Group();
+    const fallPoolY = getTerrainHeight(9.4, -4.4) + 0.08;
+    const fallTopY = Math.max(fallPoolY + 1.8, getTerrainHeight(9.2, -7.5));
+    const fallDropH = fallTopY - fallPoolY;
+    fallsGroup.position.set(9.4, fallPoolY, -5.8);
+    root.add(fallsGroup);
+
+    const fallStrands = [];
+    const fallStrandMat = new THREE.MeshStandardMaterial({
+      color: '#f0f9ff',
+      emissive: '#bae6fd',
+      emissiveIntensity: 0.5,
+      transparent: true,
+      opacity: 0.88
+    });
+    for (let i = 0; i < 14; i++) {
+      const ang = -0.7 + (i / 13) * 1.4;
+      const sx = Math.sin(ang) * 1.85;
+      const sz = -Math.cos(ang) * 0.95;
+      const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.13, fallDropH, 6), fallStrandMat);
+      strand.position.set(sx, fallDropH * 0.5, sz);
+      strand.rotation.x = 0.22;
+      fallsGroup.add(strand);
+      fallStrands.push({ mesh: strand, baseScaleY: 1, phase: i * 0.7 });
+    }
+    const plungePool = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.9, 2.0, 0.14, 24),
+      new THREE.MeshStandardMaterial({ color: '#22d3ee', emissive: '#0891b2', emissiveIntensity: 0.25, roughness: 0.12 })
+    );
+    plungePool.position.set(0, 0.04, 1.15);
+    fallsGroup.add(plungePool);
+
+    // --- F. Hakone Owakudani Ropeway (大涌谷空中纜車) + Lake Ashi Water Torii & Pirate Ship ---
+    const ropewayPylons = [
+      new THREE.Vector3(14.5, getTerrainHeight(14.5, -10.0), -10.0),
+      new THREE.Vector3(16.2, getTerrainHeight(16.2, -6.8), -6.8),
+      new THREE.Vector3(17.8, getTerrainHeight(17.8, -3.5), -3.5)
+    ];
+    const pylonMetal = new THREE.MeshStandardMaterial({ color: '#cbd5e1', metalness: 0.6, roughness: 0.35 });
+    const cableTopPts = [];
+    ropewayPylons.forEach((p) => {
+      const py = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 2.1, 6), pylonMetal);
+      py.position.set(p.x, p.y + 1.05, p.z);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.08, 0.08), pylonMetal);
+      bar.position.set(p.x, p.y + 2.08, p.z);
+      root.add(py, bar);
+      cableTopPts.push(new THREE.Vector3(p.x, p.y + 2.08, p.z));
+    });
+
+    const ropewayCurve = new THREE.CatmullRomCurve3(cableTopPts);
+    root.add(new THREE.Mesh(new THREE.TubeGeometry(ropewayCurve, 36, 0.02, 5, false), pylonMetal));
+
+    const gondolas = [];
+    for (let i = 0; i < 4; i++) {
+      const gCab = new THREE.Group();
+      const hanger = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.32, 4), pylonMetal);
+      hanger.position.y = -0.16;
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.24, 0.36),
+        new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? '#ef4444' : '#38bdf8', roughness: 0.3 })
+      );
+      box.position.y = -0.36;
+      gCab.add(hanger, box);
+      root.add(gCab);
+      gondolas.push({ mesh: gCab, offset: i * 0.25 });
+    }
+
+    // Hakone Water Torii (水上平和鳥居) standing right in Lake Ashi!
+    function createToriiGate(x, y, z, rotY = 0, sc = 1) {
+      const tg = new THREE.Group();
+      tg.position.set(x, y, z);
+      tg.rotation.y = rotY;
+      tg.scale.setScalar(sc);
+      for (const px of [-0.52, 0.52]) {
+        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 1.35, 10), vermilionMat);
+        p.position.set(px, 0.67, 0);
+        p.castShadow = true;
+        tg.add(p);
+      }
+      const topBeam = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.13, 0.16), vermilionMat);
+      topBeam.position.y = 1.35;
+      const midBeam = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.08, 0.11), vermilionMat);
+      midBeam.position.y = 1.06;
+      tg.add(topBeam, midBeam);
+      root.add(tg);
+    }
+    // Water Torii in Lake Ashi
+    createToriiGate(13.2, WATER_Y - 0.15, -10.8, 0.4, 1.15);
+
+    // 3-Masted Hakone Pirate Galleon on Lake Ashi
+    const pirateShip = new THREE.Group();
+    pirateShip.position.set(15.2, WATER_Y, -12.4);
+    pirateShip.rotation.y = 0.75;
+    root.add(pirateShip);
+    const hullMat = new THREE.MeshStandardMaterial({ color: '#7c2d12', roughness: 0.58 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: '#f59e0b', metalness: 0.65, roughness: 0.3 });
+    const sailMat = new THREE.MeshStandardMaterial({ color: '#fef9c3', roughness: 0.75, side: THREE.DoubleSide });
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.45, 2.15), hullMat);
+    hull.position.y = 0.18;
+    const stern = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.48, 0.62), goldMat);
+    stern.position.set(0, 0.52, -0.7);
+    pirateShip.add(hull, stern);
+    for (const [mz, mh] of [[-0.45, 1.45], [0.08, 1.85], [0.62, 1.4]]) {
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, mh, 6), hullMat);
+      mast.position.set(0, 0.36 + mh * 0.5, mz);
+      const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.72, mh * 0.56), sailMat);
+      sail.position.set(0, 0.36 + mh * 0.52, mz + 0.05);
+      pirateShip.add(mast, sail);
+    }
+
+    // --- G. Fuji-Q Highland (摩天輪 + 雲霄飛車) & Oshino Hakkai (合掌茅草聚落 + 水車小屋) ---
+    const fujiQ = new THREE.Group();
+    const fqX = -10.2, fqZ = 4.2;
+    fujiQ.position.set(fqX, getTerrainHeight(fqX, fqZ), fqZ);
+    root.add(fujiQ);
+
+    const wheelRotor = new THREE.Group();
+    wheelRotor.position.set(1.2, 2.75, -0.5);
+    fujiQ.add(wheelRotor);
+
+    for (const sx of [-0.55, 0.55]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 2.9, 8), whiteMat);
+      leg.position.set(1.2 + sx, 1.38, -0.5);
+      leg.rotation.z = sx > 0 ? 0.2 : -0.2;
+      fujiQ.add(leg);
+    }
+    const wheelRimMat = new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#fbbf24', emissiveIntensity: 0.3 });
+    nightEmissives.push({ mat: wheelRimMat, day: 0.25, sunset: 0.85, night: 1.9 });
+    wheelRotor.add(new THREE.Mesh(new THREE.TorusGeometry(1.85, 0.06, 8, 32), wheelRimMat));
+    const podCols = ['#ef4444', '#38bdf8', '#22c55e', '#f59e0b', '#ec4899', '#a855f7'];
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 3.7, 5), whiteMat);
+      sp.rotation.z = a;
+      const pod = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.26, 0.22), new THREE.MeshStandardMaterial({ color: podCols[i % 6] }));
+      pod.position.set(Math.cos(a) * 1.85, Math.sin(a) * 1.85, 0);
+      wheelRotor.add(sp, pod);
+    }
+
+    const coasterCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-3.2, 0.4, 0.8),
+      new THREE.Vector3(-2.1, 2.1, 0.1),
+      new THREE.Vector3(-1.0, 0.5, -0.3),
+      new THREE.Vector3(-0.4, 1.6, -0.3),
+      new THREE.Vector3(-0.85, 2.5, 0.05),
+      new THREE.Vector3(-1.45, 1.5, 0.35),
+      new THREE.Vector3(-1.0, 0.4, 0.7),
+      new THREE.Vector3(-2.4, 0.95, 1.4)
+    ], true);
+    fujiQ.add(new THREE.Mesh(
+      new THREE.TubeGeometry(coasterCurve, 84, 0.075, 8, true),
+      new THREE.MeshStandardMaterial({ color: '#0284c7', metalness: 0.45, roughness: 0.3 })
+    ));
+    const coasterCars = [];
+    for (let c = 0; c < 3; c++) {
+      const car = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.4), new THREE.MeshStandardMaterial({ color: podCols[c] }));
+      fujiQ.add(car);
+      coasterCars.push(car);
+    }
+
+    // Oshino Hakkai Thatched Village + Watermill (忍野八海合掌聚落與水車)
+    const thatchMat = new THREE.MeshStandardMaterial({ color: '#a89060', roughness: 0.92 });
+    const shojiGlow = new THREE.MeshStandardMaterial({ color: '#fef3c7', emissive: '#f59e0b', emissiveIntensity: 0.18 });
+    nightEmissives.push({ mat: shojiGlow, day: 0.15, sunset: 0.85, night: 1.9 });
+
+    let waterWheelMesh = null;
+    const cottages = [
+      [5.5, 3.6, 0.2], [7.6, 3.0, -0.25], [9.4, 3.8, 0.35],
+      [6.2, 5.8, -0.15], [8.4, 6.0, 0.2], [10.2, 5.6, -0.3]
+    ];
+    cottages.forEach(([hx, hz, rot], idx) => {
+      const hg = new THREE.Group();
+      hg.position.set(hx, getTerrainHeight(hx, hz) - 0.04, hz);
+      hg.rotation.y = rot;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.65, 0.9), new THREE.MeshStandardMaterial({ color: '#f5f0e6', roughness: 0.8 }));
+      b.position.y = 0.32;
+      b.castShadow = true;
+      const w = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.94), shojiGlow);
+      w.position.y = 0.32;
+      hg.add(b, w);
+      addSnowableRoof(hg, new THREE.ConeGeometry(0.96, 0.88, 4), thatchMat, 1.0, Math.PI / 4, [1.15, 1, 0.9]);
+
+      if (idx === 0) {
+        // Spinning wooden watermill wheel on cottage 1!
+        waterWheelMesh = new THREE.Mesh(
+          new THREE.TorusGeometry(0.32, 0.05, 6, 12),
+          new THREE.MeshStandardMaterial({ color: '#5c3a21', roughness: 0.85 })
+        );
+        waterWheelMesh.position.set(0.64, 0.35, 0);
+        waterWheelMesh.rotation.y = Math.PI / 2;
+        hg.add(waterWheelMesh);
+      }
+      root.add(hg);
+    });
+
+    const mirrorPond = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.15, 1.2, 0.08, 24),
+      new THREE.MeshStandardMaterial({ color: '#22d3ee', roughness: 0.12 })
+    );
+    mirrorPond.position.set(7.5, getTerrainHeight(7.5, 4.6) + 0.03, 4.6);
+    root.add(mirrorPond);
+    createToriiGate(10.8, getTerrainHeight(10.8, 4.6) - 0.04, 4.6, -0.3, 0.95);
+
+    // --- H. Fuji Speedway Racing Circuit (富士國際賽車場 — Image 11 & 12) ---
+    const speedwayGroup = new THREE.Group();
+    speedwayGroup.position.set(15.8, 0.98, 4.2);
+    speedwayGroup.rotation.y = -0.25;
+    root.add(speedwayGroup);
+
+    const trackLoopPts = [
+      new THREE.Vector3(-3.2, 0.05, -1.5),
+      new THREE.Vector3(3.0, 0.05, -1.5),
+      new THREE.Vector3(3.6, 0.05, -0.2),
+      new THREE.Vector3(2.2, 0.05, 1.3),
+      new THREE.Vector3(0.4, 0.05, 0.4),
+      new THREE.Vector3(-1.2, 0.05, 1.5),
+      new THREE.Vector3(-3.5, 0.05, 0.6)
+    ];
+    const raceCurve = new THREE.CatmullRomCurve3(trackLoopPts, true);
+    const raceAsphalt = new THREE.Mesh(
+      new THREE.TubeGeometry(raceCurve, 90, 0.36, 6, true),
+      new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.82 })
+    );
+    raceAsphalt.scale.y = 0.14;
+    speedwayGroup.add(raceAsphalt);
+
+    // Main Grandstand with sleek white canopy roof
+    const grandstand = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.55, 0.65), whiteMat);
+    grandstand.position.set(-0.2, 0.28, -2.25);
+    grandstand.castShadow = true;
+    speedwayGroup.add(grandstand);
+
+    const raceCars = [];
+    const f1Colors = ['#ef4444', '#facc15', '#38bdf8', '#22c55e'];
+    for (let i = 0; i < 4; i++) {
+      const rc = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.36), new THREE.MeshStandardMaterial({ color: f1Colors[i], roughness: 0.3 }));
+      speedwayGroup.add(rc);
+      raceCars.push({ mesh: rc, offset: i * 0.24 });
+    }
+
+    // --- I. Tokaido Shinkansen Elevated Viaduct, Stone Tunnel & N700S Bullet Train ---
+    const shinkansenRaw = [
+      [-30.5, 10.5], [-24.0, 9.6], [-18.0, 8.9], [-11.5, 8.2],
+      [-4.0, 8.0], [3.5, 7.8], [10.5, 5.2], [14.2, 0.5],
+      [18.2, -5.5], [21.5, -12.5], [23.0, -20.5]
+    ];
+    const shinkansenPts = shinkansenRaw.map(([sx, sz]) => {
+      const groundY = getTerrainHeight(sx, sz);
+      // Stay cleanly elevated on viaduct over lakes/valleys (min y = 0.95)
+      return new THREE.Vector3(sx, Math.max(0.95, Math.min(2.6, groundY + 0.32)), sz);
+    });
+    const shinkansenCurve = new THREE.CatmullRomCurve3(shinkansenPts);
+
+    const viaductMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.65 });
+    const viaductTrack = new THREE.Mesh(new THREE.TubeGeometry(shinkansenCurve, 130, 0.16, 6, false), viaductMat);
+    viaductTrack.castShadow = true;
+    root.add(viaductTrack);
+
+    // Concrete viaduct piers where elevated over low terrain/water
+    for (let i = 2; i < 56; i++) {
+      const u = i / 58;
+      const p = shinkansenCurve.getPointAt(u);
+      const gy = getTerrainHeight(p.x, p.z);
+      if (p.y - gy > 0.25) {
+        const h = p.y - gy;
+        const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, h, 6), viaductMat);
+        pier.position.set(p.x, gy + h * 0.5, p.z);
+        root.add(pier);
+      }
+    }
+
+    // Stone Mountain Tunnel Portals (South Entrance & North Exit under Hakone Spur)
+    for (const tu of [0.64, 0.85]) {
+      const tunPos = shinkansenCurve.getPointAt(tu);
+      const tunTan = shinkansenCurve.getTangentAt(tu);
+      const tunnelArch = new THREE.Mesh(
+        new THREE.TorusGeometry(0.5, 0.17, 8, 16, Math.PI),
+        new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.85 })
+      );
+      tunnelArch.position.set(tunPos.x, tunPos.y - 0.04, tunPos.z);
+      tunnelArch.lookAt(tunPos.x + tunTan.x, tunPos.y + tunTan.y, tunPos.z + tunTan.z);
+      root.add(tunnelArch);
+    }
+
+    // 6-Car White & Blue N700S Shinkansen Bullet Train
+    const bulletCars = [];
+    const shinkansenBodyMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.25 });
+    const shinkansenStripeMat = new THREE.MeshStandardMaterial({ color: '#1d4ed8', emissive: '#60a5fa', emissiveIntensity: 0.2 });
+    nightEmissives.push({ mat: shinkansenStripeMat, day: 0.15, sunset: 0.7, night: 1.8 });
+    for (let c = 0; c < 6; c++) {
+      const car = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.85), shinkansenBodyMat);
+      body.position.y = 0.18;
+      body.castShadow = true;
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.85), shinkansenStripeMat);
+      stripe.position.y = 0.16;
+      car.add(body, stripe);
+      root.add(car);
+      bulletCars.push(car);
+    }
+
+    // --- J. Tokyo Bay Metropolis: Tokyo Tower, Skytree, Rainbow Bridge & Cruise Ship (Image 13) ---
+    const tokyoGroup = new THREE.Group();
+    root.add(tokyoGroup);
+
+    // Iconic Red-and-White Tokyo Tower (東京鐵塔) at (28.5, y, -8.5)
+    const ttGroup = new THREE.Group();
+    ttGroup.position.set(28.5, getTerrainHeight(28.5, -8.5), -8.5);
+    const ttRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#f97316', emissiveIntensity: 0.25, roughness: 0.4 });
+    const ttWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fef3c7', emissiveIntensity: 0.2, roughness: 0.4 });
+    nightEmissives.push({ mat: ttRed, day: 0.2, sunset: 0.9, night: 1.9 });
+    nightEmissives.push({ mat: ttWhite, day: 0.15, sunset: 0.7, night: 1.6 });
+
+    const ttLower = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 1.05, 1.8, 4, 1, false), ttRed);
+    ttLower.rotation.y = Math.PI / 4;
+    ttLower.position.y = 0.9;
+    const ttDeck1 = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.24, 0.82), ttWhite);
+    ttDeck1.position.y = 1.85;
+    const ttMid = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.42, 1.6, 4), ttWhite);
+    ttMid.rotation.y = Math.PI / 4;
+    ttMid.position.y = 2.75;
+    const ttTop = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.2, 1.6, 4), ttRed);
+    ttTop.rotation.y = Math.PI / 4;
+    ttTop.position.y = 4.35;
+    ttGroup.add(ttLower, ttDeck1, ttMid, ttTop);
+    tokyoGroup.add(ttGroup);
+
+    // Sleek Tall Tokyo Skytree (東京晴空塔) at (26.2, y, -16.8)
+    const skyGroup = new THREE.Group();
+    skyGroup.position.set(26.2, getTerrainHeight(26.2, -16.8), -16.8);
+    const skySteel = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#38bdf8', emissiveIntensity: 0.15, metalness: 0.45, roughness: 0.3 });
+    nightEmissives.push({ mat: skySteel, day: 0.12, sunset: 0.65, night: 1.75 });
+    const skyShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.55, 5.2, 12), skySteel);
+    skyShaft.position.y = 2.6;
+    const skyPod1 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.32, 16), whiteMat);
+    skyPod1.position.y = 3.65;
+    const skyPod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.28, 0.24, 16), whiteMat);
+    skyPod2.position.y = 4.55;
+    const skySpire = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.12, 1.6, 8), skySteel);
+    skySpire.position.y = 5.95;
+    skyGroup.add(skyShaft, skyPod1, skyPod2, skySpire);
+    tokyoGroup.add(skyGroup);
+
+    // Surrounding Tokyo High-Rise Cluster
+    const cityWinMat = new THREE.MeshStandardMaterial({
+      color: '#94a3b8',
+      emissive: '#fde68a',
+      emissiveIntensity: 0.12,
+      roughness: 0.35,
+      metalness: 0.45
+    });
+    nightEmissives.push({ mat: cityWinMat, day: 0.1, sunset: 0.7, night: 1.65 });
+    for (let i = 0; i < 28; i++) {
+      const bx = randRange(24.2, 31.0);
+      const bz = randRange(-21.2, -7.8);
+      if (Math.hypot(bx - 28.5, bz + 8.5) < 1.5 || Math.hypot(bx - 26.2, bz + 16.8) < 1.5) continue;
+      const bh = randRange(0.75, 2.45);
+      const bldg = new THREE.Mesh(new THREE.BoxGeometry(randRange(0.55, 0.95), bh, randRange(0.55, 0.95)), cityWinMat);
+      bldg.position.set(bx, getTerrainHeight(bx, bz) + bh * 0.5, bz);
+      bldg.castShadow = true;
+      tokyoGroup.add(bldg);
+    }
+
+    // Rainbow Bridge spanning Tokyo Bay inlet + Ocean Cruise Ship
+    const rainbowBridge = new THREE.Group();
+    rainbowBridge.position.set(28.5, WATER_Y + 0.65, -4.2);
+    const rbDeck = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.14, 0.55), whiteMat);
+    const rbTower1 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.35, 0.65), whiteMat);
+    rbTower1.position.set(-1.5, 0.45, 0);
+    const rbTower2 = rbTower1.clone();
+    rbTower2.position.x = 1.5;
+    rainbowBridge.add(rbDeck, rbTower1, rbTower2);
+    tokyoGroup.add(rainbowBridge);
+
+    const cruiseShip = new THREE.Group();
+    const csHull = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.38, 2.3), whiteMat);
+    csHull.position.y = 0.16;
+    const csDeck = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.35, 1.65), shinkansenStripeMat);
+    csDeck.position.y = 0.48;
+    cruiseShip.add(csHull, csDeck);
+    cruiseShip.position.set(27.5, WATER_Y, 6.5);
+    root.add(cruiseShip);
+
+    // --- K. Fumotoppara Campsite Tents (山麓露營帳篷) & Aokigahara Wildlife ---
+    const tentColors = ['#eab308', '#22c55e', '#f97316', '#38bdf8'];
+    for (let i = 0; i < 6; i++) {
+      const tx = -3.8 + (i % 3) * 0.75;
+      const tz = 13.0 + Math.floor(i / 3) * 0.85;
+      const tent = new THREE.Mesh(
+        new THREE.ConeGeometry(0.26, 0.34, 4),
+        new THREE.MeshStandardMaterial({ color: tentColors[i % 4], emissive: '#fde68a', emissiveIntensity: 0.2 })
+      );
+      tent.position.set(tx, getTerrainHeight(tx, tz) + 0.16, tz);
+      root.add(tent);
+    }
+
+    // Black Bear, Sika Deer, Wild Boar & Tanuki in Aokigahara Clearing
+    function addAnimal(x, z, colHex, sx, sy, sz) {
+      const a = new THREE.Group();
+      a.position.set(x, getTerrainHeight(x, z), z);
+      a.rotation.y = randRange(-1, 1);
+      const mat = new THREE.MeshStandardMaterial({ color: colHex, roughness: 0.85 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), mat);
+      body.scale.set(sx, sy, sz);
+      body.position.y = 0.24;
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), mat);
+      head.position.set(0, 0.36, 0.26 * sz);
+      a.add(body, head);
+      root.add(a);
+    }
+    addAnimal(2.2, 18.8, '#18181b', 0.95, 0.9, 1.35);  // Japanese Black Bear (黑熊)
+    addAnimal(0.4, 19.6, '#b47b48', 0.75, 0.85, 1.25); // Sika Deer (日本鹿)
+    addAnimal(4.2, 19.4, '#5c4033', 0.9, 0.75, 1.25);  // Wild Boar (野豬)
+    addAnimal(2.8, 20.4, '#78624c', 0.7, 0.65, 1.0);   // Tanuki (狸)
+
+    // Soaring Red-Crowned Cranes (丹頂鶴) & Golden Eagles (老鷹)
+    const skyBirds = [];
+    for (let i = 0; i < 7; i++) {
+      const isCrane = i < 4;
+      const bg = new THREE.Group();
+      const bMat = new THREE.MeshStandardMaterial({ color: isCrane ? '#f8fafc' : '#5c3d28', roughness: 0.6 });
+      const bBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.32, 4, 6), bMat);
+      bBody.rotation.x = Math.PI / 2;
+      const wings = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.03, 0.22), bMat);
+      bg.add(bBody, wings);
+      root.add(bg);
+      skyBirds.push({
+        mesh: bg,
+        cx: isCrane ? -14.0 : 8.0,
+        cz: isCrane ? -4.0 : -6.0,
+        y: isCrane ? 8.5 + i * 0.9 : 11.2 + (i - 4) * 1.1,
+        r: 5.5 + (i % 3) * 2.2,
+        a: i * 0.95,
+        s: 0.32 + (i % 3) * 0.08
+      });
+    }
+
+    // =========================================================================
+    // 11. INSTANCED FORESTS (SAKURA, AUTUMN MOMIJI, PINES) WITH SNOW MORPHING
+    // =========================================================================
+    const sakuraPts = [];
+    const maplePts = [];
+    const pinePts = [];
+
+    // Sakura groves around Chureito Pagoda, Kawaguchiko, Fuji-Q & Oshino Hakkai
+    const sakZones = [
+      [-19.5, -10.0, 3.6, 36], [-21.5, 9.5, 3.2, 26], [-13.5, 10.5, 3.0, 24],
+      [-11.0, 6.2, 2.5, 18], [7.2, 5.2, 3.2, 20]
+    ];
+    sakZones.forEach(([zx, zz, zr, zn]) => {
+      for (let i = 0; i < zn; i++) {
+        const a = rand() * 6.28, d = Math.sqrt(rand()) * zr;
+        const tx = zx + Math.cos(a) * d, tz = zz + Math.sin(a) * d;
+        const ty = getTerrainHeight(tx, tz);
+        if (ty > WATER_Y + 0.2 && Math.abs(tx) < 31 && Math.abs(tz) < 22) {
+          sakuraPts.push([tx, ty, tz, randRange(0.75, 1.3)]);
+        }
+      }
+    });
+
+    // Autumn Momiji Maples around Snow Monkey Onsen, Shiraito Falls & Pagoda
+    const mapZones = [[-27.5, -2.5, 4.2, 26], [9.2, -6.8, 2.6, 16], [-17.0, -11.5, 2.5, 14]];
+    mapZones.forEach(([zx, zz, zr, zn]) => {
+      for (let i = 0; i < zn; i++) {
+        const a = rand() * 6.28, d = Math.sqrt(rand()) * zr;
+        const tx = zx + Math.cos(a) * d, tz = zz + Math.sin(a) * d;
+        const ty = getTerrainHeight(tx, tz);
+        // Keep center of Onsen pool clear
+        if (Math.hypot(tx + 27.5, tz + 2.5) < 2.2) continue;
+        if (ty > WATER_Y + 0.2 && Math.abs(tx) < 31 && Math.abs(tz) < 22) {
+          maplePts.push([tx, ty, tz, randRange(0.75, 1.2)]);
+        }
+      }
+    });
+
+    // Dense Pines across Aokigahara Jukai, Southern Alps foothills, Lake Saiko/Motosu & Hakone
+    for (let i = 0; i < 420; i++) {
+      const tx = randRange(-30.5, 22.0);
+      const tz = randRange(-21.5, 21.5);
+      const ty = getTerrainHeight(tx, tz);
+      // Avoid Fuji high slopes, Speedway, Onsen pool, Parasitic crater, and Wildlife clearing
+      const fr = Math.hypot(tx + 2.0, tz + 3.5);
+      if (ty < WATER_Y + 0.28 || ty > 5.2 || fr < 7.8) continue;
+      if (Math.hypot(tx - 15.8, tz - 4.2) < 4.8) continue; // Speedway
+      if (Math.hypot(tx + 6.5, tz - 22.5) < 3.6) continue; // Parasitic volcano
+      if (Math.hypot(tx - 2.0, tz - 19.5) < 2.4) continue; // Wildlife clearing
+      if (Math.hypot(tx - 7.5, tz - 4.5) < 3.2) continue;  // Oshino village
+      if (Math.hypot(tx + 10.2, tz - 4.2) < 3.2) continue; // Fuji-Q
+      pinePts.push([tx, ty, tz, randRange(0.75, 1.38)]);
+    }
+
+    const dummy = new THREE.Object3D();
+    const foliageMaterials = [];
+
+    function createInstancedTrees(pts, springHex, winterHex, isPine) {
+      const trunkInst = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.05, 0.08, 0.55, 6),
+        new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.9 }),
+        pts.length
+      );
+      const crownMat = new THREE.MeshStandardMaterial({ color: springHex, roughness: 0.84 });
+      foliageMaterials.push({
+        mat: crownMat,
+        spring: new THREE.Color(springHex),
+        winter: new THREE.Color(winterHex)
+      });
+      const crownGeo = isPine
+        ? new THREE.ConeGeometry(0.42, 1.2, 7)
+        : new THREE.DodecahedronGeometry(0.46, 1);
+      const crownInst = new THREE.InstancedMesh(crownGeo, crownMat, pts.length);
+      trunkInst.castShadow = true;
+      crownInst.castShadow = true;
+      crownInst.receiveShadow = true;
+
+      pts.forEach(([tx, ty, tz, sc], i) => {
+        dummy.position.set(tx, ty + 0.25 * sc, tz);
+        dummy.scale.setScalar(sc);
+        dummy.rotation.set(0, rand() * 3.14, 0);
+        dummy.updateMatrix();
+        trunkInst.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(tx, ty + (isPine ? 0.88 : 0.68) * sc, tz);
+        dummy.scale.set(sc * 1.08, sc * 0.95, sc * 1.08);
+        dummy.updateMatrix();
+        crownInst.setMatrixAt(i, dummy.matrix);
+      });
+      root.add(trunkInst, crownInst);
+    }
+
+    createInstancedTrees(sakuraPts, '#f9a8d4', '#fdf2f8', false);
+    createInstancedTrees(maplePts, '#ea580c', '#e2e8f0', false);
+    createInstancedTrees(pinePts, '#2d5c22', '#dbeafe', true);
+
+    // =========================================================================
+    // 12. VOLCANIC STEAM PLUME, ONSEN/OWAKUDANI STEAM & SEASONAL PARTICLES
+    // =========================================================================
+    // Rising Steam Clouds (Mt. Fuji Crater + Owakudani + Snow Monkey Onsen + Parasitic Vent)
+    const steamSources = [
+      { x: -2.0, y: 15.6, z: -3.5, vx: 0.45, vy: 0.75, size: 1.5, count: 26 }, // Fuji summit plume!
+      { x: 16.8, y: 4.5, z: -5.2, vx: 0.18, vy: 0.55, size: 0.85, count: 16 }, // Owakudani sulfur steam
+      { x: -27.5, y: 2.2, z: -2.5, vx: 0.12, vy: 0.45, size: 0.75, count: 14 }, // Snow Monkey Onsen steam
+      { x: -6.5, y: 4.1, z: 22.4, vx: 0.15, vy: 0.55, size: 0.75, count: 12 }  // Sliced parasitic crater
+    ];
+    const steamParticles = [];
+    steamSources.forEach((src) => {
+      for (let i = 0; i < src.count; i++) {
+        steamParticles.push({
+          src,
+          age: i / src.count,
+          jitterX: randRange(-0.35, 0.35),
+          jitterZ: randRange(-0.35, 0.35)
+        });
+      }
+    });
+    const steamPosArr = new Float32Array(steamParticles.length * 3);
+    const steamGeo = new THREE.BufferGeometry();
+    steamGeo.setAttribute('position', new THREE.BufferAttribute(steamPosArr, 3));
+    const steamPoints = new THREE.Points(
+      steamGeo,
+      new THREE.PointsMaterial({
+        map: particleTex,
+        color: '#f8fafc',
+        size: 1.45,
+        transparent: true,
+        opacity: 0.52,
+        depthWrite: false
+      })
+    );
+    root.add(steamPoints);
+
+    // Weather Particle System: Spring Sakura Petals <-> Winter Snowstorm across entire 64x46 diorama!
+    const weatherCount = 650;
+    const weatherPos = new Float32Array(weatherCount * 3);
+    const weatherVel = [];
+    for (let i = 0; i < weatherCount; i++) {
+      weatherPos[i * 3] = randRange(-W / 2, W / 2);
+      weatherPos[i * 3 + 1] = randRange(0.5, 19.0);
+      weatherPos[i * 3 + 2] = randRange(-D / 2, D / 2);
+      weatherVel.push({
+        vy: randRange(0.65, 1.35),
+        vx: randRange(-0.25, 0.35),
+        phase: rand() * 6.28
+      });
+    }
+    const weatherGeo = new THREE.BufferGeometry();
+    weatherGeo.setAttribute('position', new THREE.BufferAttribute(weatherPos, 3));
+    const weatherMat = new THREE.PointsMaterial({
+      map: particleTex,
+      color: '#fbcfe8',
+      size: 0.32,
+      transparent: true,
+      opacity: 0.78,
+      depthWrite: false
+    });
+    const weatherPoints = new THREE.Points(weatherGeo, weatherMat);
+    root.add(weatherPoints);
+
+    // =========================================================================
+    // 13. 3D FLOATING LANDMARK PINS (點擊標籤可直接飛行對焦)
+    // =========================================================================
+    const LANDMARKS = [
+      { label: '🗻 富士山 (3,776m)', pos: [-2.0, 16.6, -3.5], cam: 'fujiSummit' },
+      { label: '⛩️ 新倉山忠靈塔', pos: [-19.5, 8.8, -10.5], cam: 'pagodaLakes' },
+      { label: '♨️ 露天雪猴溫泉', pos: [-27.5, 3.6, -2.5], cam: 'onsenMonkeys' },
+      { label: '💧 富士五湖・河口湖', pos: [-16.5, 1.4, 15.5], cam: 'pagodaLakes' },
+      { label: '🌋 寶永側火山與岩漿庫', pos: [-6.5, 5.2, 22.2], cam: 'magmaVolcano' },
+      { label: '🌲 青木原樹海與地底暗河', pos: [2.5, 2.8, 17.5], cam: 'undergroundKoi' },
+      { label: '🎢 富士急樂園', pos: [-9.2, 4.8, 4.0], cam: 'fujiSummit' },
+      { label: '🏡 忍野八海合掌聚落', pos: [7.6, 2.8, 4.6], cam: 'speedwayShinkansen' },
+      { label: '🌊 白糸之瀧', pos: [9.4, 3.0, -5.8], cam: 'shiraitoOwakudani' },
+      { label: '🚡 大涌谷硫磺谷纜車', pos: [16.5, 7.2, -5.2], cam: 'shiraitoOwakudani' },
+      { label: '🚢 蘆之湖水上鳥居・海賊船', pos: [14.5, 2.4, -11.5], cam: 'ashiTorii' },
+      { label: '🏎️ 富士國際賽車場', pos: [15.8, 2.5, 4.2], cam: 'speedwayShinkansen' },
+      { label: '🚄 東海道新幹線', pos: [-3.5, 2.2, 8.0], cam: 'speedwayShinkansen' },
+      { label: '🐳 駿河灣鯨豚海洋剖面', pos: [21.5, 1.2, 17.5], cam: 'oceanTokyo' },
+      { label: '🗼 東京鐵塔・晴空塔', pos: [27.5, 6.8, -12.5], cam: 'oceanTokyo' },
+      { label: '🧊 鳴澤冰穴', pos: [31.2, 0.2, -16.2], cam: 'undergroundKoi' }
+    ];
+
+    const pinItems = LANDMARKS.map((lm) => {
+      const el = document.createElement('div');
+      el.className = 'pin-label';
+      el.textContent = lm.label;
+      el.addEventListener('click', () => flyTo(lm.cam));
+      labelsContainer.appendChild(el);
+      return { el, worldPos: new THREE.Vector3(...lm.pos) };
+    });
+
+    // =========================================================================
+    // 14. SEASON (SNOW MODE), TIME OF DAY & 10 CAMERA PRESETS
+    // =========================================================================
+    let currentSeason = 'spring'; // 'spring' | 'winter'
+    let currentTime = 'day';      // 'day' | 'sunset' | 'night'
+    let snowFactor = 0;           // smoothly animated 0 -> 1
+
+    const TIME_CONFIG = {
+      day: {
+        bgSpring: '#c8bfb3', bgWinter: '#cbd5e1',
+        hemi: 0.94, sunCol: 0xfff5e4, sunInt: 2.3, sunPos: [-48, 62, 38],
+        fillInt: 0.68, tokyoInt: 0.2, exp: 1.06
+      },
+      sunset: {
+        bgSpring: '#3b2322', bgWinter: '#33293a',
+        hemi: 0.68, sunCol: 0xff773d, sunInt: 2.8, sunPos: [-56, 22, 42],
+        fillInt: 0.42, tokyoInt: 1.2, exp: 1.04
+      },
+      night: {
+        bgSpring: '#0b0f19', bgWinter: '#0f172a',
+        hemi: 0.36, sunCol: 0x60a5fa, sunInt: 0.58, sunPos: [32, 48, -32],
+        fillInt: 0.32, tokyoInt: 2.8, exp: 1.22
+      }
+    };
+
+    function applyAtmosphere() {
+      const tc = TIME_CONFIG[currentTime];
+      const bgHex = currentSeason === 'winter' ? tc.bgWinter : tc.bgSpring;
+      scene.background.set(bgHex);
+      scene.fog.color.set(bgHex);
+
+      hemiLight.intensity = tc.hemi + (currentSeason === 'winter' ? 0.12 : 0);
+      sunLight.color.setHex(tc.sunCol);
+      sunLight.intensity = tc.sunInt;
+      sunLight.position.set(...tc.sunPos);
+      fillLight.intensity = tc.fillInt;
+      tokyoGlowLight.intensity = tc.tokyoInt;
+      renderer.toneMappingExposure = tc.exp;
+
+      nightEmissives.forEach((item) => {
+        item.mat.emissiveIntensity = item[currentTime];
+      });
+
+      if (currentSeason === 'winter') {
+        weatherMat.color.set('#ffffff');
+        weatherMat.size = 0.42;
+        weatherMat.opacity = 0.92;
+      } else {
+        weatherMat.color.set('#fbcfe8');
+        weatherMat.size = 0.3;
+        weatherMat.opacity = 0.72;
+      }
+    }
+
+    function setSeason(season) {
+      currentSeason = season;
+      document.querySelectorAll('[data-season]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.season === season);
+      });
+      applyAtmosphere();
+    }
+
+    function setTimeOfDay(mode) {
+      currentTime = mode;
+      document.querySelectorAll('[data-time]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.time === mode);
+      });
+      applyAtmosphere();
+    }
+
+    const CAM_PRESETS = {
+      panorama:           { pos: [-34, 38, 58], target: [0, 1.8, 1.5] },
+      fujiSummit:         { pos: [-8, 18, 22],  target: [-2.0, 9.5, -2.5] },
+      pagodaLakes:        { pos: [-32, 13, 2],  target: [-15.0, 3.5, -2.0] },
+      onsenMonkeys:       { pos: [-37, 8.5, 6.5], target: [-27.5, 2.2, -2.5] },
+      magmaVolcano:       { pos: [-7, 4.2, 39], target: [-6.5, -0.5, 21.5] },
+      shiraitoOwakudani:  { pos: [12, 13, 6],   target: [13.5, 3.5, -5.8] },
+      ashiTorii:          { pos: [22, 7.5, -22], target: [14.0, 0.8, -11.5] },
+      speedwayShinkansen: { pos: [14, 11, 18],  target: [11.5, 1.2, 4.5] },
+      oceanTokyo:         { pos: [44, 15, 26],  target: [24.5, 0.8, 4.0] },
+      undergroundKoi:     { pos: [8, 2.2, 38],  target: [3.6, -2.8, 21.5] }
+    };
+
+    let camAnim = null;
+    function flyTo(name) {
+      const p = CAM_PRESETS[name];
+      if (!p) return;
+      camAnim = {
+        startPos: camera.position.clone(),
+        endPos: new THREE.Vector3(...p.pos),
+        startTarget: orbit.target.clone(),
+        endTarget: new THREE.Vector3(...p.target),
+        t: 0
+      };
+      document.querySelectorAll('[data-cam]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.cam === name);
+      });
+    }
+
+    document.querySelectorAll('[data-season]').forEach((b) => b.addEventListener('click', () => setSeason(b.dataset.season)));
+    document.querySelectorAll('[data-time]').forEach((b) => b.addEventListener('click', () => setTimeOfDay(b.dataset.time)));
+    document.querySelectorAll('[data-cam]').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
+
+    const optLabels = document.getElementById('opt-labels');
+    const optAnim = document.getElementById('opt-anim');
+    const optOrbit = document.getElementById('opt-orbit');
+
+    optLabels.addEventListener('change', () => {
+      labelsContainer.style.display = optLabels.checked ? 'block' : 'none';
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 15. MAIN ANIMATION & SNOW TRANSITION LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+    const projVec = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
+
+      // Smooth camera flight
+      if (camAnim) {
+        camAnim.t = Math.min(1, camAnim.t + dt * 1.35);
+        const ease = 1 - Math.pow(1 - camAnim.t, 3);
+        camera.position.lerpVectors(camAnim.startPos, camAnim.endPos, ease);
+        orbit.target.lerpVectors(camAnim.startTarget, camAnim.endTarget, ease);
+        if (camAnim.t >= 1) camAnim = null;
+      }
+
+      orbit.autoRotate = optOrbit.checked;
+      orbit.autoRotateSpeed = 0.65;
+      orbit.update();
+
+      // Smooth Snow Mode Transition (Terrain vertex colors + Foliage + Roof snowcaps)
+      const targetSnow = currentSeason === 'winter' ? 1 : 0;
+      if (Math.abs(snowFactor - targetSnow) > 0.002) {
+        snowFactor += (targetSnow - snowFactor) * Math.min(1, dt * 3.8);
+        const colAttr = terrainGeo.attributes.color;
+        const arr = colAttr.array;
+        for (let i = 0; i < arr.length; i++) {
+          arr[i] = springColors[i] + (winterColors[i] - springColors[i]) * snowFactor;
+        }
+        colAttr.needsUpdate = true;
+
+        foliageMaterials.forEach((fm) => {
+          fm.mat.color.lerpColors(fm.spring, fm.winter, snowFactor);
+        });
+        snowCapMat.opacity = snowFactor * 0.95;
+      }
+
+      // Pulsing Magma Chamber
+      magmaMat.emissiveIntensity = 1.85 + Math.sin(t * 2.8) * 0.4;
+
+      if (optAnim.checked) {
+        // 1. N700S Shinkansen gliding smoothly back and forth
+        const trainHeadU = 0.08 + 0.84 * (0.5 - 0.5 * Math.cos(t * 0.22));
+        bulletCars.forEach((car, idx) => {
+          const u = Math.max(0.01, Math.min(0.99, trainHeadU - idx * 0.022));
+          const pos = shinkansenCurve.getPointAt(u);
+          const look = shinkansenCurve.getPointAt(Math.min(0.995, u + 0.01));
+          car.position.copy(pos);
+          car.lookAt(look);
+        });
+
+        // 2. Fuji Speedway Race Cars zooming around circuit
+        raceCars.forEach((rc, i) => {
+          const u = (t * (0.28 + i * 0.02) + rc.offset) % 1;
+          const pos = raceCurve.getPointAt(u);
+          const look = raceCurve.getPointAt((u + 0.02) % 1);
+          rc.mesh.position.copy(pos);
+          rc.mesh.position.y += 0.08;
+          rc.mesh.lookAt(look.x, look.y + 0.08, look.z);
+        });
+
+        // 3. Owakudani Ropeway Gondolas
+        gondolas.forEach((gd) => {
+          const raw = (t * 0.12 + gd.offset) % 1;
+          const u = raw < 0.5 ? raw * 2 : (1 - raw) * 2;
+          gd.mesh.position.copy(ropewayCurve.getPointAt(u));
+        });
+
+        // 4. Fuji-Q Ferris Wheel, Roller Coaster & Oshino Watermill
+        wheelRotor.rotation.z -= dt * 0.35;
+        if (waterWheelMesh) waterWheelMesh.rotation.x += dt * 1.4;
+        const cu = (t * 0.15) % 1;
+        coasterCars.forEach((car, idx) => {
+          const u = (cu - idx * 0.028 + 1) % 1;
+          car.position.copy(coasterCurve.getPointAt(u));
+          car.lookAt(coasterCurve.getPointAt((u + 0.015) % 1));
+        });
+
+        // 5. Shiraito Falls shimmer
+        fallStrands.forEach((fs) => {
+          fs.mesh.scale.x = 0.88 + Math.sin(t * 7 + fs.phase) * 0.18;
+        });
+
+        // 6. Hakone Pirate Ship, Cruise Ship, Dolphins, Whale, Lake Fish & Underground Koi
+        pirateShip.position.y = WATER_Y + Math.sin(t * 1.8) * 0.04;
+        pirateShip.rotation.z = Math.sin(t * 1.3) * 0.035;
+        cruiseShip.position.z = 6.5 + Math.sin(t * 0.25) * 3.8;
+
+        dolphins.forEach((d) => {
+          const cycle = (t * 1.5 + d.phase) % (Math.PI * 2);
+          const leap = Math.sin(cycle);
+          d.mesh.position.set(d.bx + Math.cos(cycle) * 0.9, WATER_Y - 0.25 + leap * 0.95, d.bz);
+          d.mesh.rotation.z = Math.PI / 2 - Math.cos(cycle) * 0.65;
+        });
+
+        whale.position.x = 22.5 + Math.sin(t * 0.35) * 2.6;
+        whale.rotation.y = Math.cos(t * 0.35) >= 0 ? 0 : Math.PI;
+
+        aquaticSwimmers.forEach((f) => {
+          f.a += dt * f.s;
+          f.mesh.position.set(f.cx + Math.cos(f.a) * f.r, f.y, f.cz + Math.sin(f.a) * f.r);
+          f.mesh.rotation.y = -f.a;
+        });
+
+        caveKoi.forEach((k) => {
+          k.angle += dt * 0.9;
+          k.mesh.position.set(3.65 + Math.cos(k.angle) * k.r * 1.8, -4.18, D / 2 - 0.85 + Math.sin(k.angle) * 0.45);
+          k.mesh.rotation.y = -k.angle;
+        });
+
+        // 7. Soaring Cranes & Golden Eagles
+        skyBirds.forEach((b) => {
+          b.a += dt * b.s;
+          b.mesh.position.set(b.cx + Math.cos(b.a) * b.r, b.y + Math.sin(t * 2 + b.a) * 0.25, b.cz + Math.sin(b.a) * b.r);
+          b.mesh.rotation.y = -b.a;
+        });
+
+        // 8. Rising Steam Plumes (Mt. Fuji Crater + Owakudani + Onsen + Parasitic Vent)
+        for (let i = 0; i < steamParticles.length; i++) {
+          const sp = steamParticles[i];
+          sp.age = (sp.age + dt * 0.28) % 1;
+          const s = sp.src;
+          steamPosArr[i * 3] = s.x + sp.jitterX + sp.age * s.vx * 3.8;
+          steamPosArr[i * 3 + 1] = s.y + sp.age * s.vy * 3.6;
+          steamPosArr[i * 3 + 2] = s.z + sp.jitterZ - sp.age * 0.6;
+        }
+        steamGeo.attributes.position.needsUpdate = true;
+
+        // 9. Falling Snowflakes (Winter) or Drifting Sakura Petals (Spring)
+        const wArr = weatherGeo.attributes.position.array;
+        const limitX = currentSeason === 'winter' ? W / 2 : -4.0;
+        const minX = currentSeason === 'winter' ? -W / 2 : -28.0;
+        for (let i = 0; i < weatherCount; i++) {
+          const v = weatherVel[i];
+          wArr[i * 3] += Math.sin(t * 1.4 + v.phase) * dt * 0.35 + v.vx * dt;
+          wArr[i * 3 + 1] -= v.vy * dt * (currentSeason === 'winter' ? 1.35 : 0.8);
+          if (wArr[i * 3 + 1] < 0.1 || (currentSeason === 'spring' && wArr[i * 3] > limitX)) {
+            wArr[i * 3] = minX + ((i * 0.618034) % 1) * (limitX - minX);
+            wArr[i * 3 + 1] = 15.5 + (i % 5);
+            wArr[i * 3 + 2] = -D / 2 + ((i * 0.381966) % 1) * D;
+          }
+        }
+        weatherGeo.attributes.position.needsUpdate = true;
+      }
+
+      // Project 3D Landmark Pins to 2D Screen Coordinates
+      if (optLabels.checked) {
+        const halfW = window.innerWidth * 0.5;
+        const halfH = window.innerHeight * 0.5;
+        pinItems.forEach((pin) => {
+          projVec.copy(pin.worldPos).project(camera);
+          if (projVec.z > 1) {
+            pin.el.style.display = 'none';
+          } else {
+            pin.el.style.display = 'block';
+            pin.el.style.left = `${projVec.x * halfW + halfW}px`;
+            pin.el.style.top = `${-projVec.y * halfH + halfH}px`;
+          }
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    applyAtmosphere();
+    animate();
+  </script>
+</body>
+</html>

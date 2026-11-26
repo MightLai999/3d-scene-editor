@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 高雄愛河灣超人力霸王 — 3D 立體微縮模型</title>
+  <style>
+    :root {
+      --bg-panel: rgba(16, 19, 27, 0.85);
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.13);
+      --accent: #38bdf8;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #14171f;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      font-size: 13px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .title-card {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      padding: 12px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      max-width: 310px;
+    }
+
+    .title-card h1 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .title-card p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .back-link:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.55);
+    }
+
+    .controls-panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 248px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .btn-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .btn {
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn.left-align { justify-content: flex-start; }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.55);
+    }
+
+    .btn.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.8);
+      color: #e0f2fe;
+      font-weight: 600;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 2px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .statusbar {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .statusbar b { color: var(--text); font-weight: 600; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="title-card">
+    <a href="./index.html" class="back-link">← 返回作品集首頁</a>
+    <h1>⚡ 2026 高雄愛河灣超人力霸王</h1>
+    <p>立體微縮場景模型：高流蜂巢建築、超人力霸王對決怪獸、大港橋與海底生態樹脂剖面、駁二倉庫、冬日遊樂園、環狀輕軌與捷運隧道剖面。</p>
+  </div>
+
+  <aside class="controls-panel">
+    <div>
+      <div class="section-label">展示燈光模式</div>
+      <div class="btn-group">
+        <button class="btn active" data-time="day">☀️ 白晝</button>
+        <button class="btn" data-time="sunset">🌅 暖夕</button>
+        <button class="btn" data-time="night">🌙 夜燈</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">模型特寫視角</div>
+      <div class="btn-list">
+        <button class="btn left-align active" data-cam="overview">📦 經典微縮全景</button>
+        <button class="btn left-align" data-cam="battle">⚡ 超人力霸王對決特寫</button>
+        <button class="btn left-align" data-cam="bridge">🌉 大港橋與海底剖面</button>
+        <button class="btn left-align" data-cam="music">🎵 高雄流行音樂中心</button>
+        <button class="btn left-align" data-cam="park">🎡 冬日遊樂園與捷運剖面</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">動態效果</div>
+      <div class="toggle-row">
+        <label for="opt-anim">輕軌 / 摩天輪 / 潛艇動畫</label>
+        <input type="checkbox" id="opt-anim" checked />
+      </div>
+      <div class="toggle-row">
+        <label for="opt-orbit">自動展示台旋轉</label>
+        <input type="checkbox" id="opt-orbit" />
+      </div>
+    </div>
+  </aside>
+
+  <div class="statusbar">
+    <span><b>左鍵拖曳</b> 旋轉</span>
+    <span><b>右鍵拖曳</b> 平移</span>
+    <span><b>滾輪</b> 放大縮小</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. RENDERER, SCENE & CAMERA
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#272b36');
+
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.5, 400);
+    camera.position.set(-22, 24, 34);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    container.appendChild(renderer.domElement);
+
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.06;
+    orbit.maxPolarAngle = Math.PI / 2 - 0.02;
+    orbit.minDistance = 8;
+    orbit.maxDistance = 95;
+    orbit.target.set(0, 3.5, 0);
+
+    // =========================================================================
+    // 2. STUDIO LIGHTING
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xfef3c7, 0x334155, 0.85);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff7ed, 2.0);
+    keyLight.position.set(-28, 38, 26);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 5;
+    keyLight.shadow.camera.far = 120;
+    const sd = 26;
+    keyLight.shadow.camera.left = -sd;
+    keyLight.shadow.camera.right = sd;
+    keyLight.shadow.camera.top = sd;
+    keyLight.shadow.camera.bottom = -sd;
+    keyLight.shadow.bias = -0.0004;
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0x93c5fd, 0.7);
+    rimLight.position.set(25, 22, -25);
+    scene.add(rimLight);
+
+    const battleGlow = new THREE.PointLight(0x38bdf8, 0.6, 18, 1.5);
+    battleGlow.position.set(0, 7.5, -1);
+    scene.add(battleGlow);
+
+    const nightMats = [];
+
+    // =========================================================================
+    // 3. PROCEDURAL TEXTURES
+    // =========================================================================
+    function createMarqueeTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 160;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 1024, 0);
+      grad.addColorStop(0, '#ea580c');
+      grad.addColorStop(0.45, '#0d9488');
+      grad.addColorStop(0.8, '#0284c7');
+      grad.addColorStop(1, '#1e293b');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1024, 160);
+
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(0, 122, 1024, 38);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 74px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('2026高雄愛河灣超人力霸王', 512, 68);
+
+      ctx.fillStyle = '#fde68a';
+      ctx.font = '20px monospace';
+      ctx.fillText('KAOHSIUNG LOVE RIVER BAY  •  ULTRAMAN 60TH ANNIVERSARY DIORAMA', 512, 141);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createStrataTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#6b4c35';
+      ctx.fillRect(0, 0, 512, 256);
+      const layers = ['#8c6239', '#5c4028', '#735338', '#473322', '#3a2c24'];
+      layers.forEach((col, i) => {
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(0, i * 50);
+        for (let x = 0; x <= 512; x += 32) {
+          ctx.lineTo(x, i * 50 + Math.sin(x * 0.02 + i) * 10);
+        }
+        ctx.lineTo(512, 256);
+        ctx.lineTo(0, 256);
+        ctx.closePath();
+        ctx.fill();
+      });
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // =========================================================================
+    // 4. TABLETOP & WOODEN DIORAMA PLINTH WITH LED MARQUEE
+    // =========================================================================
+    const root = new THREE.Group();
+    scene.add(root);
+
+    // Desk surface
+    const desk = new THREE.Mesh(
+      new THREE.BoxGeometry(90, 1.2, 68),
+      new THREE.MeshStandardMaterial({ color: '#5c3d28', roughness: 0.72 })
+    );
+    desk.position.set(0, -1.8, 0);
+    desk.receiveShadow = true;
+    root.add(desk);
+
+    // Walnut Wood Diorama Base Box (34 x 2.6 x 24)
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#7a5233', roughness: 0.58 });
+    const darkWoodMat = new THREE.MeshStandardMaterial({ color: '#4a311e', roughness: 0.65 });
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(34, 2.4, 24), woodMat);
+    plinth.position.set(0, 0, 0);
+    plinth.castShadow = true;
+    plinth.receiveShadow = true;
+    root.add(plinth);
+
+    // Front Glowing LED Marquee Screen
+    const marqueeMat = new THREE.MeshStandardMaterial({
+      map: createMarqueeTexture(),
+      emissiveMap: createMarqueeTexture(),
+      emissive: new THREE.Color('#ffffff'),
+      emissiveIntensity: 0.85,
+      roughness: 0.25
+    });
+    nightMats.push({ mat: marqueeMat, day: 0.75, sunset: 1.0, night: 1.4 });
+    const marquee = new THREE.Mesh(new THREE.PlaneGeometry(22.5, 1.85), marqueeMat);
+    marquee.position.set(-4.2, 0, 12.04);
+    root.add(marquee);
+
+    // Control Knobs & Speaker Grille on Right of Front Plinth
+    const metalDark = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.4, metalness: 0.6 });
+    const switchBase = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.1, 0.2), metalDark);
+    switchBase.position.set(8.6, 0, 12.05);
+    root.add(switchBase);
+
+    const knob1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.48, 0.4, 16), metalDark);
+    knob1.rotation.x = Math.PI / 2;
+    knob1.position.set(10.6, -0.1, 12.15);
+    root.add(knob1);
+
+    const knob2 = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.3, 0.35, 16), metalDark);
+    knob2.rotation.x = Math.PI / 2;
+    knob2.position.set(11.9, 0.35, 12.15);
+    root.add(knob2);
+
+    const speaker = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.12, 24), darkWoodMat);
+    speaker.rotation.x = Math.PI / 2;
+    speaker.position.set(14.0, 0, 12.03);
+    root.add(speaker);
+
+    // =========================================================================
+    // 5. LAND MASS, GEOLOGY CUTAWAY (地質剖面) & MRT TUNNEL (捷運隧道)
+    // =========================================================================
+    const strataMat = new THREE.MeshStandardMaterial({ map: createStrataTexture(), roughness: 0.88 });
+    const landTopMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.82 });
+
+    // Left-side land block (x: -16.5 to 1.5, z: -11.5 to 11.5)
+    const landLeft = new THREE.Mesh(new THREE.BoxGeometry(18, 3.6, 23), [
+      strataMat, strataMat, landTopMat, strataMat, strataMat, strataMat
+    ]);
+    landLeft.position.set(-7.5, 3.0, 0);
+    landLeft.castShadow = true;
+    landLeft.receiveShadow = true;
+    root.add(landLeft);
+
+    // Back-right Pier-2 land quay (x: 1.5 to 16.5, z: -11.5 to -1.5)
+    const landPier2 = new THREE.Mesh(new THREE.BoxGeometry(15, 3.6, 10), [
+      strataMat, strataMat, landTopMat, strataMat, strataMat, strataMat
+    ]);
+    landPier2.position.set(9.0, 3.0, -6.5);
+    landPier2.castShadow = true;
+    landPier2.receiveShadow = true;
+    root.add(landPier2);
+
+    // Front-right peninsula pier for Great Harbor Bridge landing
+    const pierLanding = new THREE.Mesh(new THREE.BoxGeometry(5.5, 3.6, 5.5), landTopMat);
+    pierLanding.position.set(13.8, 3.0, 4.2);
+    pierLanding.castShadow = true;
+    pierLanding.receiveShadow = true;
+    root.add(pierLanding);
+
+    // MRT Tunnel Cutaway on Front-Left Wall (捷運隧道剖面)
+    const tunnelGroup = new THREE.Group();
+    tunnelGroup.position.set(-8.5, 2.5, 11.52);
+    root.add(tunnelGroup);
+
+    const tunnelRing = new THREE.Mesh(
+      new THREE.TorusGeometry(1.15, 0.22, 12, 24),
+      new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.6 })
+    );
+    tunnelGroup.add(tunnelRing);
+
+    const tunnelVoid = new THREE.Mesh(
+      new THREE.CircleGeometry(1.05, 24),
+      new THREE.MeshBasicMaterial({ color: '#0f172a' })
+    );
+    tunnelVoid.position.z = -0.05;
+    tunnelGroup.add(tunnelVoid);
+
+    // Miniature MRT Train inside tunnel
+    const mrtTrain = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 1.05, 0.8),
+      new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.35 })
+    );
+    mrtTrain.position.set(0, -0.15, 0.15);
+    tunnelGroup.add(mrtTrain);
+    const mrtWindow = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.38, 0.06),
+      new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#38bdf8', emissiveIntensity: 0.6 })
+    );
+    mrtWindow.position.set(0, 0.1, 0.56);
+    tunnelGroup.add(mrtWindow);
+
+    // =========================================================================
+    // 6. TRANSPARENT RESIN HARBOR WATER & UNDERWATER ECOSYSTEM (海底剖面)
+    // =========================================================================
+    // Seabed floor
+    const seabed = new THREE.Mesh(
+      new THREE.BoxGeometry(15, 0.4, 13),
+      new THREE.MeshStandardMaterial({ color: '#2b4c59', roughness: 0.9 })
+    );
+    seabed.position.set(9.0, 1.4, 5.0);
+    seabed.receiveShadow = true;
+    root.add(seabed);
+
+    // Underwater corals & rocks
+    const coralCols = ['#f97316', '#ec4899', '#10b981', '#eab308', '#a855f7'];
+    for (let i = 0; i < 22; i++) {
+      const cx = 2.5 + Math.random() * 12.5;
+      const cz = 0.0 + Math.random() * 10.5;
+      const cMesh = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.35 + Math.random() * 0.45, 0),
+        new THREE.MeshStandardMaterial({ color: coralCols[i % coralCols.length], roughness: 0.8 })
+      );
+      cMesh.position.set(cx, 1.85, cz);
+      root.add(cMesh);
+    }
+
+    // Yellow Mini-Submarine (水中黃色小潛艇)
+    const submarine = new THREE.Group();
+    submarine.position.set(7.5, 2.8, 7.2);
+    const subBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.32, 0.85, 8, 16),
+      new THREE.MeshStandardMaterial({ color: '#facc15', roughness: 0.3, metalness: 0.2 })
+    );
+    subBody.rotation.z = Math.PI / 2;
+    const subTower = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.2, 0.35, 10),
+      new THREE.MeshStandardMaterial({ color: '#eab308', roughness: 0.35 })
+    );
+    subTower.position.y = 0.32;
+    submarine.add(subBody, subTower);
+    root.add(submarine);
+
+    // Swimming Fish inside Resin Block
+    const fishes = [];
+    for (let i = 0; i < 10; i++) {
+      const f = new THREE.Mesh(
+        new THREE.ConeGeometry(0.14, 0.45, 6),
+        new THREE.MeshStandardMaterial({ color: i === 0 ? '#64748b' : '#f8fafc', roughness: 0.4 })
+      );
+      f.rotation.z = -Math.PI / 2;
+      if (i === 0) f.scale.set(2.2, 2.6, 2.2); // Shark silhouette!
+      f.position.set(4 + Math.random() * 10, 2.1 + Math.random() * 1.4, 2 + Math.random() * 8);
+      root.add(f);
+      fishes.push({ mesh: f, angle: Math.random() * Math.PI * 2, radius: 1.5 + Math.random() * 2.5, cx: 8.5, cz: 6.0, speed: 0.4 + Math.random() * 0.5 });
+    }
+
+    // Glossy Translucent Resin Water Block
+    const waterMat = new THREE.MeshPhysicalMaterial({
+      color: '#0ea5e9',
+      roughness: 0.08,
+      metalness: 0.05,
+      transmission: 0.68,
+      transparent: true,
+      opacity: 0.72,
+      ior: 1.33,
+      thickness: 4.0
+    });
+    const waterBlock = new THREE.Mesh(new THREE.BoxGeometry(15, 2.9, 13), waterMat);
+    waterBlock.position.set(9.0, 3.05, 5.0);
+    root.add(waterBlock);
+
+    // =========================================================================
+    // 7. KAOHSIUNG MUSIC CENTER (高雄流行音樂中心 — 白蜂巢地標)
+    // =========================================================================
+    const musicCenter = new THREE.Group();
+    musicCenter.position.set(-5.5, 4.8, -6.8);
+    root.add(musicCenter);
+
+    const hexWhiteMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.38, metalness: 0.1 });
+    const hexGlowMat = new THREE.MeshStandardMaterial({
+      color: '#fef3c7',
+      emissive: '#fbbf24',
+      emissiveIntensity: 0.35,
+      roughness: 0.3
+    });
+    nightMats.push({ mat: hexGlowMat, day: 0.25, sunset: 0.85, night: 1.75 });
+
+    // Build stepped hexagonal honeycomb cluster
+    const hexLayout = [
+      [0, 0, 5.8], [-2.1, 0.5, 4.6], [2.1, 0.4, 4.8],
+      [-1.1, 2.1, 3.8], [1.1, 2.0, 4.0], [-3.2, 2.0, 3.0],
+      [3.1, 1.8, 3.2], [0, -1.8, 4.4]
+    ];
+    hexLayout.forEach(([hx, hz, hh]) => {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.32, hh, 6), hexWhiteMat);
+      col.position.set(hx, hh / 2, hz);
+      col.castShadow = true;
+      col.receiveShadow = true;
+      musicCenter.add(col);
+
+      // Glowing recessed hexagonal window cells on front face
+      for (let y = 1.0; y < hh - 0.8; y += 1.15) {
+        const cell = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.15, 6), hexGlowMat);
+        cell.rotation.x = Math.PI / 2;
+        cell.position.set(hx, y, hz + 1.18);
+        musicCenter.add(cell);
+      }
+    });
+
+    // =========================================================================
+    // 8. GREAT HARBOR BRIDGE (大港橋 — 純白貝殼拱橋)
+    // =========================================================================
+    const bridgeGroup = new THREE.Group();
+    bridgeGroup.position.set(8.2, 4.75, 4.2);
+    root.add(bridgeGroup);
+
+    const bridgeWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.35, metalness: 0.15 });
+    // Bridge deck
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.35, 2.4), bridgeWhite);
+    deck.castShadow = true;
+    deck.receiveShadow = true;
+    bridgeGroup.add(deck);
+
+    // Iconic Dolphin/Shell Arch
+    const archCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-5.2, 0.1, 0),
+      new THREE.Vector3(-2.5, 3.2, 0.4),
+      new THREE.Vector3(0.5, 3.8, 0.2),
+      new THREE.Vector3(3.2, 2.6, -0.3),
+      new THREE.Vector3(5.2, 0.1, 0)
+    ]);
+    const archMesh = new THREE.Mesh(new THREE.TubeGeometry(archCurve, 32, 0.42, 12, false), bridgeWhite);
+    archMesh.castShadow = true;
+    bridgeGroup.add(archMesh);
+
+    // Suspension cables
+    const cableMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', metalness: 0.6 });
+    for (let cx = -3.8; cx <= 3.8; cx += 0.95) {
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.8, 6), cableMat);
+      cable.position.set(cx, 1.5, 0);
+      bridgeGroup.add(cable);
+    }
+
+    // =========================================================================
+    // 9. PIER-2 ART CENTER WAREHOUSES (駁二藝術特區倉庫群)
+    // =========================================================================
+    const brickMat = new THREE.MeshStandardMaterial({ color: '#8c533e', roughness: 0.85 });
+    const roofMetalMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.5, metalness: 0.35 });
+    const doorGlow = new THREE.MeshStandardMaterial({ color: '#fef3c7', emissive: '#f59e0b', emissiveIntensity: 0.3 });
+    nightMats.push({ mat: doorGlow, day: 0.2, sunset: 0.8, night: 1.6 });
+
+    for (let i = 0; i < 3; i++) {
+      const wh = new THREE.Group();
+      wh.position.set(6.2 + i * 3.8, 4.8, -6.5);
+      const body = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.2, 5.2), brickMat);
+      body.position.y = 1.1;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      wh.add(body);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.1, 4), roofMetalMat);
+      roof.rotation.y = Math.PI / 4;
+      roof.scale.set(0.92, 1, 1.48);
+      roof.position.y = 2.75;
+      roof.castShadow = true;
+      wh.add(roof);
+
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.3, 0.1), doorGlow);
+      door.position.set(0, 0.7, 2.62);
+      wh.add(door);
+
+      root.add(wh);
+    }
+
+    // =========================================================================
+    // 10. CENTERPIECE: ULTRAMAN TIGA vs. KAIJU GOMORA (超人力霸王對決怪獸)
+    // =========================================================================
+    // --- ULTRAMAN (超人力霸王) ---
+    const ultraman = new THREE.Group();
+    ultraman.position.set(-2.2, 4.8, -0.5);
+    ultraman.rotation.y = Math.PI / 2 - 0.15;
+    root.add(ultraman);
+
+    const ultraSilver = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.25, metalness: 0.65 });
+    const ultraRed = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.35, metalness: 0.25 });
+    const ultraPurple = new THREE.MeshStandardMaterial({ color: '#3b2874', roughness: 0.38, metalness: 0.3 });
+    const ultraGlow = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#38bdf8', emissiveIntensity: 1.8 });
+    const eyeGlow = new THREE.MeshStandardMaterial({ color: '#fef9c3', emissive: '#fef08a', emissiveIntensity: 1.6 });
+
+    // Legs (dynamic wide combat stance)
+    const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 2.4, 8, 12), ultraPurple);
+    legL.position.set(-0.65, 1.45, 0.2);
+    legL.rotation.z = 0.22;
+    legL.castShadow = true;
+    const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 2.4, 8, 12), ultraPurple);
+    legR.position.set(0.65, 1.45, -0.2);
+    legR.rotation.z = -0.22;
+    legR.castShadow = true;
+    ultraman.add(legL, legR);
+
+    // Torso (red chest + silver waist)
+    const waist = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.52, 1.2, 14), ultraSilver);
+    waist.position.y = 3.1;
+    waist.castShadow = true;
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.65, 1.6, 14), ultraRed);
+    chest.position.y = 4.35;
+    chest.castShadow = true;
+    ultraman.add(waist, chest);
+
+    // Glowing Color Timer (彩色計時器)
+    const timer = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), ultraGlow);
+    timer.position.set(0, 4.45, 0.84);
+    ultraman.add(timer);
+
+    // Arms (fighting punch/guard pose)
+    const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 1.7, 8, 12), ultraSilver);
+    armL.position.set(-1.15, 4.5, 0.55);
+    armL.rotation.set(1.2, 0, 0.35);
+    armL.castShadow = true;
+    const armR = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 1.7, 8, 12), ultraSilver);
+    armR.position.set(1.05, 4.45, 0.85);
+    armR.rotation.set(1.45, 0, -0.25);
+    armR.castShadow = true;
+    ultraman.add(armL, armR);
+
+    // Head with iconic crest & glowing eyes
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.58, 16, 16), ultraSilver);
+    head.scale.set(0.88, 1.12, 0.95);
+    head.position.y = 5.75;
+    head.castShadow = true;
+    const crest = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.72, 0.85), ultraSilver);
+    crest.position.set(0, 6.25, -0.05);
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), eyeGlow);
+    eyeL.scale.set(1.3, 0.7, 0.6);
+    eyeL.position.set(-0.22, 5.8, 0.48);
+    const eyeR = eyeL.clone();
+    eyeR.position.x = 0.22;
+    ultraman.add(head, crest, eyeL, eyeR);
+
+    // --- KAIJU MONSTER (哥莫拉怪獸) ---
+    const kaiju = new THREE.Group();
+    kaiju.position.set(2.4, 4.8, -0.5);
+    kaiju.rotation.y = -Math.PI / 2 + 0.15;
+    root.add(kaiju);
+
+    const kaijuMat = new THREE.MeshStandardMaterial({ color: '#5c4b3b', roughness: 0.82 });
+    const kaijuBelly = new THREE.MeshStandardMaterial({ color: '#78634e', roughness: 0.85 });
+    const hornMat = new THREE.MeshStandardMaterial({ color: '#d6cbb0', roughness: 0.55 });
+
+    // Heavy body & legs
+    const kBody = new THREE.Mesh(new THREE.SphereGeometry(1.45, 16, 14), kaijuMat);
+    kBody.scale.set(0.95, 1.35, 1.05);
+    kBody.position.set(0, 2.7, 0);
+    kBody.castShadow = true;
+    const kChest = new THREE.Mesh(new THREE.SphereGeometry(1.1, 14, 12), kaijuBelly);
+    kChest.position.set(0, 2.9, 0.65);
+    kaiju.add(kBody, kChest);
+
+    for (const sx of [-0.8, 0.8]) {
+      const kLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.72, 2.0, 12), kaijuMat);
+      kLeg.position.set(sx, 1.0, 0.15);
+      kLeg.castShadow = true;
+      kaiju.add(kLeg);
+
+      const kArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 1.2, 8, 10), kaijuMat);
+      kArm.position.set(sx * 1.45, 3.6, 0.8);
+      kArm.rotation.set(1.1, 0, sx > 0 ? -0.3 : 0.3);
+      kArm.castShadow = true;
+      kaiju.add(kArm);
+    }
+
+    // Head + Crescent Horns
+    const kHead = new THREE.Mesh(new THREE.SphereGeometry(0.85, 14, 12), kaijuMat);
+    kHead.scale.set(0.95, 0.9, 1.25);
+    kHead.position.set(0, 4.75, 0.55);
+    kHead.castShadow = true;
+    kaiju.add(kHead);
+
+    for (const sx of [-0.55, 0.55]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.45, 8), hornMat);
+      horn.position.set(sx, 5.65, 0.35);
+      horn.rotation.set(-0.35, 0, sx > 0 ? -0.45 : 0.45);
+      kaiju.add(horn);
+    }
+
+    // Thick curving tail
+    const tailCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 1.6, -1.0),
+      new THREE.Vector3(0.4, 1.1, -2.6),
+      new THREE.Vector3(-0.3, 1.3, -4.4),
+      new THREE.Vector3(-0.8, 2.1, -5.6)
+    ]);
+    const kTail = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 18, 0.45, 10, false), kaijuMat);
+    kTail.castShadow = true;
+    kaiju.add(kTail);
+
+    // =========================================================================
+    // 11. WINTER AMUSEMENT PARK (2026 冬日遊樂園 — 摩天輪 & 旋轉木馬)
+    // =========================================================================
+    // Ferris Wheel (摩天輪)
+    const ferrisGroup = new THREE.Group();
+    ferrisGroup.position.set(-11.5, 4.8, -3.5);
+    ferrisGroup.rotation.y = 0.4;
+    root.add(ferrisGroup);
+
+    const ferrisStand = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 4.2, 8), bridgeWhite);
+    ferrisStand.position.set(-0.8, 2.0, 0);
+    ferrisStand.rotation.z = -0.25;
+    const ferrisStand2 = ferrisStand.clone();
+    ferrisStand2.position.x = 0.8;
+    ferrisStand2.rotation.z = 0.25;
+    ferrisGroup.add(ferrisStand, ferrisStand2);
+
+    const wheelRotor = new THREE.Group();
+    wheelRotor.position.set(0, 4.1, 0);
+    ferrisGroup.add(wheelRotor);
+
+    const wheelRim = new THREE.Mesh(
+      new THREE.TorusGeometry(2.6, 0.1, 10, 32),
+      new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#f59e0b', emissiveIntensity: 0.4 })
+    );
+    nightMats.push({ mat: wheelRim.material, day: 0.3, sunset: 0.9, night: 1.8 });
+    wheelRotor.add(wheelRim);
+
+    const podCols = ['#ef4444', '#38bdf8', '#22c55e', '#f59e0b', '#ec4899', '#a855f7'];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 5.2, 6), bridgeWhite);
+      spoke.rotation.z = a;
+      wheelRotor.add(spoke);
+
+      const gondola = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38, 0.42, 0.38),
+        new THREE.MeshStandardMaterial({ color: podCols[i % podCols.length], roughness: 0.4 })
+      );
+      gondola.position.set(Math.cos(a) * 2.6, Math.sin(a) * 2.6, 0);
+      wheelRotor.add(gondola);
+    }
+
+    // Carousel (旋轉木馬)
+    const carousel = new THREE.Group();
+    carousel.position.set(-11.2, 4.8, 3.2);
+    root.add(carousel);
+    const cBase = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 2.0, 0.35, 20), bridgeWhite);
+    cBase.position.y = 0.18;
+    const cRoof = new THREE.Mesh(
+      new THREE.ConeGeometry(2.1, 1.35, 16),
+      new THREE.MeshStandardMaterial({ color: '#f43f5e', roughness: 0.45 })
+    );
+    cRoof.position.y = 2.35;
+    cRoof.castShadow = true;
+    const cCore = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.7, 12), hexGlowMat);
+    cCore.position.y = 1.1;
+    carousel.add(cBase, cRoof, cCore);
+
+    // =========================================================================
+    // 12. CIRCULAR LIGHT RAIL (環狀輕軌列車動畫) & MEDIA HELICOPTER
+    // =========================================================================
+    const lrtCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-15.5, 4.92, 6.2),
+      new THREE.Vector3(-8.0, 4.92, 5.8),
+      new THREE.Vector3(-4.5, 4.92, 2.2),
+      new THREE.Vector3(-2.5, 4.92, -3.0),
+      new THREE.Vector3(2.5, 4.92, -9.5),
+      new THREE.Vector3(15.5, 4.92, -9.8)
+    ]);
+
+    const trackMesh = new THREE.Mesh(
+      new THREE.TubeGeometry(lrtCurve, 60, 0.55, 6, false),
+      new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.9 })
+    );
+    trackMesh.scale.y = 0.12;
+    trackMesh.position.y = 4.35;
+    root.add(trackMesh);
+
+    const lrtTrain = new THREE.Group();
+    const lrtBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.85, 0.85, 3.6),
+      new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.3 })
+    );
+    lrtBody.position.y = 0.48;
+    lrtBody.castShadow = true;
+    const lrtStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.88, 0.25, 3.62),
+      new THREE.MeshStandardMaterial({ color: '#16a34a', roughness: 0.4 })
+    );
+    lrtStripe.position.y = 0.28;
+    lrtTrain.add(lrtBody, lrtStripe);
+    root.add(lrtTrain);
+
+    // Hovering Media Helicopter (空拍直升機)
+    const heli = new THREE.Group();
+    heli.position.set(-10.5, 13.5, -5.5);
+    const hBody = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10), bridgeWhite);
+    hBody.scale.set(0.85, 0.8, 1.5);
+    const hTail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.14, 1.5, 8), bridgeWhite);
+    hTail.rotation.x = Math.PI / 2;
+    hTail.position.z = -1.1;
+    const hRotor = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.04, 0.12), metalDark);
+    hRotor.position.y = 0.55;
+    heli.add(hBody, hTail, hRotor);
+    root.add(heli);
+
+    // =========================================================================
+    // 13. TIME OF DAY & CAMERA PRESETS
+    // =========================================================================
+    const TIME_PRESETS = {
+      day:    { bg: '#2c3240', hemi: 0.9, keyCol: 0xfff7ed, keyInt: 2.0, rimInt: 0.7, battleInt: 0.5, exp: 1.08 },
+      sunset: { bg: '#261e24', hemi: 0.65, keyCol: 0xffa057, keyInt: 2.2, rimInt: 0.45, battleInt: 1.4, exp: 1.02 },
+      night:  { bg: '#0c101a', hemi: 0.35, keyCol: 0x60a5fa, keyInt: 0.55, rimInt: 0.35, battleInt: 3.2, exp: 1.18 }
+    };
+
+    function setTime(mode) {
+      const p = TIME_PRESETS[mode];
+      scene.background.set(p.bg);
+      hemiLight.intensity = p.hemi;
+      keyLight.color.setHex(p.keyCol);
+      keyLight.intensity = p.keyInt;
+      rimLight.intensity = p.rimInt;
+      battleGlow.intensity = p.battleInt;
+      renderer.toneMappingExposure = p.exp;
+
+      nightMats.forEach((m) => { m.mat.emissiveIntensity = m[mode]; });
+      document.querySelectorAll('[data-time]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.time === mode);
+      });
+    }
+
+    const CAM_PRESETS = {
+      overview: { pos: [-22, 24, 34], target: [0, 3.5, 0] },
+      battle:   { pos: [0, 11, 13], target: [0, 7.5, -0.5] },
+      bridge:   { pos: [16, 11, 21], target: [8.5, 4.2, 4.5] },
+      music:    { pos: [-16, 14, 6], target: [-5.5, 7.5, -6.5] },
+      park:     { pos: [-18, 12, 22], target: [-10, 4.5, 3.5] }
+    };
+
+    let camAnim = null;
+    function flyTo(name) {
+      const p = CAM_PRESETS[name];
+      if (!p) return;
+      camAnim = {
+        startPos: camera.position.clone(),
+        endPos: new THREE.Vector3(...p.pos),
+        startTarget: orbit.target.clone(),
+        endTarget: new THREE.Vector3(...p.target),
+        t: 0
+      };
+      document.querySelectorAll('[data-cam]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.cam === name);
+      });
+    }
+
+    document.querySelectorAll('[data-time]').forEach((b) => b.addEventListener('click', () => setTime(b.dataset.time)));
+    document.querySelectorAll('[data-cam]').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
+
+    const optAnim = document.getElementById('opt-anim');
+    const optOrbit = document.getElementById('opt-orbit');
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 14. ANIMATION LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+    let lrtProgress = 0;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
+
+      if (camAnim) {
+        camAnim.t = Math.min(1, camAnim.t + dt * 1.4);
+        const ease = 1 - Math.pow(1 - camAnim.t, 3);
+        camera.position.lerpVectors(camAnim.startPos, camAnim.endPos, ease);
+        orbit.target.lerpVectors(camAnim.startTarget, camAnim.endTarget, ease);
+        if (camAnim.t >= 1) camAnim = null;
+      }
+
+      orbit.autoRotate = optOrbit.checked;
+      orbit.autoRotateSpeed = 0.8;
+      orbit.update();
+
+      if (optAnim.checked) {
+        // Rotate Ferris wheel & carousel
+        wheelRotor.rotation.z -= dt * 0.35;
+        carousel.rotation.y += dt * 0.9;
+
+        // Glide LRT train along curve
+        lrtProgress = (lrtProgress + dt * 0.065) % 1;
+        const pos = lrtCurve.getPointAt(lrtProgress);
+        const nextPos = lrtCurve.getPointAt((lrtProgress + 0.01) % 1);
+        lrtTrain.position.copy(pos);
+        lrtTrain.lookAt(nextPos);
+
+        // Hovering helicopter + spinning rotor
+        hRotor.rotation.y += dt * 22;
+        heli.position.y = 13.5 + Math.sin(t * 2.2) * 0.35;
+        heli.position.x = -10.5 + Math.cos(t * 0.6) * 0.9;
+
+        // Submarine & fish swimming inside resin block
+        submarine.position.x = 7.5 + Math.sin(t * 0.7) * 1.6;
+        submarine.position.y = 2.75 + Math.cos(t * 1.2) * 0.2;
+        fishes.forEach((f) => {
+          f.angle += dt * f.speed;
+          f.mesh.position.x = f.cx + Math.cos(f.angle) * f.radius;
+          f.mesh.position.z = f.cz + Math.sin(f.angle) * f.radius;
+          f.mesh.rotation.y = -f.angle;
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

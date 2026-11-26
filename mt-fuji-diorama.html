@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>富士山及其周邊著名景點 (1/100,000比例模型) — 精緻 3D 微縮場景</title>
+  <style>
+    :root {
+      --bg-panel: rgba(16, 18, 24, 0.84);
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.14);
+      --accent: #f472b6;
+      --accent-blue: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a1817;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      font-size: 13px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .title-card {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      padding: 13px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+      max-width: 330px;
+    }
+
+    .title-card h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+
+    .title-card p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: #f9a8d4;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .back-link:hover {
+      background: var(--bg-hover);
+      border-color: rgba(244, 114, 182, 0.55);
+    }
+
+    .controls-panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 264px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .btn-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .btn {
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .btn.left-align { justify-content: flex-start; }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(244, 114, 182, 0.55);
+    }
+
+    .btn.active {
+      background: rgba(244, 114, 182, 0.2);
+      border-color: rgba(244, 114, 182, 0.8);
+      color: #fdf2f8;
+      font-weight: 600;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 3px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .statusbar {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 18px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .statusbar b { color: var(--text); font-weight: 600; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="title-card">
+    <a href="./index.html" class="back-link">← 返回作品集首頁</a>
+    <h1>🗻 富士山及其周邊著名景點 (1/100,000比例模型)</h1>
+    <p>博物館級精緻立體剖面模型：富士山雪冠與地底岩漿脈、河口湖跨湖橋與水下魚群、忠靈塔五重塔櫻花林、富士急摩天輪與雲霄飛車、忍野八海合掌聚落、箱根海賊船、鳴澤冰穴與青木原樹海。</p>
+  </div>
+
+  <aside class="controls-panel">
+    <div>
+      <div class="section-label">展示燈光模式</div>
+      <div class="btn-group">
+        <button class="btn active" data-time="day">☀️ 白晝</button>
+        <button class="btn" data-time="sunset">🌅 赤富士</button>
+        <button class="btn" data-time="night">🌙 夜景</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">微縮景點特寫導覽</div>
+      <div class="btn-list">
+        <button class="btn left-align active" data-cam="overview">🗻 經典微縮全景</button>
+        <button class="btn left-align" data-cam="pagoda">⛩️ 忠靈塔與富士山</button>
+        <button class="btn left-align" data-cam="magmaLake">🌋 岩漿與湖底剖面</button>
+        <button class="btn left-align" data-cam="fujiQ">🎢 富士急樂園與列車</button>
+        <button class="btn left-align" data-cam="iceOshino">🧊 鳴澤冰穴與忍野八海</button>
+        <button class="btn left-align" data-cam="forest">🐻 青木原樹海與地底生態</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">動態與顯示選項</div>
+      <div class="toggle-row">
+        <label for="opt-anim">動態特效（列車／摩天輪／海賊船／櫻吹雪）</label>
+        <input type="checkbox" id="opt-anim" checked />
+      </div>
+      <div class="toggle-row">
+        <label for="opt-orbit">自動展示台旋轉</label>
+        <input type="checkbox" id="opt-orbit" />
+      </div>
+    </div>
+  </aside>
+
+  <div class="statusbar">
+    <span><b>左鍵拖曳</b> 旋轉</span>
+    <span><b>右鍵拖曳</b> 平移</span>
+    <span><b>滾輪</b> 放大縮小</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. RENDERER, SCENE, CAMERA & DETERMINISTIC PRNG
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#cfc6ba');
+    scene.fog = new THREE.FogExp2('#cfc6ba', 0.0042);
+
+    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.4, 300);
+    camera.position.set(-22, 23, 36);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.06;
+    container.appendChild(renderer.domElement);
+
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.06;
+    orbit.maxPolarAngle = Math.PI / 2 - 0.015;
+    orbit.minDistance = 8;
+    orbit.maxDistance = 95;
+    orbit.target.set(0, 1.2, 0.5);
+
+    let seed = 20261126;
+    function rand() {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+    function randRange(a, b) {
+      return a + rand() * (b - a);
+    }
+
+    // =========================================================================
+    // 2. STUDIO LIGHTING (DAY / AKA-FUJI SUNSET / NIGHT GLOW)
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xfff7ed, 0x475569, 0.92);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff5e4, 2.25);
+    keyLight.position.set(-30, 38, 22);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 6;
+    keyLight.shadow.camera.far = 115;
+    const shD = 26;
+    keyLight.shadow.camera.left = -shD;
+    keyLight.shadow.camera.right = shD;
+    keyLight.shadow.camera.top = shD;
+    keyLight.shadow.camera.bottom = -shD;
+    keyLight.shadow.bias = -0.0004;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xbfdbfe, 0.65);
+    fillLight.position.set(26, 20, -24);
+    scene.add(fillLight);
+
+    const magmaLight1 = new THREE.PointLight(0xff5500, 1.4, 12, 1.6);
+    magmaLight1.position.set(-16.2, -2.0, 13.6);
+    scene.add(magmaLight1);
+
+    const magmaLight2 = new THREE.PointLight(0xff6a00, 1.6, 13, 1.6);
+    magmaLight2.position.set(-5.6, -2.5, 13.6);
+    scene.add(magmaLight2);
+
+    const iceLight = new THREE.PointLight(0x38bdf8, 1.8, 12, 1.5);
+    iceLight.position.set(17.5, -1.6, 6.5);
+    scene.add(iceLight);
+
+    const nightLightRig = new THREE.PointLight(0xfde68a, 0.2, 22, 1.4);
+    nightLightRig.position.set(4, 5, 3);
+    scene.add(nightLightRig);
+
+    const nightEmissives = [];
+
+    // =========================================================================
+    // 3. PROCEDURAL TEXTURES (WALNUT WOOD, PLAQUE, GEOLOGY STRATA)
+    // =========================================================================
+    function createWalnutTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#6c4223';
+      ctx.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 220; i++) {
+        const y = rand() * 512;
+        const h = 1 + rand() * 5;
+        ctx.fillStyle = rand() > 0.5 ? 'rgba(42, 22, 10, 0.22)' : 'rgba(138, 88, 50, 0.16)';
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= 512; x += 32) {
+          ctx.lineTo(x, y + Math.sin(x * 0.02 + i) * 3);
+        }
+        ctx.lineTo(512, y + h);
+        ctx.lineTo(0, y + h);
+        ctx.closePath();
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createPlaqueTexture() {
+      const c = document.createElement('canvas');
+      c.width = 640;
+      c.height = 180;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 640, 180);
+      grad.addColorStop(0, '#d6dadf');
+      grad.addColorStop(0.5, '#f1f5f9');
+      grad.addColorStop(1, '#bcc3cc');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 640, 180);
+
+      // Brushed metal streaks
+      for (let y = 0; y < 180; y += 2) {
+        ctx.fillStyle = y % 4 === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.03)';
+        ctx.fillRect(0, y, 640, 1);
+      }
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(8, 8, 624, 164);
+
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 42px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('富士山及其周邊著名景點', 320, 68);
+
+      ctx.fillStyle = '#334155';
+      ctx.font = '600 28px "Noto Sans TC", "Microsoft JhengHei", sans-serif';
+      ctx.fillText('(1/100,000比例模型)', 320, 124);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createGeologyTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024;
+      c.height = 384;
+      const ctx = c.getContext('2d');
+
+      // Base soil
+      ctx.fillStyle = '#5c4028';
+      ctx.fillRect(0, 0, 1024, 384);
+
+      const strata = [
+        { y0: 0, h: 52, col: '#4a6128' },   // Top humus & turf
+        { y0: 36, h: 80, col: '#6d4c33' },  // Volcanic loam
+        { y0: 100, h: 75, col: '#4b3b34' }, // Basalt & scoria
+        { y0: 168, h: 70, col: '#7b5c42' }, // Ochre tuff
+        { y0: 230, h: 82, col: '#3d3635' }, // Deep fractured lava rock
+        { y0: 300, h: 90, col: '#2d292b' }  // Bedrock
+      ];
+
+      strata.forEach((s, idx) => {
+        ctx.fillStyle = s.col;
+        ctx.beginPath();
+        ctx.moveTo(0, s.y0);
+        for (let x = 0; x <= 1024; x += 24) {
+          const wy = s.y0 + Math.sin(x * 0.015 + idx * 1.4) * 11 + Math.cos(x * 0.04) * 4;
+          ctx.lineTo(x, wy);
+        }
+        ctx.lineTo(1024, 384);
+        ctx.lineTo(0, 384);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // Pebbles & geological grain
+      for (let i = 0; i < 1600; i++) {
+        const px = rand() * 1024;
+        const py = 25 + rand() * 340;
+        const r = 1 + rand() * 3.5;
+        ctx.fillStyle = rand() > 0.5 ? 'rgba(255,235,205,0.1)' : 'rgba(15,10,8,0.22)';
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Blue subterranean groundwater / aquifer vein (伏流水)
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.72)';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      for (let x = 0; x <= 1024; x += 16) {
+        const y = 328 + Math.sin(x * 0.018) * 10;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(186, 230, 253, 0.55)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const walnutTex = createWalnutTexture();
+    const geologyTex = createGeologyTexture();
+
+    // =========================================================================
+    // 4. DIORAMA DIMENSIONS & SHARED CONTINUOUS TERRAIN FUNCTION
+    // =========================================================================
+    const W = 36;
+    const D = 26;
+    const BASE_Y = -4.2;
+    const WATER_Y = -0.15;
+
+    const root = new THREE.Group();
+    scene.add(root);
+
+    function smoothstep(edge0, edge1, x) {
+      const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+      return t * t * (3 - 2 * t);
+    }
+
+    function gaussian2D(x, z, cx, cz, rx, rz) {
+      const dx = (x - cx) / rx;
+      const dz = (z - cz) / rz;
+      return Math.exp(-(dx * dx + dz * dz));
+    }
+
+    function getTerrainHeight(x, z) {
+      // Base gently undulating plains
+      let h = 0.42 + Math.sin(x * 0.25) * Math.cos(z * 0.22) * 0.12 + Math.sin(x * 0.6 + z * 0.5) * 0.04;
+
+      // 1. Mount Fuji centered at (-1.2, -3.5), iconic graceful concave stratovolcano
+      const fx = x + 1.2;
+      const fz = z + 3.5;
+      const fr = Math.hypot(fx, fz);
+      const theta = Math.atan2(fz, fx);
+      const fujiMask = 1 - smoothstep(8.5, 13.5, fr);
+      const ridges = (Math.sin(theta * 9 + fr * 0.15) * 0.28 + Math.sin(theta * 17 - fr * 0.2) * 0.14)
+        * smoothstep(0.9, 3.2, fr) * (1 - smoothstep(5.5, 10.5, fr));
+      let fujiH = 10.6 * Math.exp(-fr / 5.4) * fujiMask + ridges;
+      // Summit volcanic crater indentation
+      if (fr < 1.05) {
+        fujiH -= (1 - smoothstep(0.15, 1.05, fr)) * 0.68;
+      }
+      h += fujiH;
+
+      // 2. Chureito Pagoda Hill at (-10.5, -9.0)
+      h += 2.75 * gaussian2D(x, z, -10.5, -9.0, 3.4, 3.0);
+      // Secondary forested back-left knoll
+      h += 1.65 * gaussian2D(x, z, -15.2, -9.8, 3.0, 2.8);
+      // Back saddle hills behind Fuji
+      h += 1.85 * gaussian2D(x, z, 4.2, -10.5, 2.6, 2.2);
+
+      // 3. Hakone / Outer Rim Mountain Ridge along far-right edge (x in [12.5, 18.0], z in [-3.0, 12.0])
+      const ridge1 = 4.2 * gaussian2D(x, z, 16.5, 5.2, 2.5, 3.2);
+      const ridge2 = 3.5 * gaussian2D(x, z, 15.6, 0.8, 2.4, 2.8);
+      const ridge3 = 3.9 * gaussian2D(x, z, 17.2, 9.6, 2.2, 2.6);
+      const ridgeRough = (Math.sin(x * 1.4 + z * 1.1) * 0.28 + Math.cos(z * 2.1) * 0.2) * smoothstep(11.5, 15.5, x);
+      h += ridge1 + ridge2 + ridge3 + ridgeRough;
+
+      // 4. Lake Kawaguchiko Basin (front-left)
+      const lakeUpper = gaussian2D(x, z, -13.0, -1.8, 3.3, 3.5);
+      const lakeChannel = gaussian2D(x, z, -11.4, 4.2, 1.7, 2.8); // narrows under bridge
+      const lakeMain = gaussian2D(x, z, -9.4, 9.8, 5.2, 4.6);
+      const lakeFrontOutlet = gaussian2D(x, z, -9.2, 13.0, 4.4, 2.4);
+      const kawaguchiMask = Math.min(1, lakeUpper * 1.35 + lakeChannel * 1.15 + lakeMain * 1.45 + lakeFrontOutlet * 1.35);
+      h -= 2.45 * smoothstep(0.16, 0.72, kawaguchiMask);
+
+      // Two tiny green islets inside Lake Kawaguchiko
+      h += 1.75 * gaussian2D(x, z, -12.5, 2.5, 1.05, 0.9);
+      h += 1.55 * gaussian2D(x, z, -7.2, 8.2, 0.95, 0.85);
+
+      // 5. Lake Ashi Basin (back-right)
+      const ashiMask = gaussian2D(x, z, 12.2, -7.6, 4.4, 4.2);
+      h -= 1.85 * smoothstep(0.22, 0.75, ashiMask);
+
+      // Ensure Oshino Hakkai & Fuji-Q Highland stay comfortably above water
+      const plainFlatten = gaussian2D(x, z, 6.2, 4.2, 5.0, 5.5);
+      if (plainFlatten > 0.45 && h < 0.48) {
+        h = 0.48;
+      }
+
+      return h;
+    }
+
+    // =========================================================================
+    // 5. DESK, STEPPED WALNUT PLINTH & ENGRAVED METALLIC PLAQUE
+    // =========================================================================
+    const desk = new THREE.Mesh(
+      new THREE.BoxGeometry(105, 1.0, 80),
+      new THREE.MeshStandardMaterial({ map: walnutTex, color: '#a0724c', roughness: 0.72 })
+    );
+    desk.position.set(0, -6.56, 0);
+    desk.receiveShadow = true;
+    root.add(desk);
+
+    const walnutMat = new THREE.MeshStandardMaterial({ map: walnutTex, color: '#8f5a34', roughness: 0.52, metalness: 0.05 });
+    const plinthLower = new THREE.Mesh(new THREE.BoxGeometry(38.8, 1.3, 28.8), walnutMat);
+    plinthLower.position.set(0, -5.4, 0);
+    plinthLower.castShadow = true;
+    plinthLower.receiveShadow = true;
+    root.add(plinthLower);
+
+    const plinthUpper = new THREE.Mesh(new THREE.BoxGeometry(37.0, 0.55, 27.0), walnutMat);
+    plinthUpper.position.set(0, -4.475, 0);
+    plinthUpper.castShadow = true;
+    plinthUpper.receiveShadow = true;
+    root.add(plinthUpper);
+
+    // Metallic Nameplate Plaque
+    const plaqueGroup = new THREE.Group();
+    plaqueGroup.position.set(-4.0, -5.25, 14.44);
+    root.add(plaqueGroup);
+
+    const plaqueBase = new THREE.Mesh(
+      new THREE.BoxGeometry(7.2, 1.75, 0.14),
+      new THREE.MeshStandardMaterial({ color: '#94a3b8', metalness: 0.75, roughness: 0.3 })
+    );
+    plaqueGroup.add(plaqueBase);
+
+    const plaqueFace = new THREE.Mesh(
+      new THREE.PlaneGeometry(7.05, 1.62),
+      new THREE.MeshStandardMaterial({ map: createPlaqueTexture(), metalness: 0.55, roughness: 0.32 })
+    );
+    plaqueFace.position.z = 0.075;
+    plaqueGroup.add(plaqueFace);
+
+    const rivetGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.08, 10);
+    rivetGeo.rotateX(Math.PI / 2);
+    const rivetMat = new THREE.MeshStandardMaterial({ color: '#475569', metalness: 0.85, roughness: 0.25 });
+    for (const [rx, ry] of [[-3.3, 0.65], [3.3, 0.65], [-3.3, -0.65], [3.3, -0.65]]) {
+      const rv = new THREE.Mesh(rivetGeo, rivetMat);
+      rv.position.set(rx, ry, 0.08);
+      plaqueGroup.add(rv);
+    }
+
+    // =========================================================================
+    // 6. HIGH-RES SCULPTED TERRAIN MESH WITH VERTEX COLORING
+    // =========================================================================
+    const segX = 180;
+    const segZ = 130;
+    const terrainGeo = new THREE.PlaneGeometry(W, D, segX, segZ);
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    const tPos = terrainGeo.attributes.position;
+    const tColors = new Float32Array(tPos.count * 3);
+    const col = new THREE.Color();
+
+    for (let i = 0; i < tPos.count; i++) {
+      const x = tPos.getX(i);
+      const z = tPos.getZ(i);
+      const y = getTerrainHeight(x, z);
+      tPos.setY(i, y);
+
+      const fx = x + 1.2;
+      const fz = z + 3.5;
+      const fr = Math.hypot(fx, fz);
+      const theta = Math.atan2(fz, fx);
+      const gully = Math.sin(theta * 9 + fr * 0.15) * 0.5 + Math.sin(theta * 17) * 0.3;
+
+      if (y < WATER_Y - 0.02) {
+        // Underwater lakebed sand/gravel
+        const depthT = Math.min(1, (WATER_Y - y) / 1.8);
+        col.set('#8ca0a6').lerp(new THREE.Color('#475f6b'), depthT);
+      } else if (fr < 9.5 && y > 4.6 + gully * 0.72) {
+        // Crisp jagged Mt. Fuji snowcap
+        col.set('#f8fafc').lerp(new THREE.Color('#dbeafe'), Math.max(0, 1 - (y - 4.6) / 3.0) * 0.35);
+      } else if (fr < 10.5 && y > 2.35) {
+        // Volcanic blue-slate scoria mid-slopes
+        const slopeT = smoothstep(2.35, 5.2, y);
+        col.set('#4c5c4a').lerp(new THREE.Color('#536274'), slopeT);
+      } else if (x > 13.0 && y > 3.5) {
+        // Snow-dusted tips on Hakone right-edge ridge
+        col.set('#6b7f5a').lerp(new THREE.Color('#f1f5f9'), smoothstep(3.5, 4.6, y) * 0.88);
+      } else {
+        // Lush multi-tone Japanese greenery & meadows
+        const n = Math.sin(x * 0.9) * Math.cos(z * 0.9) * 0.5 + 0.5;
+        col.set('#3d6b26').lerp(new THREE.Color('#5d8e35'), n);
+        // Slightly darker dense forest on front-right Aokigahara
+        if (x > 0 && z > 5.5 && x < 11) {
+          col.lerp(new THREE.Color('#2d4f1e'), 0.48);
+        }
+      }
+
+      tColors[i * 3] = col.r;
+      tColors[i * 3 + 1] = col.g;
+      tColors[i * 3 + 2] = col.b;
+    }
+    terrainGeo.setAttribute('color', new THREE.BufferAttribute(tColors, 3));
+    terrainGeo.computeVertexNormals();
+
+    const terrainMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.88,
+      metalness: 0.02
+    });
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.castShadow = true;
+    terrainMesh.receiveShadow = true;
+    root.add(terrainMesh);
+
+    // =========================================================================
+    // 7. FOUR-SIDED GEOLOGICAL CUTAWAY WALLS + ICE CAVERN INDENTATION
+    // =========================================================================
+    function buildCutawayWall(axis, fixedVal, count, start, end, flipWinding, indentFn = null) {
+      const positions = [];
+      const uvs = [];
+      const indices = [];
+
+      const rows = 14;
+      for (let i = 0; i <= count; i++) {
+        const u = i / count;
+        const coord = start + (end - start) * u;
+        const x = axis === 'z' ? coord : fixedVal;
+        const z = axis === 'z' ? fixedVal : coord;
+        const topY = getTerrainHeight(x, z);
+
+        for (let r = 0; r <= rows; r++) {
+          const v = r / rows;
+          const y = BASE_Y + (topY - BASE_Y) * v;
+          let wx = x;
+          let wz = z;
+          if (indentFn) {
+            const offset = indentFn(coord, y);
+            if (axis === 'x') wx += offset;
+            else wz += offset;
+          }
+          positions.push(wx, y, wz);
+          uvs.push(u * 1.4, (y - BASE_Y) / 14.8);
+        }
+      }
+
+      const stride = rows + 1;
+      for (let i = 0; i < count; i++) {
+        for (let r = 0; r < rows; r++) {
+          const a = i * stride + r;
+          const b = (i + 1) * stride + r;
+          const c = (i + 1) * stride + (r + 1);
+          const d = i * stride + (r + 1);
+          if (!flipWinding) {
+            indices.push(a, b, c, a, c, d);
+          } else {
+            indices.push(a, c, b, a, d, c);
+          }
+        }
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geo.setIndex(indices);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    const wallMat = new THREE.MeshStandardMaterial({
+      map: geologyTex,
+      roughness: 0.9,
+      metalness: 0.03,
+      side: THREE.DoubleSide
+    });
+
+    // Front wall (z = +13)
+    const frontWall = new THREE.Mesh(buildCutawayWall('z', D / 2, segX, -W / 2, W / 2, false), wallMat);
+    frontWall.receiveShadow = true;
+    root.add(frontWall);
+
+    // Back wall (z = -13)
+    const backWall = new THREE.Mesh(buildCutawayWall('z', -D / 2, segX, -W / 2, W / 2, true), wallMat);
+    backWall.receiveShadow = true;
+    root.add(backWall);
+
+    // Left wall (x = -18)
+    const leftWall = new THREE.Mesh(buildCutawayWall('x', -W / 2, segZ, -D / 2, D / 2, false), wallMat);
+    leftWall.receiveShadow = true;
+    root.add(leftWall);
+
+    // Right wall (x = +18) with indented Narusawa Ice Cavern (鳴澤冰穴) at z ∈ [3.6, 9.4]
+    function iceCaveIndent(z, y) {
+      if (z < 3.6 || z > 9.4 || y > 0.9) return 0;
+      const cz = (z - 6.5) / 2.9;
+      const cy = (y + 1.55) / 2.35;
+      const rad = Math.hypot(cz, cy);
+      if (rad >= 1) return 0;
+      return -2.5 * Math.cos(rad * Math.PI * 0.5);
+    }
+    const rightWall = new THREE.Mesh(buildCutawayWall('x', W / 2, segZ, -D / 2, D / 2, true, iceCaveIndent), wallMat);
+    rightWall.receiveShadow = true;
+    root.add(rightWall);
+
+    // Bottom cap
+    const bottomCap = new THREE.Mesh(
+      new THREE.PlaneGeometry(W, D),
+      new THREE.MeshStandardMaterial({ color: '#2b2421', roughness: 0.95 })
+    );
+    bottomCap.rotation.x = Math.PI / 2;
+    bottomCap.position.y = BASE_Y;
+    root.add(bottomCap);
+
+    // =========================================================================
+    // 8. 3D CUTAWAY DETAILS: MAGMA CONDUITS, ICE CAVERN, BURROWS & ROOTS
+    // =========================================================================
+    // --- A. Magma Conduits & Pools (Front-Left & Left Wall) ---
+    const magmaMat = new THREE.MeshStandardMaterial({
+      color: '#ff4500',
+      emissive: new THREE.Color('#ff5e00'),
+      emissiveIntensity: 1.9,
+      roughness: 0.35
+    });
+
+    function createMagmaVein(points, radius) {
+      const curve = new THREE.CatmullRomCurve3(points);
+      const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, radius, 8, false), magmaMat);
+      root.add(m);
+      return m;
+    }
+
+    // Leftmost vent + horizontal chamber
+    createMagmaVein([
+      new THREE.Vector3(-16.2, 0.35, 13.02),
+      new THREE.Vector3(-16.0, -1.2, 13.02),
+      new THREE.Vector3(-16.3, -2.8, 13.02),
+      new THREE.Vector3(-13.8, -3.4, 13.02)
+    ], 0.24);
+    // Tiny smoking volcanic cone on surface at vent 1
+    const miniVolcano = new THREE.Mesh(
+      new THREE.ConeGeometry(0.55, 0.45, 10, 1, true),
+      new THREE.MeshStandardMaterial({ color: '#3b3330', roughness: 0.9, side: THREE.DoubleSide })
+    );
+    miniVolcano.position.set(-16.2, getTerrainHeight(-16.2, 12.6) + 0.15, 12.6);
+    root.add(miniVolcano);
+
+    // Second vertical magma conduit under Lake Kawaguchiko edge
+    createMagmaVein([
+      new THREE.Vector3(-5.6, -0.3, 13.02),
+      new THREE.Vector3(-5.7, -2.0, 13.02),
+      new THREE.Vector3(-5.5, -3.5, 13.02)
+    ], 0.22);
+
+    const magmaPool = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 10), magmaMat);
+    magmaPool.scale.set(1.8, 0.38, 0.35);
+    magmaPool.position.set(-5.7, -3.55, 12.95);
+    root.add(magmaPool);
+
+    // --- B. Narusawa Glowing Ice Cavern (鳴澤冰穴) on Right Cutaway Wall ---
+    const iceMat = new THREE.MeshPhysicalMaterial({
+      color: '#bae6fd',
+      emissive: new THREE.Color('#0ea5e9'),
+      emissiveIntensity: 0.75,
+      roughness: 0.15,
+      transmission: 0.55,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const iceCaveGroup = new THREE.Group();
+    iceCaveGroup.position.set(17.2, -1.5, 6.5);
+    root.add(iceCaveGroup);
+
+    const iceFloor = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.35, 4.6), iceMat);
+    iceFloor.position.set(-0.2, -1.75, 0);
+    iceCaveGroup.add(iceFloor);
+
+    for (let i = 0; i < 24; i++) {
+      const h = randRange(0.55, 1.55);
+      const isStalactite = i < 14;
+      const icicle = new THREE.Mesh(new THREE.ConeGeometry(randRange(0.08, 0.22), h, 6), iceMat);
+      const iz = randRange(-2.1, 2.1);
+      const ix = randRange(-0.9, 0.4);
+      if (isStalactite) {
+        icicle.rotation.x = Math.PI;
+        icicle.position.set(ix, 1.6 - h * 0.5, iz);
+      } else {
+        icicle.position.set(ix, -1.6 + h * 0.5, iz);
+      }
+      iceCaveGroup.add(icicle);
+    }
+
+    // --- C. Front-Right Underground Burrows & Tree Roots ---
+    const burrowMat = new THREE.MeshBasicMaterial({ color: '#140e0b' });
+    const rootBarkMat = new THREE.MeshStandardMaterial({ color: '#6b4423', roughness: 0.9 });
+    const critterMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.7 });
+
+    [1.8, 5.8, 10.2].forEach((bx, idx) => {
+      const by = -1.6 - idx * 0.35;
+      const hole = new THREE.Mesh(new THREE.SphereGeometry(0.68, 12, 10), burrowMat);
+      hole.scale.set(1.35, 0.75, 0.35);
+      hole.position.set(bx, by, 12.92);
+      root.add(hole);
+
+      // Little burrowing critter inside
+      const critter = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), critterMat);
+      critter.scale.set(1.3, 0.8, 0.8);
+      critter.position.set(bx + 0.15, by - 0.12, 13.06);
+      root.add(critter);
+    });
+
+    // Exposed roots dangling into the front soil profile
+    for (let rx = 1.0; rx <= 11.5; rx += 1.6) {
+      const topY = getTerrainHeight(rx, 12.95);
+      const rootCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(rx, topY - 0.05, 13.02),
+        new THREE.Vector3(rx + randRange(-0.3, 0.3), topY - 0.8, 13.05),
+        new THREE.Vector3(rx + randRange(-0.5, 0.5), topY - 1.7, 13.03)
+      ]);
+      const rMesh = new THREE.Mesh(new THREE.TubeGeometry(rootCurve, 10, 0.045, 5, false), rootBarkMat);
+      root.add(rMesh);
+    }
+
+    // =========================================================================
+    // 9. TRANSLUCENT LAKE WATER, FRONT WATER CUTAWAY WALL & AQUATIC LIFE
+    // =========================================================================
+    const lakeWaterMat = new THREE.MeshPhysicalMaterial({
+      color: '#1e90c8',
+      roughness: 0.07,
+      metalness: 0.04,
+      transmission: 0.62,
+      transparent: true,
+      opacity: 0.76,
+      ior: 1.33,
+      thickness: 2.5
+    });
+
+    // Water surface mesh clipped cleanly inside Lake Kawaguchiko & Lake Ashi
+    function createLakeSurface(xMin, xMax, zMin, zMax) {
+      const subX = 64, subZ = 64;
+      const g = new THREE.PlaneGeometry(xMax - xMin, zMax - zMin, subX, subZ);
+      g.rotateX(-Math.PI / 2);
+      const p = g.attributes.position;
+      const cx = (xMin + xMax) / 2;
+      const cz = (zMin + zMax) / 2;
+      const idx = g.index;
+      const validIndices = [];
+      for (let i = 0; i < idx.count; i += 3) {
+        const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
+        const ya = getTerrainHeight(p.getX(a) + cx, p.getZ(a) + cz);
+        const yb = getTerrainHeight(p.getX(b) + cx, p.getZ(b) + cz);
+        const yc = getTerrainHeight(p.getX(c) + cx, p.getZ(c) + cz);
+        if (ya < WATER_Y + 0.16 || yb < WATER_Y + 0.16 || yc < WATER_Y + 0.16) {
+          validIndices.push(a, b, c);
+        }
+      }
+      g.setIndex(validIndices);
+      g.computeVertexNormals();
+      const mesh = new THREE.Mesh(g, lakeWaterMat);
+      mesh.position.set(cx, WATER_Y, cz);
+      mesh.receiveShadow = true;
+      root.add(mesh);
+    }
+
+    createLakeSurface(-16.8, -2.5, -5.8, 13.0); // Lake Kawaguchiko
+    createLakeSurface(7.2, 16.5, -12.4, -2.8); // Lake Ashi
+
+    // Front Cutaway Water Pane closing Lake Kawaguchiko along z = +13.0
+    (function buildFrontWaterCutaway() {
+      const xStart = -14.2, xEnd = -4.2, steps = 80;
+      const pos = [], ind = [];
+      for (let i = 0; i <= steps; i++) {
+        const x = xStart + (xEnd - xStart) * (i / steps);
+        const bedY = Math.min(WATER_Y, getTerrainHeight(x, D / 2));
+        pos.push(x, bedY, D / 2 + 0.02);
+        pos.push(x, WATER_Y, D / 2 + 0.02);
+      }
+      for (let i = 0; i < steps; i++) {
+        const a = i * 2, b = i * 2 + 1, c = i * 2 + 2, d = i * 2 + 3;
+        ind.push(a, c, d, a, d, b);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setIndex(ind);
+      g.computeVertexNormals();
+      const frontPane = new THREE.Mesh(g, lakeWaterMat);
+      root.add(frontPane);
+    })();
+
+    // Underwater Koi, Trout & Freshwater Crab
+    const lakeFish = [];
+    const koiColors = ['#f97316', '#f8fafc', '#ef4444', '#60a5fa', '#fbbf24'];
+    for (let i = 0; i < 12; i++) {
+      const fish = new THREE.Mesh(
+        new THREE.ConeGeometry(0.11, 0.38, 6),
+        new THREE.MeshStandardMaterial({ color: koiColors[i % koiColors.length], roughness: 0.4 })
+      );
+      fish.rotation.z = -Math.PI / 2;
+      const fx = randRange(-12.2, -6.2);
+      const fz = randRange(7.5, 12.2);
+      const fy = randRange(-1.25, -0.45);
+      fish.position.set(fx, fy, fz);
+      root.add(fish);
+      lakeFish.push({ mesh: fish, cx: fx, cz: fz, radius: randRange(0.4, 1.1), angle: rand() * Math.PI * 2, speed: randRange(0.6, 1.2) });
+    }
+
+    // Freshwater crab & swaying aquatic weeds on lakebed near front cutaway
+    const crab = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 10, 8),
+      new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.6 })
+    );
+    crab.scale.set(1.4, 0.55, 1.0);
+    crab.position.set(-7.6, getTerrainHeight(-7.6, 11.8) + 0.12, 11.8);
+    root.add(crab);
+
+    const lakeWeeds = [];
+    const weedMat = new THREE.MeshStandardMaterial({ color: '#15803d', roughness: 0.85 });
+    for (let i = 0; i < 16; i++) {
+      const wx = randRange(-13.2, -5.2);
+      const wz = randRange(8.5, 12.5);
+      const wy = getTerrainHeight(wx, wz);
+      if (wy < WATER_Y - 0.35) {
+        const h = randRange(0.35, 0.72);
+        const weed = new THREE.Mesh(new THREE.ConeGeometry(0.06, h, 5), weedMat);
+        weed.position.set(wx, wy + h * 0.48, wz);
+        root.add(weed);
+        lakeWeeds.push({ mesh: weed, phase: rand() * Math.PI * 2 });
+      }
+    }
+
+    // =========================================================================
+    // 10. LANDMARKS: CHUREITO PAGODA, LAKE BRIDGE, BOATS & OSHINO HAKKAI
+    // =========================================================================
+    // --- 1. Chureito Pagoda (忠靈塔五重塔) ---
+    const pagoda = new THREE.Group();
+    const pagX = -10.4, pagZ = -8.8;
+    pagoda.position.set(pagX, getTerrainHeight(pagX, pagZ) - 0.1, pagZ);
+    root.add(pagoda);
+
+    const pagStone = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.85 });
+    const pagRed = new THREE.MeshStandardMaterial({ color: '#b91c1c', roughness: 0.55 });
+    const pagWhite = new THREE.MeshStandardMaterial({
+      color: '#f8fafc',
+      emissive: '#fef3c7',
+      emissiveIntensity: 0.08,
+      roughness: 0.7
+    });
+    nightEmissives.push({ mat: pagWhite, day: 0.08, sunset: 0.4, night: 1.1 });
+    const pagRoofMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.65, metalness: 0.15 });
+    const pagGold = new THREE.MeshStandardMaterial({ color: '#fbbf24', metalness: 0.85, roughness: 0.25 });
+
+    const pBase = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.55, 1.75), pagStone);
+    pBase.position.y = 0.27;
+    pBase.castShadow = true;
+    pagoda.add(pBase);
+
+    for (let tier = 0; tier < 5; tier++) {
+      const sc = 1 - tier * 0.11;
+      const ty = 0.55 + tier * 0.62;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.12 * sc, 0.42, 1.12 * sc), pagRed);
+      body.position.y = ty + 0.21;
+      body.castShadow = true;
+      pagoda.add(body);
+
+      const infill = new THREE.Mesh(new THREE.BoxGeometry(0.9 * sc, 0.36, 1.16 * sc), pagWhite);
+      infill.position.y = ty + 0.21;
+      pagoda.add(infill);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.22 * sc, 0.36, 4), pagRoofMat);
+      roof.rotation.y = Math.PI / 4;
+      roof.position.y = ty + 0.5;
+      roof.castShadow = true;
+      pagoda.add(roof);
+    }
+    const sorin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.08, 1.15, 8), pagGold);
+    sorin.position.y = 4.25;
+    pagoda.add(sorin);
+
+    // --- 2. Lake Kawaguchiko White Arched Bridge & Boats ---
+    const bridgeGroup = new THREE.Group();
+    bridgeGroup.position.set(-11.4, WATER_Y, 4.3);
+    bridgeGroup.rotation.y = -0.18;
+    root.add(bridgeGroup);
+
+    const bridgeMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.5 });
+    const bridgeDeckCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-2.6, 0.22, 0),
+      new THREE.Vector3(-1.0, 0.42, 0),
+      new THREE.Vector3(1.0, 0.42, 0),
+      new THREE.Vector3(2.6, 0.22, 0)
+    ]);
+    const deckGeo = new THREE.TubeGeometry(bridgeDeckCurve, 20, 0.24, 6, false);
+    deckGeo.scale(1, 0.35, 1.2);
+    const bridgeDeck = new THREE.Mesh(deckGeo, bridgeMat);
+    bridgeDeck.castShadow = true;
+    bridgeGroup.add(bridgeDeck);
+
+    for (const bx of [-1.6, 0, 1.6]) {
+      const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.5, 8), bridgeMat);
+      pier.position.set(bx, -0.4, 0);
+      bridgeGroup.add(pier);
+    }
+
+    // Sightseeing Cruiser & Tiny Rowboats
+    const boats = [];
+    const cruiser = new THREE.Group();
+    const cHull = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.22, 1.15), new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.35 }));
+    cHull.position.y = 0.08;
+    const cCabin = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.6), new THREE.MeshStandardMaterial({ color: '#38bdf8', roughness: 0.2 }));
+    cCabin.position.set(0, 0.24, -0.05);
+    cruiser.add(cHull, cCabin);
+    cruiser.position.set(-9.5, WATER_Y, 9.6);
+    cruiser.rotation.y = 0.5;
+    root.add(cruiser);
+    boats.push({ mesh: cruiser, baseY: WATER_Y, phase: 0.2 });
+
+    for (const [rx, rz, rot] of [[-12.8, -1.6, 0.9], [-11.5, 7.6, -0.4], [-6.0, 10.6, 1.2]]) {
+      const rb = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.09, 0.32, 4, 8),
+        new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.6 })
+      );
+      rb.rotation.set(Math.PI / 2, 0, rot);
+      rb.position.set(rx, WATER_Y + 0.02, rz);
+      root.add(rb);
+      boats.push({ mesh: rb, baseY: WATER_Y + 0.02, phase: rx });
+    }
+
+    // --- 3. Fuji-Q Highland (Ferris Wheel, Looping Coaster & Tents) ---
+    const fujiQ = new THREE.Group();
+    const fqX = 0.1, fqZ = 2.6;
+    fujiQ.position.set(fqX, getTerrainHeight(fqX, fqZ), fqZ);
+    root.add(fujiQ);
+
+    const whiteSteel = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.35, metalness: 0.35 });
+    const coasterBlue = new THREE.MeshStandardMaterial({ color: '#0284c7', roughness: 0.3, metalness: 0.45 });
+
+    // Ferris Wheel
+    const ferrisBase = new THREE.Group();
+    ferrisBase.position.set(1.3, 0, -0.7);
+    ferrisBase.rotation.y = -0.35;
+    fujiQ.add(ferrisBase);
+
+    for (const side of [-0.55, 0.55]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 2.8, 8), whiteSteel);
+      leg.position.set(side, 1.3, 0);
+      leg.rotation.z = side > 0 ? 0.2 : -0.2;
+      leg.castShadow = true;
+      ferrisBase.add(leg);
+    }
+
+    const wheelRotor = new THREE.Group();
+    wheelRotor.position.set(0, 2.65, 0);
+    ferrisBase.add(wheelRotor);
+
+    const rimMat = new THREE.MeshStandardMaterial({
+      color: '#fef08a',
+      emissive: '#fbbf24',
+      emissiveIntensity: 0.25,
+      roughness: 0.3
+    });
+    nightEmissives.push({ mat: rimMat, day: 0.2, sunset: 0.75, night: 1.7 });
+    wheelRotor.add(new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.055, 8, 32), rimMat));
+
+    const podPalette = ['#ef4444', '#38bdf8', '#22c55e', '#f59e0b', '#ec4899', '#a855f7'];
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 3.5, 5), whiteSteel);
+      sp.rotation.z = a;
+      wheelRotor.add(sp);
+
+      const pod = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.26, 0.22),
+        new THREE.MeshStandardMaterial({ color: podPalette[i % podPalette.length], roughness: 0.4 })
+      );
+      pod.position.set(Math.cos(a) * 1.75, Math.sin(a) * 1.75, 0);
+      wheelRotor.add(pod);
+    }
+
+    // Looping Roller Coaster
+    const coasterPts = [
+      new THREE.Vector3(-3.4, 0.4, 0.8),
+      new THREE.Vector3(-2.4, 1.9, 0.2),
+      new THREE.Vector3(-1.3, 0.5, -0.3),
+      // Vertical loop!
+      new THREE.Vector3(-0.7, 1.5, -0.3),
+      new THREE.Vector3(-1.1, 2.35, 0.05),
+      new THREE.Vector3(-1.7, 1.5, 0.35),
+      new THREE.Vector3(-1.2, 0.4, 0.6),
+      new THREE.Vector3(-2.5, 0.9, 1.4),
+      new THREE.Vector3(-3.8, 0.5, 1.2)
+    ];
+    const coasterCurve = new THREE.CatmullRomCurve3(coasterPts, true);
+    const coasterMesh = new THREE.Mesh(new THREE.TubeGeometry(coasterCurve, 90, 0.075, 8, true), coasterBlue);
+    coasterMesh.castShadow = true;
+    fujiQ.add(coasterMesh);
+
+    // Coaster support columns
+    [0.12, 0.35, 0.55, 0.78].forEach((u) => {
+      const p = coasterCurve.getPointAt(u);
+      const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, p.y, 6), whiteSteel);
+      strut.position.set(p.x, p.y / 2, p.z);
+      fujiQ.add(strut);
+    });
+
+    // Animated 3-Car Roller Coaster Train
+    const coasterCars = [];
+    const coasterCarColors = ['#ef4444', '#f59e0b', '#38bdf8'];
+    for (let c = 0; c < 3; c++) {
+      const car = new THREE.Mesh(
+        new THREE.BoxGeometry(0.2, 0.15, 0.38),
+        new THREE.MeshStandardMaterial({ color: coasterCarColors[c], emissive: '#fde047', emissiveIntensity: 0.2 })
+      );
+      fujiQ.add(car);
+      coasterCars.push(car);
+    }
+
+    // Circus / Carousel Tents
+    for (const [tx, tz, colHex] of [[-0.6, 2.1, '#ef4444'], [0.7, 1.8, '#38bdf8']]) {
+      const tentBase = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.7, 0.35, 12), whiteSteel);
+      tentBase.position.set(tx, 0.18, tz);
+      const tentRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(0.78, 0.65, 12),
+        new THREE.MeshStandardMaterial({ color: colHex, roughness: 0.5 })
+      );
+      tentRoof.position.set(tx, 0.65, tz);
+      tentRoof.castShadow = true;
+      fujiQ.add(tentBase, tentRoof);
+    }
+
+    // --- 4. Oshino Hakkai Thatched Village, Spring Pond & Torii Shrine ---
+    const villageGroup = new THREE.Group();
+    root.add(villageGroup);
+
+    const thatchMat = new THREE.MeshStandardMaterial({ color: '#a89060', roughness: 0.92 });
+    const cottageWallMat = new THREE.MeshStandardMaterial({ color: '#f5f0e6', roughness: 0.8 });
+    const shojiGlow = new THREE.MeshStandardMaterial({
+      color: '#fef3c7',
+      emissive: '#f59e0b',
+      emissiveIntensity: 0.15,
+      roughness: 0.4
+    });
+    nightEmissives.push({ mat: shojiGlow, day: 0.15, sunset: 0.8, night: 1.8 });
+
+    const houseCoords = [
+      [5.0, 2.0, 0.2], [7.2, 1.4, -0.3], [9.5, 2.4, 0.4],
+      [5.8, 4.4, -0.15], [8.5, 4.7, 0.25], [10.6, 5.2, -0.4]
+    ];
+    houseCoords.forEach(([hx, hz, rot]) => {
+      const hy = getTerrainHeight(hx, hz);
+      const h = new THREE.Group();
+      h.position.set(hx, hy - 0.05, hz);
+      h.rotation.y = rot;
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.65, 0.9), cottageWallMat);
+      body.position.y = 0.32;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      h.add(body);
+
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.85, 4), thatchMat);
+      roof.rotation.y = Math.PI / 4;
+      roof.scale.set(1.15, 1, 0.9);
+      roof.position.y = 0.98;
+      roof.castShadow = true;
+      h.add(roof);
+
+      // Crossed gable ridge poles (千木)
+      const ridgeMat = new THREE.MeshStandardMaterial({ color: '#5c4028', roughness: 0.9 });
+      for (const rz of [-0.32, 0.32]) {
+        for (const tilt of [-0.55, 0.55]) {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 5), ridgeMat);
+          pole.position.set(0, 1.38, rz);
+          pole.rotation.z = tilt;
+          h.add(pole);
+        }
+      }
+
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.94), shojiGlow);
+      win.position.y = 0.32;
+      h.add(win);
+
+      villageGroup.add(h);
+    });
+
+    // Oshino Spring Pond, Winding Turquoise Stream & Tiny Wooden Bridge
+    const streamMat = new THREE.MeshStandardMaterial({ color: '#22d3ee', roughness: 0.16, metalness: 0.1 });
+    const springPond = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.85, 0.9, 0.08, 18),
+      streamMat
+    );
+    springPond.scale.set(1.4, 1, 0.9);
+    springPond.position.set(7.4, getTerrainHeight(7.4, 3.1) + 0.03, 3.1);
+    villageGroup.add(springPond);
+
+    const streamCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(6.8, getTerrainHeight(6.8, 3.1) - 0.07, 3.1),
+      new THREE.Vector3(8.5, getTerrainHeight(8.5, 3.4) - 0.07, 3.4),
+      new THREE.Vector3(10.2, getTerrainHeight(10.2, 4.2) - 0.07, 4.2),
+      new THREE.Vector3(12.2, getTerrainHeight(12.2, 5.2) - 0.07, 5.2)
+    ]);
+    const streamMesh = new THREE.Mesh(new THREE.TubeGeometry(streamCurve, 28, 0.16, 6, false), streamMat);
+    villageGroup.add(streamMesh);
+
+    const tinyBridge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.08, 0.42),
+      new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.8 })
+    );
+    tinyBridge.position.set(9.4, getTerrainHeight(9.4, 3.8) + 0.15, 3.8);
+    tinyBridge.rotation.y = 0.4;
+    villageGroup.add(tinyBridge);
+
+    // Vermilion Shinto Torii Gate & Shrine Hall
+    function buildTorii(tx, tz, rot = 0, scale = 1) {
+      const tg = new THREE.Group();
+      tg.position.set(tx, getTerrainHeight(tx, tz) - 0.04, tz);
+      tg.rotation.y = rot;
+      tg.scale.setScalar(scale);
+      const vermilion = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.45 });
+      for (const px of [-0.48, 0.48]) {
+        const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.075, 1.25, 10), vermilion);
+        p.position.set(px, 0.62, 0);
+        p.castShadow = true;
+        tg.add(p);
+      }
+      const kasagi = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 0.15), vermilion);
+      kasagi.position.y = 1.26;
+      const nuki = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.08, 0.1), vermilion);
+      nuki.position.y = 1.0;
+      tg.add(kasagi, nuki);
+      root.add(tg);
+    }
+
+    buildTorii(11.4, 4.3, -0.35, 1.0);
+    buildTorii(11.8, 1.8, 0.15, 0.85);
+
+    const shrineHall = new THREE.Group();
+    const shX = 12.2, shZ = 0.6;
+    shrineHall.position.set(shX, getTerrainHeight(shX, shZ) - 0.05, shZ);
+    const shBody = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.75, 1.1), new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.6 }));
+    shBody.position.y = 0.38;
+    shBody.castShadow = true;
+    const shRoof = new THREE.Mesh(new THREE.ConeGeometry(1.15, 0.65, 4), pagRoofMat);
+    shRoof.rotation.y = Math.PI / 4;
+    shRoof.scale.set(1.2, 1, 1.0);
+    shRoof.position.y = 1.05;
+    shRoof.castShadow = true;
+    shrineHall.add(shBody, shRoof);
+    root.add(shrineHall);
+
+    // --- 5. Scenic Mountain Railway & Animated 4-Car Train ---
+    const railPointsRaw = [
+      [3.5, 0.8], [4.4, -0.6], [5.8, -1.8], [7.1, -3.5], [7.2, -5.6], [6.2, -7.8], [4.5, -9.6]
+    ];
+    const railPts = railPointsRaw.map(([rx, rz]) => new THREE.Vector3(rx, getTerrainHeight(rx, rz) + 0.12, rz));
+    const railCurve = new THREE.CatmullRomCurve3(railPts);
+
+    const steelTrack = new THREE.Mesh(
+      new THREE.TubeGeometry(railCurve, 70, 0.08, 6, false),
+      new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.6, metalness: 0.4 })
+    );
+    steelTrack.castShadow = true;
+    root.add(steelTrack);
+
+    // Wooden railway sleepers along curve
+    const sleeperCount = 46;
+    const sleeperInst = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.42, 0.04, 0.1),
+      new THREE.MeshStandardMaterial({ color: '#5c4028', roughness: 0.9 }),
+      sleeperCount
+    );
+    const sleeperDummy = new THREE.Object3D();
+    for (let i = 0; i < sleeperCount; i++) {
+      const u = i / (sleeperCount - 1);
+      const sp = railCurve.getPointAt(u);
+      const st = railCurve.getTangentAt(u);
+      sleeperDummy.position.set(sp.x, sp.y - 0.04, sp.z);
+      sleeperDummy.lookAt(sp.x + st.x, sp.y - 0.04 + st.y, sp.z + st.z);
+      sleeperDummy.updateMatrix();
+      sleeperInst.setMatrixAt(i, sleeperDummy.matrix);
+    }
+    root.add(sleeperInst);
+
+    const trainCars = [];
+    const trainCarBodyMat = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.38 });
+    const trainCarTopMat = new THREE.MeshStandardMaterial({ color: '#fef3c7', roughness: 0.42 });
+    const trainWinMat = new THREE.MeshStandardMaterial({
+      color: '#bae6fd',
+      emissive: '#fef08a',
+      emissiveIntensity: 0.3,
+      roughness: 0.2
+    });
+    nightEmissives.push({ mat: trainWinMat, day: 0.25, sunset: 0.85, night: 1.8 });
+
+    for (let c = 0; c < 4; c++) {
+      const car = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.26, 0.72), trainCarBodyMat);
+      body.position.y = 0.15;
+      body.castShadow = true;
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.1, 0.72), trainCarTopMat);
+      top.position.y = 0.29;
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.54), trainWinMat);
+      win.position.y = 0.21;
+      car.add(body, top, win);
+      if (c === 0) {
+        const hl = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), trainWinMat);
+        hl.position.set(0, 0.16, 0.38);
+        car.add(hl);
+      }
+      root.add(car);
+      trainCars.push(car);
+    }
+
+    // --- 6. Hakone Pirate Ship (箱根海賊船) on Lake Ashi ---
+    const pirateShip = new THREE.Group();
+    pirateShip.position.set(11.6, WATER_Y, -7.2);
+    pirateShip.rotation.y = 0.6;
+    root.add(pirateShip);
+
+    const shipHullMat = new THREE.MeshStandardMaterial({ color: '#7c2d12', roughness: 0.6 });
+    const shipGoldMat = new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.35, metalness: 0.6 });
+    const sailMat = new THREE.MeshStandardMaterial({ color: '#fef9c3', roughness: 0.75, side: THREE.DoubleSide });
+
+    const shipHull = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.42, 1.95), shipHullMat);
+    shipHull.position.y = 0.16;
+    shipHull.castShadow = true;
+    const bowsprit = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.65, 6), shipHullMat);
+    bowsprit.rotation.x = Math.PI / 2 - 0.25;
+    bowsprit.position.set(0, 0.42, 1.2);
+    const sternCabin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.58), shipGoldMat);
+    sternCabin.position.set(0, 0.5, -0.62);
+    const porthole = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.36), trainWinMat);
+    porthole.position.set(0, 0.52, -0.62);
+    pirateShip.add(shipHull, bowsprit, sternCabin, porthole);
+
+    for (const [mz, mh] of [[-0.4, 1.35], [0.08, 1.75], [0.58, 1.3]]) {
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.038, mh, 6), shipHullMat);
+      mast.position.set(0, 0.35 + mh * 0.5, mz);
+      const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.72, 5), shipHullMat);
+      yard.rotation.z = Math.PI / 2;
+      yard.position.set(0, 0.35 + mh * 0.72, mz);
+      const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.66, mh * 0.55), sailMat);
+      sail.position.set(0, 0.35 + mh * 0.52, mz + 0.05);
+      pirateShip.add(mast, yard, sail);
+    }
+
+    // =========================================================================
+    // 11. SAKURA BLOSSOMS, RED MAPLES, AOKIGAHARA FOREST & WILDLIFE
+    // =========================================================================
+    const sakuraPts = [];
+    const maplePts = [];
+    const forestPts = [];
+
+    // Sakura clusters around Lake Kawaguchiko, Bridge & Chureito Pagoda
+    const sakuraClusters = [
+      { x: -13.8, z: 1.5, r: 2.2, n: 18 },
+      { x: -10.8, z: 6.2, r: 2.4, n: 22 },
+      { x: -7.5, z: 4.5, r: 2.6, n: 24 },
+      { x: -11.5, z: -7.2, r: 2.8, n: 22 },
+      { x: -15.5, z: 5.5, r: 2.0, n: 15 },
+      { x: -4.2, z: 7.2, r: 2.0, n: 14 },
+      { x: -7.2, z: 8.2, r: 0.7, n: 4 } // islet sakura
+    ];
+
+    sakuraClusters.forEach((cl) => {
+      for (let i = 0; i < cl.n; i++) {
+        const a = rand() * Math.PI * 2;
+        const d = Math.sqrt(rand()) * cl.r;
+        const tx = cl.x + Math.cos(a) * d;
+        const tz = cl.z + Math.sin(a) * d;
+        const ty = getTerrainHeight(tx, tz);
+        if (ty > WATER_Y + 0.08 && Math.abs(tx) < 17.4 && Math.abs(tz) < 12.4) {
+          sakuraPts.push([tx, ty, tz, randRange(0.75, 1.25)]);
+        }
+      }
+    });
+
+    // Red Maples near Mt. Fuji base & Pagoda
+    for (let i = 0; i < 16; i++) {
+      const tx = randRange(-16.5, -5.5);
+      const tz = randRange(-11.5, -3.5);
+      const ty = getTerrainHeight(tx, tz);
+      if (ty > WATER_Y + 0.15) {
+        maplePts.push([tx, ty, tz, randRange(0.7, 1.1)]);
+      }
+    }
+
+    // Dense Aokigahara Forest (front-right) + eastern pine slopes
+    for (let i = 0; i < 115; i++) {
+      const tx = randRange(0.8, 10.5);
+      const tz = randRange(5.8, 12.2);
+      // Leave small clearing for bear & macaque
+      if (Math.hypot(tx - 5.2, tz - 11.0) < 1.1) continue;
+      const ty = getTerrainHeight(tx, tz);
+      if (ty > WATER_Y + 0.15) {
+        forestPts.push([tx, ty, tz, randRange(0.75, 1.3)]);
+      }
+    }
+    // Pine trees around Mt. Fuji eastern foothills & back-left hill
+    for (let i = 0; i < 45; i++) {
+      const tx = randRange(1.5, 8.8);
+      const tz = randRange(-10.5, -0.5);
+      const ty = getTerrainHeight(tx, tz);
+      if (ty > WATER_Y + 0.15 && ty < 3.6) {
+        forestPts.push([tx, ty, tz, randRange(0.7, 1.1)]);
+      }
+    }
+
+    const dummy = new THREE.Object3D();
+    function buildTreeInstancing(pts, crownColorHex, crownGeoType) {
+      if (pts.length === 0) return;
+      const trunks = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(0.05, 0.08, 0.55, 6),
+        new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.9 }),
+        pts.length
+      );
+      const cGeo = crownGeoType === 'pine'
+        ? new THREE.ConeGeometry(0.42, 1.15, 7)
+        : new THREE.DodecahedronGeometry(0.46, 1);
+      const crowns = new THREE.InstancedMesh(
+        cGeo,
+        new THREE.MeshStandardMaterial({ color: crownColorHex, roughness: 0.85 }),
+        pts.length
+      );
+      trunks.castShadow = true;
+      crowns.castShadow = true;
+      crowns.receiveShadow = true;
+
+      pts.forEach(([tx, ty, tz, sc], i) => {
+        dummy.position.set(tx, ty + 0.25 * sc, tz);
+        dummy.scale.setScalar(sc);
+        dummy.rotation.set(0, rand() * Math.PI, 0);
+        dummy.updateMatrix();
+        trunks.setMatrixAt(i, dummy.matrix);
+
+        dummy.position.set(tx, ty + (crownGeoType === 'pine' ? 0.85 : 0.65) * sc, tz);
+        dummy.scale.set(sc * 1.1, sc * 0.9, sc * 1.1);
+        dummy.updateMatrix();
+        crowns.setMatrixAt(i, dummy.matrix);
+      });
+      root.add(trunks, crowns);
+    }
+
+    buildTreeInstancing(sakuraPts, '#f9a8d4', 'broad');
+    buildTreeInstancing(maplePts, '#dc2626', 'broad');
+    buildTreeInstancing(forestPts, '#2e5d24', 'pine');
+
+    // Miniature Japanese Black Bear, Macaque, Deer & White Forest Birds
+    const bear = new THREE.Group();
+    const bX = 5.2, bZ = 10.8;
+    bear.position.set(bX, getTerrainHeight(bX, bZ), bZ);
+    bear.rotation.y = -0.5;
+    const blackFur = new THREE.MeshStandardMaterial({ color: '#18181b', roughness: 0.85 });
+    const bearBody = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), blackFur);
+    bearBody.scale.set(0.9, 0.85, 1.35);
+    bearBody.position.y = 0.28;
+    const bearHead = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), blackFur);
+    bearHead.position.set(0, 0.42, 0.36);
+    const bearEarL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), blackFur);
+    bearEarL.position.set(-0.14, 0.57, 0.34);
+    const bearEarR = bearEarL.clone();
+    bearEarR.position.x = 0.14;
+    const chestCrescent = new THREE.Mesh(
+      new THREE.TorusGeometry(0.14, 0.03, 6, 12, Math.PI),
+      new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.7 })
+    );
+    chestCrescent.rotation.x = Math.PI;
+    chestCrescent.position.set(0, 0.36, 0.42);
+    bear.add(bearBody, bearHead, bearEarL, bearEarR, chestCrescent);
+    root.add(bear);
+
+    const macaque = new THREE.Group();
+    const mX = -1.6, mZ = 10.6;
+    macaque.position.set(mX, getTerrainHeight(mX, mZ), mZ);
+    const macFur = new THREE.MeshStandardMaterial({ color: '#9a7b5c', roughness: 0.85 });
+    const mBody = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), macFur);
+    mBody.scale.set(0.85, 1.25, 0.85);
+    mBody.position.y = 0.28;
+    const mFace = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), new THREE.MeshStandardMaterial({ color: '#fca5a5', roughness: 0.7 }));
+    mFace.position.set(0, 0.52, 0.08);
+    macaque.add(mBody, mFace);
+    root.add(macaque);
+
+    // 2 Miniature Japanese Deer near Torii Shrine
+    const deerMat = new THREE.MeshStandardMaterial({ color: '#b47b48', roughness: 0.8 });
+    for (const [dx, dz, rot] of [[10.8, 3.3, 0.6], [12.3, 3.0, -0.4]]) {
+      const deer = new THREE.Group();
+      deer.position.set(dx, getTerrainHeight(dx, dz), dz);
+      deer.rotation.y = rot;
+      const dBody = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.16, 0.36), deerMat);
+      dBody.position.y = 0.24;
+      const dNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.24, 6), deerMat);
+      dNeck.position.set(0, 0.38, 0.14);
+      const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.075, 6, 6), deerMat);
+      dHead.position.set(0, 0.5, 0.18);
+      deer.add(dBody, dNeck, dHead);
+      root.add(deer);
+    }
+
+    // Tiny white birds perched on Aokigahara forest canopy
+    const birdMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.5 });
+    for (const [bx, bz] of [[3.2, 8.8], [6.4, 8.0], [7.8, 10.2]]) {
+      const bird = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), birdMat);
+      bird.scale.set(0.9, 0.8, 1.4);
+      bird.position.set(bx, getTerrainHeight(bx, bz) + 1.55, bz);
+      root.add(bird);
+    }
+
+    // =========================================================================
+    // 12. GENTLE FALLING SAKURA PETALS (櫻吹雪粒子)
+    // =========================================================================
+    const petalCount = 220;
+    const petalPos = new Float32Array(petalCount * 3);
+    const petalVel = [];
+    for (let i = 0; i < petalCount; i++) {
+      petalPos[i * 3] = randRange(-16.5, -2.5);
+      petalPos[i * 3 + 1] = randRange(0.5, 6.5);
+      petalPos[i * 3 + 2] = randRange(-10.5, 11.5);
+      petalVel.push({ vy: randRange(0.35, 0.7), vx: randRange(0.12, 0.35), phase: rand() * Math.PI * 2 });
+    }
+    const petalGeo = new THREE.BufferGeometry();
+    petalGeo.setAttribute('position', new THREE.BufferAttribute(petalPos, 3));
+    const petalPoints = new THREE.Points(
+      petalGeo,
+      new THREE.PointsMaterial({ color: '#fbcfe8', size: 0.14, transparent: true, opacity: 0.85 })
+    );
+    root.add(petalPoints);
+
+    // =========================================================================
+    // 13. TIME OF DAY & CAMERA PRESETS
+    // =========================================================================
+    const TIME_PRESETS = {
+      day: {
+        bg: '#cfc6ba', fog: '#cfc6ba', hemi: 0.92,
+        keyCol: 0xfff5e4, keyInt: 2.25, keyPos: [-30, 38, 22],
+        fillInt: 0.65, iceInt: 1.8, nightRig: 0.15, exp: 1.06
+      },
+      sunset: {
+        bg: '#402624', fog: '#402624', hemi: 0.68,
+        keyCol: 0xff7b42, keyInt: 2.7, keyPos: [-36, 16, 26],
+        fillInt: 0.4, iceInt: 2.2, nightRig: 0.7, exp: 1.04
+      },
+      night: {
+        bg: '#0d111a', fog: '#0d111a', hemi: 0.34,
+        keyCol: 0x60a5fa, keyInt: 0.55, keyPos: [20, 34, -20],
+        fillInt: 0.3, iceInt: 3.4, nightRig: 1.6, exp: 1.2
+      }
+    };
+
+    function setTimeOfDay(mode) {
+      const p = TIME_PRESETS[mode];
+      scene.background.set(p.bg);
+      scene.fog.color.set(p.fog);
+      hemiLight.intensity = p.hemi;
+      keyLight.color.setHex(p.keyCol);
+      keyLight.intensity = p.keyInt;
+      keyLight.position.set(...p.keyPos);
+      fillLight.intensity = p.fillInt;
+      iceLight.intensity = p.iceInt;
+      nightLightRig.intensity = p.nightRig;
+      renderer.toneMappingExposure = p.exp;
+
+      nightEmissives.forEach((item) => { item.mat.emissiveIntensity = item[mode]; });
+      document.querySelectorAll('[data-time]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.time === mode);
+      });
+    }
+
+    const CAM_PRESETS = {
+      overview:  { pos: [-22, 23, 36], target: [0, 1.2, 0.5] },
+      pagoda:    { pos: [-17, 9.5, -13.5], target: [-4.5, 4.5, -5.0] },
+      magmaLake: { pos: [-12, 3.5, 25], target: [-10.0, -1.2, 10.5] },
+      fujiQ:     { pos: [-3.5, 9.5, 14.5], target: [2.2, 1.8, 0.5] },
+      iceOshino: { pos: [25, 4.5, 18.5], target: [12.5, 0.2, 4.5] },
+      forest:    { pos: [6.5, 4.0, 23.5], target: [4.5, -0.5, 10.5] }
+    };
+
+    let camAnim = null;
+    function flyTo(name) {
+      const p = CAM_PRESETS[name];
+      if (!p) return;
+      camAnim = {
+        startPos: camera.position.clone(),
+        endPos: new THREE.Vector3(...p.pos),
+        startTarget: orbit.target.clone(),
+        endTarget: new THREE.Vector3(...p.target),
+        t: 0
+      };
+      document.querySelectorAll('[data-cam]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.cam === name);
+      });
+    }
+
+    document.querySelectorAll('[data-time]').forEach((b) => b.addEventListener('click', () => setTimeOfDay(b.dataset.time)));
+    document.querySelectorAll('[data-cam]').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
+
+    const optAnim = document.getElementById('opt-anim');
+    const optOrbit = document.getElementById('opt-orbit');
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 14. ANIMATION LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const t = clock.elapsedTime;
+
+      if (camAnim) {
+        camAnim.t = Math.min(1, camAnim.t + dt * 1.4);
+        const ease = 1 - Math.pow(1 - camAnim.t, 3);
+        camera.position.lerpVectors(camAnim.startPos, camAnim.endPos, ease);
+        orbit.target.lerpVectors(camAnim.startTarget, camAnim.endTarget, ease);
+        if (camAnim.t >= 1) camAnim = null;
+      }
+
+      orbit.autoRotate = optOrbit.checked;
+      orbit.autoRotateSpeed = 0.75;
+      orbit.update();
+
+      // Subtle magma glow pulse
+      magmaMat.emissiveIntensity = 1.7 + Math.sin(t * 2.6) * 0.35;
+
+      if (optAnim.checked) {
+        // Ferris wheel rotation
+        wheelRotor.rotation.z -= dt * 0.32;
+
+        // Roller coaster 3-car train racing
+        const cu = (t * 0.14) % 1;
+        coasterCars.forEach((car, idx) => {
+          const u = (cu - idx * 0.025 + 1) % 1;
+          const cPos = coasterCurve.getPointAt(u);
+          const cNext = coasterCurve.getPointAt((u + 0.015) % 1);
+          car.position.copy(cPos);
+          car.lookAt(cNext);
+        });
+
+        // Scenic mountain train gliding back & forth smoothly
+        const baseU = 0.12 + 0.76 * (0.5 - 0.5 * Math.cos(t * 0.32));
+        trainCars.forEach((car, idx) => {
+          const u = Math.max(0.01, Math.min(0.99, baseU - idx * 0.045));
+          const pos = railCurve.getPointAt(u);
+          const look = railCurve.getPointAt(Math.min(0.995, u + 0.015));
+          car.position.copy(pos);
+          car.lookAt(look);
+        });
+
+        // Pirate ship & Lake boats gentle bobbing
+        pirateShip.position.y = WATER_Y + Math.sin(t * 1.8) * 0.035;
+        pirateShip.rotation.z = Math.sin(t * 1.4) * 0.035;
+        pirateShip.position.x = 11.6 + Math.sin(t * 0.25) * 1.1;
+        boats.forEach((b) => {
+          b.mesh.position.y = b.baseY + Math.sin(t * 2.1 + b.phase) * 0.02;
+        });
+
+        // Lake fish swimming & underwater weeds swaying
+        lakeFish.forEach((f) => {
+          f.angle += dt * f.speed;
+          f.mesh.position.x = f.cx + Math.cos(f.angle) * f.radius;
+          f.mesh.position.z = f.cz + Math.sin(f.angle) * f.radius;
+          f.mesh.rotation.y = -f.angle;
+        });
+        lakeWeeds.forEach((w) => {
+          w.mesh.rotation.z = Math.sin(t * 2.2 + w.phase) * 0.18;
+        });
+
+        // Falling sakura petals
+        const pArr = petalGeo.attributes.position.array;
+        for (let i = 0; i < petalCount; i++) {
+          const v = petalVel[i];
+          pArr[i * 3] += Math.sin(t * 1.5 + v.phase) * dt * 0.22 + v.vx * dt;
+          pArr[i * 3 + 1] -= v.vy * dt;
+          if (pArr[i * 3 + 1] < 0.05) {
+            pArr[i * 3] = -16.5 + (i * 0.618 % 1) * 14.0;
+            pArr[i * 3 + 1] = 6.2;
+          }
+        }
+        petalGeo.attributes.position.needsUpdate = true;
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

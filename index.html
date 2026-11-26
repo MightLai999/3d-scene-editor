@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D 互動場景作品集 — Three.js Gallery</title>
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --card-bg: rgba(17, 24, 39, 0.72);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --card-hover: rgba(56, 189, 248, 0.45);
+      --accent: #38bdf8;
+      --accent-pink: #f472b6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background glow */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.14), transparent 42%),
+        radial-gradient(circle at 82% 22%, rgba(244, 114, 182, 0.12), transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.08), transparent 45%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Single shared full-viewport transparent WebGL canvas */
+    #gl-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+
+    /* Hero Header */
+    .hero {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.4px;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #f8fafc 20%, #bae6fd 70%, #fbcfe8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 660px;
+      margin: 0 auto;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* 2x2 Portfolio Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      border-color: var(--card-hover);
+      box-shadow: 0 22px 48px rgba(14, 165, 233, 0.18);
+    }
+
+    .card.featured {
+      grid-column: 1 / -1;
+      border-color: rgba(56, 189, 248, 0.32);
+    }
+
+    .card.featured .preview-stage {
+      height: 275px;
+    }
+
+    .preview-stage {
+      position: relative;
+      height: 240px;
+      width: 100%;
+      background: radial-gradient(circle at 50% 55%, rgba(30, 41, 59, 0.85), rgba(10, 14, 23, 0.96));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .preview-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 4;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #e2e8f0;
+      backdrop-filter: blur(8px);
+    }
+
+    .preview-hint {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      z-index: 4;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      color: rgba(148, 163, 184, 0.75);
+    }
+
+    .card-body {
+      padding: 20px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .tag {
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .card-cta {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .card-cta span.arrow {
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover .card-cta span.arrow {
+      transform: translateX(4px);
+    }
+
+    footer {
+      margin-top: 46px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="gl-canvas"></canvas>
+
+  <main class="container">
+    <header class="hero">
+      <div class="hero-badge">THREE.JS INTERACTIVE 3D PORTFOLIO</div>
+      <h1>3D 互動場景作品集</h1>
+      <p>純前端 Three.js 打造的建築空拍、博物館級立體微縮剖面與互動場景編輯器。點選下方任一張立體簡圖卡片，即可進入全螢幕 3D 場景自由旋轉、縮放、平移與切換日夜光影。</p>
+    </header>
+
+    <section class="grid">
+      <!-- Featured Flagship Card: Mt. Fuji Grand 100km Panorama -->
+      <a class="card featured" href="./mt-fuji-grand-panorama.html" data-scene="fuji-grand">
+        <div class="preview-stage" id="stage-fuji-grand">
+          <span class="preview-badge" style="border-color: rgba(56,189,248,0.5); color: #bae6fd;">★ 方圓 100 公里廣域旗艦版 · 支援冬日雪景</span>
+          <span class="preview-hint">LIVE 3D PANORAMA PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">富士山廣域全景生態百景圖 (方圓100公里旗艦版)</h2>
+          <p class="card-desc">融合 13 幅微縮模型全部精髓的加大廣域立體場景：整合富士山火山煙與登山道、南阿爾卑斯連峰、富士五湖、白糸之瀧、大涌谷纜車、水上鳥居與海賊船、露天雪猴溫泉、東海道新幹線高架與隧道、富士國際賽車場、駿河灣鯨豚海洋剖面、東京鐵塔／晴空塔，並內建一鍵「春櫻翠綠 ↔ 冬日雪景」與 3D 地標導覽標籤。</p>
+          <div class="tags">
+            <span class="tag">🌸 春櫻 ↔ ❄️ 冬日雪景切換</span>
+            <span class="tag">白晝 / 赤富士 / 夜景</span>
+            <span class="tag">五湖 + 駿河灣 + 東京灣廣域剖面</span>
+            <span class="tag">10 組視角 + 16 座 3D 地標標籤</span>
+          </div>
+          <div class="card-cta">
+            <span>進入廣域旗艦 3D 場景</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 1: Mt. Fuji Diorama -->
+      <a class="card" href="./mt-fuji-diorama.html" data-scene="fuji">
+        <div class="preview-stage" id="stage-fuji">
+          <span class="preview-badge">1/100,000 剖面模型</span>
+          <span class="preview-hint">LIVE 3D PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">富士山及其周邊著名景點 (1/100,000比例模型)</h2>
+          <p class="card-desc">博物館級微縮剖面場景，包含富士山雪冠、地底岩漿脈、河口湖魚群樹脂剖面、忠靈塔櫻花林、富士急摩天輪與雲霄飛車、忍野八海合掌聚落、箱根海賊船與鳴澤冰穴。</p>
+          <div class="tags">
+            <span class="tag">白晝 / 赤富士 / 夜景</span>
+            <span class="tag">地質與冰穴剖面</span>
+            <span class="tag">動態列車與櫻吹雪</span>
+          </div>
+          <div class="card-cta">
+            <span>進入 3D 互動場景</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 2: Kaohsiung Ultraman Diorama -->
+      <a class="card" href="./kaohsiung-ultraman-diorama.html" data-scene="ultraman">
+        <div class="preview-stage" id="stage-ultraman">
+          <span class="preview-badge">愛河灣微縮模型</span>
+          <span class="preview-hint">LIVE 3D PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">2026 高雄愛河灣超人力霸王微縮模型</h2>
+          <p class="card-desc">桌上展示台立體場景，結合木質發光 LED 看板、捷運隧道與海底生態剖面、超人力霸王對決怪獸、高雄流行音樂中心蜂巢建築、大港橋、駁二倉庫與冬日遊樂園。</p>
+          <div class="tags">
+            <span class="tag">白晝 / 暖夕 / 夜燈</span>
+            <span class="tag">海底樹脂剖面</span>
+            <span class="tag">輕軌與摩天輪動畫</span>
+          </div>
+          <div class="card-cta">
+            <span>進入 3D 互動場景</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 3: Kaohsiung Station -->
+      <a class="card" href="./kaohsiung-station.html" data-scene="station">
+        <div class="preview-stage" id="stage-station">
+          <span class="preview-badge">城市建築空拍</span>
+          <span class="preview-hint">LIVE 3D PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">高雄車站與周邊街區空拍場景</h2>
+          <p class="card-desc">依實景空拍建置的高雄車站建築群：西側純白商業大樓、東側圓筒木格柵旅館大樓、環抱式雲朵天棚與圓形天井、帝冠式舊車站、北側球形木格柵與紅藍彩繪引道。</p>
+          <div class="tags">
+            <span class="tag">白晝 / 黃昏 / 夜景</span>
+            <span class="tag">5 組空拍視角</span>
+            <span class="tag">動態市區車流</span>
+          </div>
+          <div class="card-cta">
+            <span>進入 3D 互動場景</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Card 4: 3D Scene Editor -->
+      <a class="card" href="./scene-editor.html" data-scene="editor">
+        <div class="preview-stage" id="stage-editor">
+          <span class="preview-badge">互動編輯器</span>
+          <span class="preview-hint">LIVE 3D PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">互動式 3D 場景編輯器 Studio</h2>
+          <p class="card-desc">可從 0 開始自由建置 3D 場景的編輯器，內建迷你城市、自然景觀、室內房間與空白範本，並提供分類物件庫、移動／旋轉／縮放控制器與燈光材質調整。</p>
+          <div class="tags">
+            <span class="tag">4 種場景範本</span>
+            <span class="tag">分類 3D 物件庫</span>
+            <span class="tag">即時材質與燈光</span>
+          </div>
+          <div class="card-cta">
+            <span>開啟 3D 編輯器</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+    </section>
+
+    <footer>
+      所有場景皆為純靜態 HTML + Three.js ES Module，免建置即可部署至 GitHub Pages · 支援滑鼠旋轉、平移與縮放
+    </footer>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    const canvas = document.getElementById('gl-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+
+    const views = [];
+
+    function setupPreviewScene(stageId, buildFn) {
+      const el = document.getElementById(stageId);
+      const cardEl = el.closest('.card');
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(36, 1.8, 0.1, 100);
+      camera.position.set(-6.5, 5.2, 7.2);
+      camera.lookAt(0, 0.4, 0);
+
+      const hemi = new THREE.HemisphereLight(0xf8fafc, 0x334155, 0.95);
+      const dir = new THREE.DirectionalLight(0xfff7ed, 2.0);
+      dir.position.set(-5, 9, 6);
+      const rim = new THREE.DirectionalLight(0x38bdf8, 0.65);
+      rim.position.set(6, 4, -5);
+      scene.add(hemi, dir, rim);
+
+      const modelGroup = new THREE.Group();
+      scene.add(modelGroup);
+      buildFn(modelGroup);
+
+      const view = { el, cardEl, scene, camera, modelGroup, hovered: false, angle: -0.45, zoom: 1.0 };
+      cardEl.addEventListener('mouseenter', () => { view.hovered = true; });
+      cardEl.addEventListener('mouseleave', () => { view.hovered = false; });
+      views.push(view);
+    }
+
+    // --- 0. Featured Mini Grand Mt. Fuji 100km Panorama ---
+    setupPreviewScene('stage-fuji-grand', (g) => {
+      const wood = new THREE.MeshStandardMaterial({ color: '#6c4223', roughness: 0.5 });
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.42, 4.4), wood);
+      plinth.position.y = -0.95;
+      g.add(plinth);
+
+      // Brass front plaque
+      const brass = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 0.24, 0.08),
+        new THREE.MeshStandardMaterial({ color: '#eab308', metalness: 0.75, roughness: 0.25 })
+      );
+      brass.position.set(0, -0.95, 2.22);
+      g.add(brass);
+
+      // Main land mass + right ocean cutaway
+      const land = new THREE.Mesh(
+        new THREE.BoxGeometry(4.8, 0.68, 4.0),
+        new THREE.MeshStandardMaterial({ color: '#4d7c2c', roughness: 0.85 })
+      );
+      land.position.set(-0.8, -0.4, 0);
+      const ocean = new THREE.Mesh(
+        new THREE.BoxGeometry(1.7, 0.62, 4.0),
+        new THREE.MeshPhysicalMaterial({ color: '#0284c7', transparent: true, opacity: 0.78, roughness: 0.1 })
+      );
+      ocean.position.set(2.35, -0.43, 0);
+      g.add(land, ocean);
+
+      // Central Mt. Fuji + Snowcap
+      const fuji = new THREE.Mesh(
+        new THREE.ConeGeometry(1.75, 2.05, 28),
+        new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.8 })
+      );
+      fuji.position.set(-0.35, 0.96, -0.25);
+      const snow = new THREE.Mesh(
+        new THREE.ConeGeometry(0.86, 0.98, 28),
+        new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.55 })
+      );
+      snow.position.set(-0.35, 1.52, -0.25);
+      g.add(fuji, snow);
+
+      // Back-left Southern Alps snowy peaks
+      for (const [ax, az, ah] of [[-2.4, -1.4, 1.15], [-1.8, -1.5, 0.95]]) {
+        const alp = new THREE.Mesh(new THREE.ConeGeometry(0.6, ah, 6), new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.7 }));
+        alp.position.set(ax, ah * 0.5 - 0.06, az);
+        g.add(alp);
+      }
+
+      // Front Sliced Parasitic Volcano + Glowing Magma Throat
+      const pCone = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.72, 12), new THREE.MeshStandardMaterial({ color: '#57534e', roughness: 0.85 }));
+      pCone.position.set(-0.85, 0.28, 1.72);
+      const magma = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.88, 0.12),
+        new THREE.MeshStandardMaterial({ color: '#ff5500', emissive: '#ff5500', emissiveIntensity: 1.8 })
+      );
+      magma.position.set(-0.85, -0.22, 1.98);
+      g.add(pCone, magma);
+
+      // Far-right Tokyo Peninsula + Red Tokyo Tower + Skytree
+      const cityPad = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 1.6), new THREE.MeshStandardMaterial({ color: '#94a3b8' }));
+      cityPad.position.set(2.4, -0.04, -1.1);
+      const tTower = new THREE.Mesh(
+        new THREE.ConeGeometry(0.2, 0.95, 4),
+        new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#f97316', emissiveIntensity: 0.5 })
+      );
+      tTower.position.set(2.55, 0.52, -0.8);
+      const skyTree = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.12, 1.25, 8),
+        new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#38bdf8', emissiveIntensity: 0.4 })
+      );
+      skyTree.position.set(2.15, 0.65, -1.45);
+      g.add(cityPad, tTower, skyTree);
+    });
+
+    // --- 1. Mini Mt. Fuji Diorama ---
+    setupPreviewScene('stage-fuji', (g) => {
+      const wood = new THREE.MeshStandardMaterial({ color: '#7a4b2a', roughness: 0.55 });
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.45, 4.0), wood);
+      plinth.position.y = -0.95;
+      g.add(plinth);
+
+      // Soil block
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(5.0, 0.75, 3.6),
+        new THREE.MeshStandardMaterial({ color: '#4d7c2c', roughness: 0.85 })
+      );
+      base.position.y = -0.38;
+      g.add(base);
+
+      // Front-left glowing magma strip
+      const magma = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.68, 0.15),
+        new THREE.MeshStandardMaterial({ color: '#ff5500', emissive: '#ff5500', emissiveIntensity: 1.6 })
+      );
+      magma.position.set(-1.9, -0.38, 1.76);
+      g.add(magma);
+
+      // Front-left translucent Lake Kawaguchiko block
+      const lake = new THREE.Mesh(
+        new THREE.BoxGeometry(2.1, 0.36, 1.5),
+        new THREE.MeshPhysicalMaterial({ color: '#0ea5e9', transparent: true, opacity: 0.78, roughness: 0.1 })
+      );
+      lake.position.set(-1.35, -0.14, 1.02);
+      g.add(lake);
+
+      // Mt. Fuji cone + crisp snowcap
+      const fuji = new THREE.Mesh(
+        new THREE.ConeGeometry(1.75, 1.9, 24),
+        new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.8 })
+      );
+      fuji.position.set(-0.2, 0.92, -0.45);
+      const snow = new THREE.Mesh(
+        new THREE.ConeGeometry(0.8, 0.88, 24),
+        new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.6 })
+      );
+      snow.position.set(-0.2, 1.46, -0.45);
+      g.add(fuji, snow);
+
+      // Tiny Red Chureito Pagoda
+      const pagoda = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.62, 0.28),
+        new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.5 })
+      );
+      pagoda.position.set(-1.75, 0.32, -1.1);
+      g.add(pagoda);
+
+      // Pink Sakura Clusters
+      const sakuraMat = new THREE.MeshStandardMaterial({ color: '#f9a8d4', roughness: 0.8 });
+      for (const [sx, sz] of [[-1.9, 0.1], [-1.3, -0.3], [-0.4, 0.6], [-2.1, -0.7]]) {
+        const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.24, 1), sakuraMat);
+        s.position.set(sx, 0.16, sz);
+        g.add(s);
+      }
+
+      // Tiny White Ferris Wheel Ring
+      const wheel = new THREE.Mesh(
+        new THREE.TorusGeometry(0.38, 0.04, 8, 24),
+        new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#fbbf24', emissiveIntensity: 0.5 })
+      );
+      wheel.position.set(0.7, 0.48, 0.45);
+      g.add(wheel);
+
+      // Tiny Thatched Village cottages
+      const thatch = new THREE.MeshStandardMaterial({ color: '#b49a6c', roughness: 0.9 });
+      for (const [hx, hz] of [[1.4, 0.6], [1.9, 0.9]]) {
+        const h = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.32, 4), thatch);
+        h.position.set(hx, 0.18, hz);
+        g.add(h);
+      }
+    });
+
+    // --- 2. Mini Kaohsiung Ultraman Diorama ---
+    setupPreviewScene('stage-ultraman', (g) => {
+      const wood = new THREE.MeshStandardMaterial({ color: '#6b4226', roughness: 0.55 });
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.48, 3.8), wood);
+      plinth.position.y = -0.85;
+      g.add(plinth);
+
+      // Glowing front LED Marquee bar
+      const led = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.4, 0.32),
+        new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0ea5e9', emissiveIntensity: 1.4 })
+      );
+      led.position.set(-0.5, -0.85, 1.92);
+      g.add(led);
+
+      // Left Land + Right Translucent Resin Harbor
+      const land = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 0.65, 3.4),
+        new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.8 })
+      );
+      land.position.set(-1.1, -0.28, 0);
+      const water = new THREE.Mesh(
+        new THREE.BoxGeometry(2.2, 0.58, 2.2),
+        new THREE.MeshPhysicalMaterial({ color: '#0ea5e9', transparent: true, opacity: 0.74, roughness: 0.1 })
+      );
+      water.position.set(1.3, -0.3, 0.58);
+      g.add(land, water);
+
+      // White Honeycomb Music Center cluster
+      const hexMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.35 });
+      for (const [hx, hz, hh] of [[-0.8, -1.0, 1.1], [-1.3, -0.8, 0.85], [-0.3, -0.9, 0.9]]) {
+        const hex = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.32, hh, 6), hexMat);
+        hex.position.set(hx, hh * 0.5 + 0.04, hz);
+        g.add(hex);
+      }
+
+      // Great Harbor Bridge White Arch
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(0.75, 0.07, 8, 20, Math.PI),
+        hexMat
+      );
+      arch.position.set(1.25, 0.05, 0.65);
+      g.add(arch);
+
+      // Ultraman vs Kaiju silhouettes
+      const ultra = new THREE.Group();
+      ultra.position.set(-0.35, 0.04, 0.1);
+      const uBody = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.14, 1.1, 10), new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.35 }));
+      uBody.position.y = 0.55;
+      const uHead = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.6, roughness: 0.25 }));
+      uHead.position.y = 1.2;
+      ultra.add(uBody, uHead);
+
+      const kaiju = new THREE.Group();
+      kaiju.position.set(0.45, 0.04, 0.1);
+      const kBody = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), new THREE.MeshStandardMaterial({ color: '#6b533e', roughness: 0.85 }));
+      kBody.scale.set(0.9, 1.4, 0.9);
+      kBody.position.y = 0.45;
+      const kHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), new THREE.MeshStandardMaterial({ color: '#5c4632', roughness: 0.85 }));
+      kHead.position.y = 0.98;
+      kaiju.add(kBody, kHead);
+      g.add(ultra, kaiju);
+
+      // Tiny Ferris Wheel
+      const ferris = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.04, 8, 22),
+        new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#f59e0b', emissiveIntensity: 0.55 })
+      );
+      ferris.position.set(-1.8, 0.65, -0.3);
+      g.add(ferris);
+    });
+
+    // --- 3. Mini Kaohsiung Station Aerial ---
+    setupPreviewScene('stage-station', (g) => {
+      const slab = new THREE.Mesh(
+        new THREE.BoxGeometry(5.2, 0.3, 4.4),
+        new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.85 })
+      );
+      slab.position.y = -0.5;
+      g.add(slab);
+
+      // Iconic Red & Blue South Approach Lanes
+      const redLane = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 1.1), new THREE.MeshStandardMaterial({ color: '#8c4347' }));
+      redLane.rotation.x = -Math.PI / 2;
+      redLane.position.set(-0.28, -0.34, 1.65);
+      const blueLane = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 1.1), new THREE.MeshStandardMaterial({ color: '#2589d8' }));
+      blueLane.rotation.x = -Math.PI / 2;
+      blueLane.position.set(0.28, -0.34, 1.65);
+      g.add(redLane, blueLane);
+
+      // West Pure-White Commercial Tower
+      const comm = new THREE.Mesh(
+        new THREE.BoxGeometry(1.15, 1.45, 1.55),
+        new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.4 })
+      );
+      comm.position.set(-1.45, 0.38, -0.1);
+      g.add(comm);
+
+      // East Cylindrical Hotel Tower with dark bands
+      const hotel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.65, 0.65, 1.4, 24),
+        new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.35, metalness: 0.4 })
+      );
+      hotel.position.set(1.45, 0.36, -0.1);
+      g.add(hotel);
+
+      // Green Organic Cloud Canopy
+      const canopy = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.3, 1.35, 0.22, 24),
+        new THREE.MeshStandardMaterial({ color: '#65a30d', roughness: 0.85 })
+      );
+      canopy.scale.set(0.95, 1, 1.25);
+      canopy.position.set(0, 0.16, -0.2);
+      g.add(canopy);
+
+      // Historic Teikan Old Station (cream hall + green hipped roof)
+      const oldBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.38, 0.62),
+        new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.75 })
+      );
+      oldBody.position.set(0, -0.16, 1.0);
+      const oldRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(0.62, 0.32, 4),
+        new THREE.MeshStandardMaterial({ color: '#3f624c', roughness: 0.55 })
+      );
+      oldRoof.rotation.y = Math.PI / 4;
+      oldRoof.position.set(0, 0.18, 1.0);
+      g.add(oldBody, oldRoof);
+
+      // North Spherical Wooden Pavilion
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 16, 12),
+        new THREE.MeshStandardMaterial({ color: '#5c4632', roughness: 0.6 })
+      );
+      sphere.position.set(0, -0.15, -1.7);
+      g.add(sphere);
+    });
+
+    // --- 4. Mini 3D Scene Editor ---
+    setupPreviewScene('stage-editor', (g) => {
+      const grid = new THREE.GridHelper(4.8, 10, 0x4f8cff, 0x2a3346);
+      grid.position.y = -0.55;
+      g.add(grid);
+
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.95, 0.95),
+        new THREE.MeshStandardMaterial({ color: '#4f8cff', roughness: 0.35, metalness: 0.2 })
+      );
+      box.position.set(0, 0.0, 0);
+
+      const sphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.55, 24, 18),
+        new THREE.MeshStandardMaterial({ color: '#34d399', roughness: 0.2, metalness: 0.65 })
+      );
+      sphere.position.set(1.35, 0.05, 0.45);
+
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.55, 1.2, 20),
+        new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.45, metalness: 0.1 })
+      );
+      cone.position.set(-1.3, 0.05, -0.4);
+
+      const torus = new THREE.Mesh(
+        new THREE.TorusGeometry(0.45, 0.16, 16, 32),
+        new THREE.MeshStandardMaterial({ color: '#f472b6', roughness: 0.3, metalness: 0.25 })
+      );
+      torus.position.set(-0.4, 0.15, 1.2);
+      torus.rotation.x = 0.4;
+
+      // Mini RGB Transform Gizmo Axes over the center cube
+      const gizmo = new THREE.Group();
+      gizmo.position.set(0, 0.55, 0);
+      const axX = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 8), new THREE.MeshBasicMaterial({ color: '#f87171' }));
+      axX.rotation.z = -Math.PI / 2;
+      axX.position.x = 0.55;
+      const axY = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 8), new THREE.MeshBasicMaterial({ color: '#4ade80' }));
+      axY.position.y = 0.55;
+      const axZ = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.1, 8), new THREE.MeshBasicMaterial({ color: '#60a5fa' }));
+      axZ.rotation.x = Math.PI / 2;
+      axZ.position.z = 0.55;
+      gizmo.add(axX, axY, axZ);
+
+      g.add(box, sphere, cone, torus, gizmo);
+    });
+
+    // Resize & Scissor Render Loop
+    function syncSize() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (canvas.width !== w * renderer.getPixelRatio() || canvas.height !== h * renderer.getPixelRatio()) {
+        renderer.setSize(w, h, false);
+      }
+    }
+    window.addEventListener('resize', syncSize);
+    syncSize();
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+
+      syncSize();
+      const viewW = canvas.clientWidth;
+      const viewH = canvas.clientHeight;
+
+      renderer.setScissorTest(false);
+      renderer.clear(true, true, true);
+      renderer.setScissorTest(true);
+
+      views.forEach((v) => {
+        const rect = v.el.getBoundingClientRect();
+        // Skip cards completely outside viewport
+        if (rect.bottom < 0 || rect.top > viewH || rect.right < 0 || rect.left > viewW || rect.width <= 0 || rect.height <= 0) {
+          return;
+        }
+
+        // Smooth spin + hover zoom
+        v.angle += dt * (v.hovered ? 0.9 : 0.32);
+        const targetZoom = v.hovered ? 1.12 : 1.0;
+        v.zoom += (targetZoom - v.zoom) * Math.min(1, dt * 8);
+
+        v.modelGroup.rotation.y = v.angle;
+        v.modelGroup.scale.setScalar(v.zoom);
+
+        const width = rect.width;
+        const height = rect.height;
+        const left = rect.left;
+        const bottom = viewH - rect.bottom;
+
+        v.camera.aspect = width / height;
+        v.camera.updateProjectionMatrix();
+
+        renderer.setViewport(left, bottom, width, height);
+        renderer.setScissor(left, bottom, width, height);
+        renderer.render(v.scene, v.camera);
+      });
+    }
+    animate();
+  </script>
+</body>
+</html>

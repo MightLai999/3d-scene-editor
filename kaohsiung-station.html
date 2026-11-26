@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>高雄車站與周邊街區 — 精緻 3D 建築空拍場景</title>
+  <style>
+    :root {
+      --bg-panel: rgba(15, 19, 28, 0.84);
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-hover: rgba(255, 255, 255, 0.14);
+      --border: rgba(255, 255, 255, 0.13);
+      --accent: #38bdf8;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b1120;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      font-size: 13px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .title-card {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      padding: 12px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      max-width: 310px;
+    }
+
+    .title-card h1 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .title-card p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .back-link:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.55);
+    }
+
+    .controls-panel {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      width: 252px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+      text-transform: uppercase;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .btn-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .btn {
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .btn.left-align { justify-content: flex-start; }
+
+    .btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(56, 189, 248, 0.5);
+    }
+
+    .btn.active {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: rgba(56, 189, 248, 0.78);
+      color: #e0f2fe;
+      font-weight: 600;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text);
+      padding: 2px 0;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .statusbar {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 7px 16px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .statusbar b { color: var(--text); font-weight: 600; }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="title-card">
+    <a href="./index.html" class="back-link">← 返回作品集首頁</a>
+    <h1>🚄 高雄車站與周邊街區</h1>
+    <p>依實景空拍建置：西側純白商業大樓、東側圓筒旅館大樓、環抱式雲朵天棚與圓形天井、帝冠式舊車站、北側球形木格柵與紅藍彩繪引道。</p>
+  </div>
+
+  <aside class="controls-panel">
+    <div>
+      <div class="section-label">白晝 / 黃昏 / 黑夜</div>
+      <div class="btn-group">
+        <button class="btn active" data-time="day">☀️ 白晝</button>
+        <button class="btn" data-time="sunset">🌅 黃昏</button>
+        <button class="btn" data-time="night">🌙 黑夜</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">實景空拍視角</div>
+      <div class="btn-list">
+        <button class="btn left-align active" data-cam="southAerial">🚁 南向北經典空拍（中山路）</button>
+        <button class="btn left-align" data-cam="oldStation">🏛️ 帝冠式舊車站特寫</button>
+        <button class="btn left-align" data-cam="northAerial">🌐 北向南空拍（博愛路球體）</button>
+        <button class="btn left-align" data-cam="canopyTop">🌿 雲朵天棚與雙塔俯瞰</button>
+        <button class="btn left-align" data-cam="nightPlaza">✨ 天棚下沉廣場近景</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">場景選項</div>
+      <div class="toggle-row">
+        <label for="opt-orbit">自動空拍環繞</label>
+        <input type="checkbox" id="opt-orbit" />
+      </div>
+      <div class="toggle-row">
+        <label for="opt-traffic">動態車流與公車</label>
+        <input type="checkbox" id="opt-traffic" checked />
+      </div>
+    </div>
+  </aside>
+
+  <div class="statusbar">
+    <span><b>左鍵拖曳</b> 旋轉</span>
+    <span><b>右鍵拖曳</b> 平移</span>
+    <span><b>滾輪</b> 放大縮小</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. RENDERER, SCENE & CAMERA
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#8ec0e8');
+    scene.fog = new THREE.FogExp2('#b8d4ec', 0.0019);
+
+    const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.5, 1100);
+    camera.position.set(0, 56, 118);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    container.appendChild(renderer.domElement);
+
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.06;
+    orbit.maxPolarAngle = Math.PI / 2 - 0.025;
+    orbit.minDistance = 12;
+    orbit.maxDistance = 300;
+    orbit.target.set(0, 6, 4);
+
+    // =========================================================================
+    // 2. LIGHTING (DAY / SUNSET / NIGHT)
+    // =========================================================================
+    const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x64748b, 0.9);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.2);
+    sunLight.position.set(90, 125, 75);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 380;
+    const shD = 140;
+    sunLight.shadow.camera.left = -shD;
+    sunLight.shadow.camera.right = shD;
+    sunLight.shadow.camera.top = shD;
+    sunLight.shadow.camera.bottom = -shD;
+    sunLight.shadow.bias = -0.0004;
+    scene.add(sunLight);
+
+    const plazaLight = new THREE.PointLight(0xffedd5, 0.8, 70, 1.3);
+    plazaLight.position.set(0, 6.5, -2);
+    scene.add(plazaLight);
+
+    const oldStationLight = new THREE.PointLight(0xfef3c7, 0.3, 40, 1.4);
+    oldStationLight.position.set(0, 8, 36);
+    scene.add(oldStationLight);
+
+    const nightEmissiveMats = [];
+
+    // =========================================================================
+    // 3. PROCEDURAL ARCHITECTURAL TEXTURES
+    // =========================================================================
+    function createWindowTexture(cols, rows, baseColor, glassColor, litColor, litRatio = 0.3) {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = baseColor;
+      ctx.fillRect(0, 0, c.width, c.height);
+
+      const padX = 5;
+      const padY = 7;
+      const cellW = c.width / cols;
+      const cellH = c.height / rows;
+
+      for (let r = 0; r < rows; r++) {
+        for (let col = 0; col < cols; col++) {
+          const isLit = Math.random() < litRatio;
+          ctx.fillStyle = isLit ? litColor : glassColor;
+          ctx.fillRect(col * cellW + padX, r * cellH + padY, cellW - padX * 2, cellH - padY * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.1)';
+          ctx.fillRect(col * cellW + padX, r * cellH + padY, (cellW - padX * 2) * 0.35, cellH - padY * 2);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createSignTexture(text, bg = '#64748b', fg = '#f8fafc') {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(4, 4, 120, 120);
+      ctx.fillStyle = fg;
+      ctx.font = 'bold 74px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 64, 68);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createPavingTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, 256, 256);
+      for (let y = 0; y < 256; y += 16) {
+        for (let x = 0; x < 256; x += 32) {
+          const shade = 195 + Math.floor(Math.random() * 28);
+          ctx.fillStyle = `rgb(${shade},${shade + 2},${shade + 5})`;
+          ctx.fillRect(x + (y % 32 ? 16 : 0), y, 30, 14);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(8, 8);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    function createRoadTexture(laneColor = '#333a44') {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = laneColor;
+      ctx.fillRect(0, 0, 256, 256);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      for (let y = 0; y < 256; y += 44) {
+        ctx.fillRect(126, y, 4, 22);
+      }
+      ctx.fillRect(8, 0, 4, 256);
+      ctx.fillRect(244, 0, 4, 256);
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const cityTex1 = createWindowTexture(5, 10, '#cbd5e1', '#334155', '#93c5fd', 0.22);
+    const cityTex2 = createWindowTexture(4, 8, '#d6cbb8', '#3f3f46', '#fde68a', 0.2);
+    const cityTex3 = createWindowTexture(6, 12, '#94a3b8', '#1e293b', '#bae6fd', 0.25);
+    const cityEmissiveTex = createWindowTexture(5, 10, '#000000', '#000000', '#fef08a', 0.35);
+    const pavingTex = createPavingTexture();
+
+    function makeCityMat(mapTex, tint = 0xffffff, rough = 0.55, metal = 0.15) {
+      const m = new THREE.MeshStandardMaterial({
+        map: mapTex,
+        color: tint,
+        roughness: rough,
+        metalness: metal,
+        emissive: new THREE.Color('#ffedd5'),
+        emissiveMap: cityEmissiveTex,
+        emissiveIntensity: 0.04
+      });
+      nightEmissiveMats.push({ mat: m, day: 0.04, sunset: 0.45, night: 1.35 });
+      return m;
+    }
+
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    // =========================================================================
+    // 4. GROUND, COLORED STATION LOOP ROADS (紅藍引道) & GREEN CORRIDOR
+    // =========================================================================
+    const baseGround = new THREE.Mesh(
+      new THREE.PlaneGeometry(520, 520),
+      new THREE.MeshStandardMaterial({ color: '#bfc7d1', roughness: 0.92 })
+    );
+    baseGround.rotation.x = -Math.PI / 2;
+    baseGround.position.y = -0.08;
+    baseGround.receiveShadow = true;
+    worldGroup.add(baseGround);
+
+    // Central Station Plaza Paved Platform
+    const mainPlaza = new THREE.Mesh(
+      new THREE.CylinderGeometry(52, 54, 0.16, 48),
+      new THREE.MeshStandardMaterial({ map: pavingTex, roughness: 0.82 })
+    );
+    mainPlaza.scale.set(1.05, 1, 1.18);
+    mainPlaza.position.set(0, 0.02, 2);
+    mainPlaza.receiveShadow = true;
+    worldGroup.add(mainPlaza);
+
+    // Iconic Brick-Red (West/Left) & Sky-Blue (East/Right) Colored Lanes on Zhongshan 1st Rd
+    const redLaneTex = createRoadTexture('#8c4347');
+    redLaneTex.repeat.set(1, 5);
+    const blueLaneTex = createRoadTexture('#2589d8');
+    blueLaneTex.repeat.set(1, 5);
+    const grayRoadTex = createRoadTexture('#343b46');
+    grayRoadTex.repeat.set(1, 14);
+
+    // Zhongshan 1st Rd (South axis: z = 54..180)
+    const zhongshanRed = new THREE.Mesh(
+      new THREE.PlaneGeometry(8.5, 120),
+      new THREE.MeshStandardMaterial({ map: redLaneTex, roughness: 0.8 })
+    );
+    zhongshanRed.rotation.x = -Math.PI / 2;
+    zhongshanRed.position.set(-5.2, 0.08, 114);
+    zhongshanRed.receiveShadow = true;
+    worldGroup.add(zhongshanRed);
+
+    const zhongshanBlue = new THREE.Mesh(
+      new THREE.PlaneGeometry(8.5, 120),
+      new THREE.MeshStandardMaterial({ map: blueLaneTex, roughness: 0.8 })
+    );
+    zhongshanBlue.rotation.x = -Math.PI / 2;
+    zhongshanBlue.position.set(5.2, 0.08, 114);
+    zhongshanBlue.receiveShadow = true;
+    worldGroup.add(zhongshanBlue);
+
+    // Yellow median strip between red & blue lanes
+    const median = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.8, 120),
+      new THREE.MeshStandardMaterial({ color: '#eab308', roughness: 0.85 })
+    );
+    median.rotation.x = -Math.PI / 2;
+    median.position.set(0, 0.09, 114);
+    worldGroup.add(median);
+
+    // Curved Colored Loop Aprons embracing the South Plaza (Photo 1 & 3)
+    const redArc = new THREE.Mesh(
+      new THREE.RingGeometry(44, 52.5, 28, 1, Math.PI * 0.52, Math.PI * 0.36),
+      new THREE.MeshStandardMaterial({ color: '#8c4347', roughness: 0.82 })
+    );
+    redArc.rotation.x = -Math.PI / 2;
+    redArc.position.set(-4, 0.07, 14);
+    redArc.receiveShadow = true;
+    worldGroup.add(redArc);
+
+    const blueArc = new THREE.Mesh(
+      new THREE.RingGeometry(44, 52.5, 28, 1, Math.PI * 0.12, Math.PI * 0.36),
+      new THREE.MeshStandardMaterial({ color: '#2589d8', roughness: 0.82 })
+    );
+    blueArc.rotation.x = -Math.PI / 2;
+    blueArc.position.set(4, 0.07, 14);
+    blueArc.receiveShadow = true;
+    worldGroup.add(blueArc);
+
+    // Bo'ai 1st Rd (North axis: z = -54..-180)
+    const boaiRoad = new THREE.Mesh(
+      new THREE.PlaneGeometry(17, 130),
+      new THREE.MeshStandardMaterial({ map: grayRoadTex, roughness: 0.85 })
+    );
+    boaiRoad.rotation.x = -Math.PI / 2;
+    boaiRoad.position.set(0, 0.06, -120);
+    boaiRoad.receiveShadow = true;
+    worldGroup.add(boaiRoad);
+
+    // Jianguo Rd (East-West South) & Jiuru Rd (East-West North)
+    for (const rz of [54, -56]) {
+      const rTex = createRoadTexture('#343b46');
+      rTex.repeat.set(1, 20);
+      const rMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(13, 380),
+        new THREE.MeshStandardMaterial({ map: rTex, roughness: 0.85 })
+      );
+      rMesh.rotation.x = -Math.PI / 2;
+      rMesh.rotation.z = Math.PI / 2;
+      rMesh.position.set(0, 0.05, rz);
+      rMesh.receiveShadow = true;
+      worldGroup.add(rMesh);
+    }
+
+    // Green Corridor (東西向綠園道)
+    const greenCorridorMat = new THREE.MeshStandardMaterial({ color: '#5b8a2f', roughness: 0.92 });
+    for (const sx of [-125, 125]) {
+      const gc = new THREE.Mesh(new THREE.BoxGeometry(140, 0.14, 22), greenCorridorMat);
+      gc.position.set(sx, 0.02, -4);
+      gc.receiveShadow = true;
+      worldGroup.add(gc);
+    }
+
+    // =========================================================================
+    // 5. WEST COMMERCIAL TOWER (西側純白水平線條商業大樓 — Photo 1 & 3 Left)
+    // =========================================================================
+    function createRoundedRectShape(w, d, r) {
+      const s = new THREE.Shape();
+      const hw = w / 2, hd = d / 2;
+      s.moveTo(-hw + r, -hd);
+      s.lineTo(hw - r, -hd);
+      s.quadraticCurveTo(hw, -hd, hw, -hd + r);
+      s.lineTo(hw, hd - r);
+      s.quadraticCurveTo(hw, hd, hw - r, hd);
+      s.lineTo(-hw + r, hd);
+      s.quadraticCurveTo(-hw, hd, -hw, hd - r);
+      s.lineTo(-hw, -hd + r);
+      s.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+      return s;
+    }
+
+    const westTower = new THREE.Group();
+    westTower.position.set(-29, 0, -2);
+    worldGroup.add(westTower);
+
+    const commW = 24, commD = 32, commH = 32;
+    const commShape = createRoundedRectShape(commW, commD, 4.5);
+
+    // Inner teal-blue glass core
+    const tealGlassMat = new THREE.MeshStandardMaterial({
+      color: '#1b6b84',
+      roughness: 0.18,
+      metalness: 0.65,
+      emissive: new THREE.Color('#7dd3fc'),
+      emissiveIntensity: 0.06
+    });
+    nightEmissiveMats.push({ mat: tealGlassMat, day: 0.06, sunset: 0.35, night: 0.85 });
+
+    const commCoreGeo = new THREE.ExtrudeGeometry(commShape, { depth: commH - 2, bevelEnabled: false, curveSegments: 16 });
+    commCoreGeo.rotateX(-Math.PI / 2);
+    const commCore = new THREE.Mesh(commCoreGeo, tealGlassMat);
+    commCore.scale.set(0.96, 1, 0.96);
+    commCore.position.y = 0.5;
+    commCore.castShadow = true;
+    commCore.receiveShadow = true;
+    westTower.add(commCore);
+
+    // Iconic Pure White Horizontal Ribbed Louver Bands wrapping the rounded rectangle
+    const whiteFacadeMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.42, metalness: 0.08 });
+    for (let f = 0; f < 10; f++) {
+      // Leave a signature taller glass reveal band around floor 6-7 (as seen in Photo 1 & 3)
+      const bandH = (f === 6) ? 0.9 : 2.15;
+      const yPos = 1.0 + f * 2.95;
+      const bandGeo = new THREE.ExtrudeGeometry(commShape, { depth: bandH, bevelEnabled: false, curveSegments: 16 });
+      bandGeo.rotateX(-Math.PI / 2);
+      const band = new THREE.Mesh(bandGeo, whiteFacadeMat);
+      band.position.y = yPos;
+      band.castShadow = true;
+      band.receiveShadow = true;
+      westTower.add(band);
+    }
+
+    // Perforated white crown parapet & rooftop solar panel arrays
+    const crownHole = createRoundedRectShape(commW - 4, commD - 4, 3.0);
+    const crownShape = createRoundedRectShape(commW + 0.4, commD + 0.4, 4.6);
+    crownShape.holes.push(crownHole);
+    const crownGeo = new THREE.ExtrudeGeometry(crownShape, { depth: 3.2, bevelEnabled: false, curveSegments: 16 });
+    crownGeo.rotateX(-Math.PI / 2);
+    const crown = new THREE.Mesh(crownGeo, whiteFacadeMat);
+    crown.position.y = commH - 2.0;
+    crown.castShadow = true;
+    westTower.add(crown);
+
+    const solarMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.2, metalness: 0.7 });
+    for (const sx of [-9.5, 9.5]) {
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.25, 24), solarMat);
+      sp.position.set(sx, commH + 1.25, 0);
+      westTower.add(sp);
+    }
+
+    // =========================================================================
+    // 6. EAST HOTEL TOWER (東側圓筒木格柵旅館大樓 — Photo 1 & 3 Right)
+    // =========================================================================
+    const eastTower = new THREE.Group();
+    eastTower.position.set(29, 0, -2);
+    worldGroup.add(eastTower);
+
+    const hotelR = 13.5, hotelH = 31;
+    // Inner dark glass cylinder
+    const hotelGlassMat = new THREE.MeshStandardMaterial({
+      color: '#1e293b',
+      roughness: 0.22,
+      metalness: 0.55,
+      emissive: new THREE.Color('#fde68a'),
+      emissiveMap: cityEmissiveTex,
+      emissiveIntensity: 0.08
+    });
+    nightEmissiveMats.push({ mat: hotelGlassMat, day: 0.08, sunset: 0.55, night: 1.4 });
+
+    const hotelCore = new THREE.Mesh(new THREE.CylinderGeometry(hotelR - 0.6, hotelR - 0.6, hotelH - 1, 36), hotelGlassMat);
+    hotelCore.scale.set(1.04, 1, 0.92);
+    hotelCore.position.y = hotelH / 2;
+    hotelCore.castShadow = true;
+    hotelCore.receiveShadow = true;
+    eastTower.add(hotelCore);
+
+    // Dark Charcoal Horizontal Slab Rings (Photo 1 & 3)
+    const darkRingMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.45, metalness: 0.3 });
+    for (let f = 0; f <= 10; f++) {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(hotelR + 0.35, hotelR + 0.35, 0.72, 36), darkRingMat);
+      ring.scale.set(1.04, 1, 0.92);
+      ring.position.y = 1.2 + f * 2.85;
+      ring.castShadow = true;
+      ring.receiveShadow = true;
+      eastTower.add(ring);
+    }
+
+    // Warm Vertical Wood/Bronze Louvers around the drum
+    const woodLouverMat = new THREE.MeshStandardMaterial({ color: '#9a6b3e', roughness: 0.65, metalness: 0.15 });
+    const louverCount = 56;
+    const louverGeo = new THREE.BoxGeometry(0.22, hotelH - 3.5, 0.55);
+    const louverInst = new THREE.InstancedMesh(louverGeo, woodLouverMat, louverCount);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < louverCount; i++) {
+      const ang = (i / louverCount) * Math.PI * 2;
+      const lx = Math.cos(ang) * (hotelR * 1.04);
+      const lz = Math.sin(ang) * (hotelR * 0.92);
+      dummy.position.set(lx, hotelH / 2 - 0.5, lz);
+      dummy.rotation.set(0, -ang, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      louverInst.setMatrixAt(i, dummy.matrix);
+    }
+    eastTower.add(louverInst);
+
+    // Rooftop solar deck on Hotel Tower
+    const hotelRoofSolar = new THREE.Mesh(new THREE.CylinderGeometry(hotelR - 2.5, hotelR - 2.5, 0.4, 32), solarMat);
+    hotelRoofSolar.scale.set(1.04, 1, 0.92);
+    hotelRoofSolar.position.y = hotelH + 0.4;
+    eastTower.add(hotelRoofSolar);
+
+    // =========================================================================
+    // 7. ORGANIC LOBED CLOUD CANOPY WITH OCULUS HOLES (雲朵天棚 / 綠之丘)
+    // =========================================================================
+    const canopyGroup = new THREE.Group();
+    worldGroup.add(canopyGroup);
+
+    // Build authentic organic multi-lobed canopy shape (embracing Old Station on south!)
+    const canopyShape = new THREE.Shape();
+    // Start at south-center arch just behind the Old Station (z = +15 in world -> y = -15 in 2D shape before rotateX)
+    canopyShape.moveTo(0, -14);
+    // Curve right-south around the Old Station (east horseshoe arm)
+    canopyShape.bezierCurveTo(14, -14, 24, -22, 30, -34);
+    canopyShape.bezierCurveTo(36, -42, 46, -38, 42, -26);
+    canopyShape.bezierCurveTo(38, -16, 28, -12, 22, -4);
+    // Pass between east hotel tower & central plaza to north mound
+    canopyShape.bezierCurveTo(18, 6, 22, 18, 18, 28);
+    // North green hill lobe
+    canopyShape.bezierCurveTo(14, 38, -14, 38, -18, 28);
+    // West side back down
+    canopyShape.bezierCurveTo(-22, 18, -18, 6, -22, -4);
+    // Curve left-south around Old Station (west horseshoe arm)
+    canopyShape.bezierCurveTo(-28, -12, -38, -16, -42, -26);
+    canopyShape.bezierCurveTo(-46, -38, -36, -42, -30, -34);
+    canopyShape.bezierCurveTo(-24, -22, -14, -14, 0, -14);
+
+    // Punch authentic circular oculus cutouts (天井開口) through the canopy!
+    const holes = [
+      { x: 0, y: 2, r: 5.5 },     // Central sunken plaza oculus
+      { x: -9, y: 12, r: 3.6 },   // Mid-west light well
+      { x: 9, y: 12, r: 3.6 },    // Mid-east light well
+      { x: 0, y: 23, r: 4.2 }     // North sunken plaza oculus
+    ];
+    holes.forEach((h) => {
+      const path = new THREE.Path();
+      path.absarc(h.x, h.y, h.r, 0, Math.PI * 2, true);
+      canopyShape.holes.push(path);
+    });
+
+    // White architectural fascia shell
+    const canopyShellGeo = new THREE.ExtrudeGeometry(canopyShape, {
+      depth: 1.4,
+      bevelEnabled: true,
+      bevelThickness: 0.25,
+      bevelSize: 0.25,
+      bevelSegments: 3,
+      curveSegments: 28
+    });
+    canopyShellGeo.rotateX(-Math.PI / 2);
+
+    const whiteCanopyMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.4, metalness: 0.08 });
+    const canopyShell = new THREE.Mesh(canopyShellGeo, whiteCanopyMat);
+    canopyShell.position.set(0, 7.2, 2);
+    canopyShell.castShadow = true;
+    canopyShell.receiveShadow = true;
+    canopyGroup.add(canopyShell);
+
+    // Lush Green Roof Top Layer (綠之丘草皮)
+    const greenTopGeo = new THREE.ExtrudeGeometry(canopyShape, {
+      depth: 0.35,
+      bevelEnabled: false,
+      curveSegments: 28
+    });
+    greenTopGeo.rotateX(-Math.PI / 2);
+    const greenTopMat = new THREE.MeshStandardMaterial({ color: '#658f34', roughness: 0.92 });
+    const greenTop = new THREE.Mesh(greenTopGeo, greenTopMat);
+    greenTop.scale.set(0.96, 1, 0.96);
+    greenTop.position.set(0, 8.75, 2);
+    greenTop.receiveShadow = true;
+    canopyGroup.add(greenTop);
+
+    // North Raised Green Hill Mound (北側綠之丘高坡 — Photo 1 & 2)
+    const northMound = new THREE.Mesh(
+      new THREE.SphereGeometry(12, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.42),
+      new THREE.MeshStandardMaterial({ color: '#5c842e', roughness: 0.92 })
+    );
+    northMound.scale.set(1.25, 0.38, 1.0);
+    northMound.position.set(0, 7.8, -16);
+    northMound.receiveShadow = true;
+    canopyGroup.add(northMound);
+
+    // East-West Elevated Skyway Arms extending over roads (Photo 1 & 2)
+    for (const dir of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(58, 1.0, 5.2), whiteCanopyMat);
+      arm.position.set(dir * 52, 7.6, -12);
+      arm.castShadow = true;
+      arm.receiveShadow = true;
+      canopyGroup.add(arm);
+
+      const armGreen = new THREE.Mesh(new THREE.BoxGeometry(56, 0.25, 3.6), greenTopMat);
+      armGreen.position.set(dir * 52, 8.2, -12);
+      canopyGroup.add(armGreen);
+    }
+
+    // White Circular Roof Pavilions / Shelters (天棚上的白色圓形涼亭 — Photo 3 & 4)
+    const pavilionCoords = [[-13, 10], [13, 10], [-7, -8], [8, -10]];
+    pavilionCoords.forEach(([px, pz]) => {
+      const roof = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.3, 24), whiteCanopyMat);
+      roof.position.set(px, 11.2, pz);
+      roof.castShadow = true;
+      canopyGroup.add(roof);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 2.4, 10), whiteCanopyMat);
+      post.position.set(px, 9.9, pz);
+      canopyGroup.add(post);
+    });
+
+    // V-Shaped Branched White Steel Columns supporting the Canopy (Photo 4 left)
+    const colPositions = [
+      [-28, 32], [-18, 20], [18, 20], [28, 32],
+      [-14, 0], [14, 0], [-14, -18], [14, -18],
+      [-45, -12], [45, -12]
+    ];
+    colPositions.forEach(([cx, cz]) => {
+      for (const tilt of [-0.22, 0.22]) {
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 7.6, 10), whiteCanopyMat);
+        strut.position.set(cx + tilt * 3.5, 3.8, cz);
+        strut.rotation.z = -tilt;
+        strut.castShadow = true;
+        canopyGroup.add(strut);
+      }
+    });
+
+    // Glowing Cloud Ceiling Lantern Pods under the Canopy (廟埕燈籠天棚)
+    const podMat = new THREE.MeshStandardMaterial({
+      color: '#ffffff',
+      roughness: 0.3,
+      emissive: new THREE.Color('#fef3c7'),
+      emissiveIntensity: 0.3
+    });
+    nightEmissiveMats.push({ mat: podMat, day: 0.3, sunset: 0.95, night: 2.0 });
+
+    const podGeo = new THREE.SphereGeometry(0.6, 10, 8);
+    podGeo.scale(1.2, 0.3, 1.2);
+    const podPts = [];
+    for (let x = -34; x <= 34; x += 3.8) {
+      for (let z = -28; z <= 32; z += 3.8) {
+        if (Math.hypot(x / 36, z / 32) < 0.85 && !(Math.abs(x) < 12 && z > 18)) {
+          podPts.push([x, 7.0, z]);
+        }
+      }
+    }
+    const podsInst = new THREE.InstancedMesh(podGeo, podMat, podPts.length);
+    podPts.forEach((p, i) => {
+      dummy.position.set(p[0], p[1], p[2]);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      podsInst.setMatrixAt(i, dummy.matrix);
+    });
+    canopyGroup.add(podsInst);
+
+    // =========================================================================
+    // 8. DETAILED HISTORIC OLD KAOHSIUNG STATION (帝冠式舊高雄車站 — Photo 4)
+    // =========================================================================
+    const oldStation = new THREE.Group();
+    oldStation.position.set(0, 0.1, 27);
+    worldGroup.add(oldStation);
+
+    const creamWallMat = new THREE.MeshStandardMaterial({ color: '#f3efe6', roughness: 0.78 });
+    const ochreBaseMat = new THREE.MeshStandardMaterial({ color: '#d4b46a', roughness: 0.72 });
+    const teikanTileMat = new THREE.MeshStandardMaterial({ color: '#4d533d', roughness: 0.58, metalness: 0.12 }); // Olive-bronze glazed tiles (Photo 4)
+    const oldWinMat = new THREE.MeshStandardMaterial({
+      color: '#27313d',
+      roughness: 0.25,
+      emissive: new THREE.Color('#fde68a'),
+      emissiveIntensity: 0.08
+    });
+    nightEmissiveMats.push({ mat: oldWinMat, day: 0.08, sunset: 0.75, night: 1.6 });
+
+    // Main central white hall
+    const mainHall = new THREE.Mesh(new THREE.BoxGeometry(15.5, 6.4, 10.0), creamWallMat);
+    mainHall.position.set(0, 3.2, 0);
+    mainHall.castShadow = true;
+    mainHall.receiveShadow = true;
+    oldStation.add(mainHall);
+
+    // Warm ochre plinth band around base
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.9, 10.4), ochreBaseMat);
+    plinth.position.set(0, 0.45, 0);
+    oldStation.add(plinth);
+
+    // Left & Right lower flat-roofed side wings
+    for (const sx of [-9.5, 9.5]) {
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(3.8, 4.4, 9.2), creamWallMat);
+      wing.position.set(sx, 2.2, 0);
+      wing.castShadow = true;
+      wing.receiveShadow = true;
+      oldStation.add(wing);
+    }
+
+    // Front Porte-Cochère (車寄雨庇) with 4 ochre pillars & green-brown tiled eave
+    const porticoSlab = new THREE.Mesh(new THREE.BoxGeometry(11.8, 0.7, 4.4), creamWallMat);
+    porticoSlab.position.set(0, 3.5, 6.8);
+    porticoSlab.castShadow = true;
+    oldStation.add(porticoSlab);
+
+    const porticoTile = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.35, 5.0), teikanTileMat);
+    porticoTile.position.set(0, 3.25, 6.9);
+    porticoTile.castShadow = true;
+    oldStation.add(porticoTile);
+
+    for (const px of [-4.6, -1.6, 1.6, 4.6]) {
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.65, 3.2, 0.65), ochreBaseMat);
+      pillar.position.set(px, 1.6, 8.4);
+      pillar.castShadow = true;
+      oldStation.add(pillar);
+    }
+
+    // Iconic 「高 雄 車 站」 4 Sign Plaques on top of Porte-Cochère (Photo 4)
+    ['高', '雄', '車', '站'].forEach((ch, idx) => {
+      const plaque = new THREE.Mesh(
+        new THREE.BoxGeometry(1.15, 1.15, 0.18),
+        new THREE.MeshStandardMaterial({ map: createSignTexture(ch, '#788696', '#ffffff'), roughness: 0.4 })
+      );
+      plaque.position.set(-3.3 + idx * 2.2, 4.4, 8.6);
+      oldStation.add(plaque);
+    });
+
+    // Central Flagpole
+    const flagpole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 7.5, 8), new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.6 }));
+    flagpole.position.set(0, 7.5, 8.2);
+    oldStation.add(flagpole);
+
+    // Upper facade 3 grid windows + 2 octagonal porthole windows (Photo 4)
+    for (const wx of [-2.8, 0, 2.8]) {
+      const w = new THREE.Mesh(new THREE.BoxGeometry(wx === 0 ? 2.4 : 1.3, 1.9, 0.2), oldWinMat);
+      w.position.set(wx, 4.7, 5.05);
+      oldStation.add(w);
+    }
+    for (const ox of [-5.8, 5.8]) {
+      const port = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.25, 8), oldWinMat);
+      port.rotation.x = Math.PI / 2;
+      port.position.set(ox, 4.9, 5.05);
+      oldStation.add(port);
+    }
+
+    // Front Karahafu (唐破風) Gable above upper windows
+    const gable = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.5, 3), teikanTileMat);
+    gable.rotation.y = Math.PI;
+    gable.scale.set(1.5, 1, 0.5);
+    gable.position.set(0, 7.1, 4.5);
+    gable.castShadow = true;
+    oldStation.add(gable);
+
+    // Two-Tier Imperial Crown (帝冠式) Hip-and-Gable Roof
+    const lowerCrown = new THREE.Mesh(new THREE.BoxGeometry(11.5, 1.5, 7.5), creamWallMat);
+    lowerCrown.position.set(0, 7.1, -0.5);
+    oldStation.add(lowerCrown);
+
+    const upperTeikanRoof = new THREE.Mesh(new THREE.ConeGeometry(8.2, 3.0, 4), teikanTileMat);
+    upperTeikanRoof.rotation.y = Math.PI / 4;
+    upperTeikanRoof.scale.set(1.2, 1, 0.85);
+    upperTeikanRoof.position.set(0, 9.35, -0.5);
+    upperTeikanRoof.castShadow = true;
+    oldStation.add(upperTeikanRoof);
+
+    // =========================================================================
+    // 9. NORTH SPHERICAL WOOD-SLATTED PAVILION (北側球形木格柵 — Photo 2)
+    // =========================================================================
+    const northSphereGroup = new THREE.Group();
+    northSphereGroup.position.set(0, 0.1, -44);
+    worldGroup.add(northSphereGroup);
+
+    const bronzeSlatMat = new THREE.MeshStandardMaterial({ color: '#44372c', roughness: 0.55, metalness: 0.35 });
+    const sphereCore = new THREE.Mesh(
+      new THREE.SphereGeometry(5.6, 24, 16, 0, Math.PI * 2, 0.38, Math.PI - 0.72),
+      new THREE.MeshStandardMaterial({ color: '#1e1b18', roughness: 0.7, side: THREE.DoubleSide })
+    );
+    sphereCore.position.y = 4.5;
+    sphereCore.castShadow = true;
+    northSphereGroup.add(sphereCore);
+
+    // Horizontal concentric wood/bronze rings wrapping the sphere
+    for (let i = 0; i < 11; i++) {
+      const t = (i + 1) / 12;
+      const phi = 0.42 + t * (Math.PI - 0.85);
+      const r = Math.sin(phi) * 5.85;
+      const y = 4.5 + Math.cos(phi) * 5.6;
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.14, 8, 32), bronzeSlatMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = y;
+      northSphereGroup.add(ring);
+    }
+
+    // LED Screen on north face of sphere
+    const ledScreen = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 1.8, 0.3),
+      new THREE.MeshStandardMaterial({ color: '#0f172a', emissive: '#38bdf8', emissiveIntensity: 0.4 })
+    );
+    ledScreen.position.set(0, 3.6, -5.8);
+    northSphereGroup.add(ledScreen);
+
+    // =========================================================================
+    // 10. SURROUNDING KAOHSIUNG URBAN BLOCKS & DISTANT 85 SKY TOWER (85大樓)
+    // =========================================================================
+    const cityMats = [
+      makeCityMat(cityTex1, 0xf1f5f9, 0.55, 0.15),
+      makeCityMat(cityTex2, 0xfef3c7, 0.65, 0.1), // Warm yellow-beige Taiwanese apartments (Photo 1 right)
+      makeCityMat(cityTex3, 0xdbeafe, 0.45, 0.25),
+      makeCityMat(cityTex2, 0xe7e5e4, 0.68, 0.08)
+    ];
+    const roofBoxMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.78 });
+
+    let seed = 108;
+    function rand() {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    function addCityBlock(x0, x1, z0, z1, minH, maxH) {
+      for (let x = x0; x <= x1; x += 15) {
+        for (let z = z0; z <= z1; z += 15) {
+          if (rand() < 0.14) continue;
+          const w = 9.5 + rand() * 4.5;
+          const d = 9.5 + rand() * 4.5;
+          const h = minH + rand() * (maxH - minH);
+          const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cityMats[Math.floor(rand() * cityMats.length)]);
+          b.position.set(x + (rand() - 0.5) * 1.8, h / 2, z + (rand() - 0.5) * 1.8);
+          b.castShadow = true;
+          b.receiveShadow = true;
+          worldGroup.add(b);
+
+          if (rand() > 0.35) {
+            const ph = new THREE.Mesh(new THREE.BoxGeometry(w * 0.45, 2.2, d * 0.45), roofBoxMat);
+            ph.position.set(b.position.x, h + 1.1, b.position.z);
+            worldGroup.add(ph);
+          }
+        }
+      }
+    }
+
+    // Surrounding blocks
+    addCityBlock(-155, -24, 68, 160, 12, 36);
+    addCityBlock(24, 155, 68, 160, 12, 38);
+    addCityBlock(-155, -24, -160, -70, 12, 34);
+    addCityBlock(24, 155, -160, -70, 12, 36);
+    addCityBlock(-165, -78, -42, 40, 10, 28);
+    addCityBlock(78, 165, -42, 40, 10, 28);
+
+    // Distant Kaohsiung 85 Sky Tower (高雄 85 大樓) silhouette on the south horizon (Photo 2!)
+    const tower85 = new THREE.Group();
+    tower85.position.set(0, 0, 230);
+    const t85Mat = makeCityMat(cityTex3, 0x94a3b8, 0.35, 0.4);
+    const legL = new THREE.Mesh(new THREE.BoxGeometry(10, 46, 10), t85Mat);
+    legL.position.set(-7, 23, 0);
+    const legR = new THREE.Mesh(new THREE.BoxGeometry(10, 46, 10), t85Mat);
+    legR.position.set(7, 23, 0);
+    const mid85 = new THREE.Mesh(new THREE.BoxGeometry(24, 34, 11), t85Mat);
+    mid85.position.set(0, 63, 0);
+    const top85 = new THREE.Mesh(new THREE.BoxGeometry(12, 16, 9), t85Mat);
+    top85.position.set(0, 88, 0);
+    const spire85 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.8, 14, 8), roofBoxMat);
+    spire85.position.set(0, 103, 0);
+    tower85.add(legL, legR, mid85, top85, spire85);
+    worldGroup.add(tower85);
+
+    // =========================================================================
+    // 11. INSTANCED TREES & LANDSCAPING
+    // =========================================================================
+    const treePts = [];
+    // South plaza garden islands flanking Old Station
+    for (let i = 0; i < 30; i++) {
+      const side = i % 2 === 0 ? -1 : 1;
+      treePts.push([side * (16 + rand() * 16), 0.1, 24 + rand() * 20, 0.7 + rand() * 0.45]);
+    }
+    // Green corridor east & west
+    for (let i = 0; i < 90; i++) {
+      const side = rand() > 0.5 ? 1 : -1;
+      treePts.push([side * (62 + rand() * 115), 0.1, -13 + rand() * 18, 0.85 + rand() * 0.5]);
+    }
+    // Canopy rooftop shrubs/trees
+    for (let i = 0; i < 45; i++) {
+      const tx = (rand() - 0.5) * 44;
+      const tz = -22 + rand() * 34;
+      if (Math.hypot(tx, tz) > 7 && Math.hypot(tx, tz) < 28) {
+        treePts.push([tx, 8.9, tz, 0.5 + rand() * 0.35]);
+      }
+    }
+
+    const trunkInst = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(0.18, 0.24, 1.5, 6),
+      new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 }),
+      treePts.length
+    );
+    const crownInst = new THREE.InstancedMesh(
+      new THREE.DodecahedronGeometry(1.3, 1),
+      new THREE.MeshStandardMaterial({ color: '#457b24', roughness: 0.86 }),
+      treePts.length
+    );
+    trunkInst.castShadow = true;
+    crownInst.castShadow = true;
+
+    treePts.forEach(([tx, ty, tz, sc], i) => {
+      dummy.position.set(tx, ty + 0.75 * sc, tz);
+      dummy.scale.set(sc, sc, sc);
+      dummy.rotation.set(0, rand() * Math.PI, 0);
+      dummy.updateMatrix();
+      trunkInst.setMatrixAt(i, dummy.matrix);
+
+      dummy.position.set(tx, ty + 1.95 * sc, tz);
+      dummy.updateMatrix();
+      crownInst.setMatrixAt(i, dummy.matrix);
+    });
+    worldGroup.add(trunkInst, crownInst);
+
+    // =========================================================================
+    // 12. DYNAMIC TRAFFIC (汽車與公車)
+    // =========================================================================
+    const vehicles = [];
+    const carCols = ['#f8fafc', '#1e293b', '#ef4444', '#2563eb', '#f59e0b', '#64748b'];
+
+    function spawnVehicle(axis, lane, dir, isBus = false) {
+      const g = new THREE.Group();
+      const len = isBus ? 5.4 : 2.4;
+      const wid = isBus ? 1.5 : 1.15;
+      const hgt = isBus ? 1.7 : 0.88;
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(wid, hgt, len),
+        new THREE.MeshStandardMaterial({ color: isBus ? '#0284c7' : carCols[Math.floor(rand() * carCols.length)], roughness: 0.35, metalness: 0.35 })
+      );
+      body.position.y = hgt / 2 + 0.18;
+      body.castShadow = true;
+      g.add(body);
+
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(wid * 0.8, 0.18, 0.08), new THREE.MeshBasicMaterial({ color: '#fef08a' }));
+      hl.position.set(0, 0.55, len / 2 + 0.02);
+      const tl = new THREE.Mesh(new THREE.BoxGeometry(wid * 0.8, 0.18, 0.08), new THREE.MeshBasicMaterial({ color: '#ef4444' }));
+      tl.position.set(0, 0.55, -len / 2 - 0.02);
+      g.add(hl, tl);
+
+      const posAlong = (rand() - 0.5) * 280;
+      if (axis === 'x') {
+        g.rotation.y = dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+        g.position.set(posAlong, 0.08, lane);
+      } else {
+        g.rotation.y = dir > 0 ? 0 : Math.PI;
+        g.position.set(lane, 0.08, posAlong);
+      }
+      worldGroup.add(g);
+      vehicles.push({ mesh: g, axis, dir, speed: isBus ? 8 : 13 + rand() * 7 });
+    }
+
+    for (let i = 0; i < 12; i++) {
+      spawnVehicle('x', 57.2, 1, i % 5 === 0);
+      spawnVehicle('x', 50.8, -1, i % 6 === 0);
+      spawnVehicle('x', -52.8, 1, false);
+      spawnVehicle('x', -59.2, -1, i % 5 === 0);
+    }
+    for (let i = 0; i < 8; i++) {
+      spawnVehicle('z', 5.2, -1, i % 4 === 0);
+      spawnVehicle('z', -5.2, 1, false);
+    }
+
+    // =========================================================================
+    // 13. TIME OF DAY & CAMERA PRESETS
+    // =========================================================================
+    const TIME_PRESETS = {
+      day: {
+        bg: '#8ec0e8', fog: '#b8d4ec', fogDensity: 0.0019,
+        hemiSky: 0xe0f2fe, hemiGround: 0x64748b, hemiInt: 0.9,
+        sunColor: 0xfffbeb, sunInt: 2.2, sunPos: [90, 125, 75],
+        plazaInt: 0.8, oldInt: 0.3, exposure: 1.05
+      },
+      sunset: {
+        bg: '#c77252', fog: '#dc8f6c', fogDensity: 0.0024,
+        hemiSky: 0xfdba74, hemiGround: 0x334155, hemiInt: 0.65,
+        sunColor: 0xff8c42, sunInt: 2.35, sunPos: [-120, 34, 55],
+        plazaInt: 2.5, oldInt: 1.4, exposure: 1.0
+      },
+      night: {
+        bg: '#070b16', fog: '#0d1426', fogDensity: 0.0028,
+        hemiSky: 0x1e293b, hemiGround: 0x0f172a, hemiInt: 0.42,
+        sunColor: 0x60a5fa, sunInt: 0.45, sunPos: [65, 85, -55],
+        plazaInt: 5.0, oldInt: 3.2, exposure: 1.18
+      }
+    };
+
+    function setTimeOfDay(mode) {
+      const p = TIME_PRESETS[mode];
+      scene.background.set(p.bg);
+      scene.fog.color.set(p.fog);
+      scene.fog.density = p.fogDensity;
+      hemiLight.color.setHex(p.hemiSky);
+      hemiLight.groundColor.setHex(p.hemiGround);
+      hemiLight.intensity = p.hemiInt;
+      sunLight.color.setHex(p.sunColor);
+      sunLight.intensity = p.sunInt;
+      sunLight.position.set(...p.sunPos);
+      plazaLight.intensity = p.plazaInt;
+      oldStationLight.intensity = p.oldInt;
+      renderer.toneMappingExposure = p.exposure;
+
+      nightEmissiveMats.forEach((item) => {
+        item.mat.emissiveIntensity = item[mode];
+      });
+
+      document.querySelectorAll('[data-time]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.time === mode);
+      });
+    }
+
+    const CAM_PRESETS = {
+      southAerial: { pos: [0, 56, 118], target: [0, 6, 4] },
+      oldStation:  { pos: [0, 14, 56], target: [0, 5.5, 25] },
+      northAerial: { pos: [0, 24, -84], target: [0, 7, -14] },
+      canopyTop:   { pos: [46, 58, 52], target: [0, 8, 2] },
+      nightPlaza:  { pos: [-26, 14, 48], target: [0, 6, 12] }
+    };
+
+    let camAnim = null;
+    function flyTo(name) {
+      const p = CAM_PRESETS[name];
+      if (!p) return;
+      camAnim = {
+        startPos: camera.position.clone(),
+        endPos: new THREE.Vector3(...p.pos),
+        startTarget: orbit.target.clone(),
+        endTarget: new THREE.Vector3(...p.target),
+        t: 0
+      };
+      document.querySelectorAll('[data-cam]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.cam === name);
+      });
+    }
+
+    document.querySelectorAll('[data-time]').forEach((b) => {
+      b.addEventListener('click', () => setTimeOfDay(b.dataset.time));
+    });
+    document.querySelectorAll('[data-cam]').forEach((b) => {
+      b.addEventListener('click', () => flyTo(b.dataset.cam));
+    });
+
+    const optOrbit = document.getElementById('opt-orbit');
+    const optTraffic = document.getElementById('opt-traffic');
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // =========================================================================
+    // 14. RENDER LOOP
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+
+      if (camAnim) {
+        camAnim.t = Math.min(1, camAnim.t + dt * 1.35);
+        const ease = 1 - Math.pow(1 - camAnim.t, 3);
+        camera.position.lerpVectors(camAnim.startPos, camAnim.endPos, ease);
+        orbit.target.lerpVectors(camAnim.startTarget, camAnim.endTarget, ease);
+        if (camAnim.t >= 1) camAnim = null;
+      }
+
+      orbit.autoRotate = optOrbit.checked;
+      orbit.autoRotateSpeed = 0.6;
+      orbit.update();
+
+      if (optTraffic.checked) {
+        vehicles.forEach((v) => {
+          if (v.axis === 'x') {
+            v.mesh.position.x += v.dir * v.speed * dt;
+            if (v.mesh.position.x > 165) v.mesh.position.x = -165;
+            if (v.mesh.position.x < -165) v.mesh.position.x = 165;
+          } else {
+            v.mesh.position.z += v.dir * v.speed * dt;
+            if (v.dir > 0 && v.mesh.position.z > -54 && v.mesh.position.z < 56) v.mesh.position.z = 56;
+            if (v.dir < 0 && v.mesh.position.z < 56 && v.mesh.position.z > -54) v.mesh.position.z = -54;
+            if (v.mesh.position.z > 165) v.mesh.position.z = -165;
+            if (v.mesh.position.z < -165) v.mesh.position.z = 165;
+          }
+        });
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

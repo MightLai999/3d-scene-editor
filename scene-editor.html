@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D 場景編輯器 — Three.js Studio</title>
+  <style>
+    :root {
+      --bg-panel: rgba(20, 22, 28, 0.86);
+      --bg-card: rgba(255, 255, 255, 0.05);
+      --bg-hover: rgba(255, 255, 255, 0.11);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #4f8cff;
+      --accent-hover: #6ba0ff;
+      --danger: #ef4444;
+      --text: #eef1f6;
+      --text-muted: #9aa3b2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111318;
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      font-size: 13px;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top Toolbar */
+    .topbar {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 10px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      max-width: calc(100vw - 580px);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .topbar .divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 3px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 5px 9px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: var(--bg-hover); }
+
+    .btn.active {
+      background: rgba(79, 140, 255, 0.22);
+      border-color: rgba(79, 140, 255, 0.6);
+      color: #cfe0ff;
+    }
+
+    .btn.danger { color: #fca5a5; }
+    .btn.danger:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Side Panels */
+    .panel {
+      position: fixed;
+      top: 12px;
+      bottom: 48px;
+      width: 276px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      z-index: 15;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+      overflow: hidden;
+    }
+
+    .panel.left { left: 12px; }
+    .panel.right { right: 12px; }
+
+    .panel-header {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 6px; }
+    .panel-body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    /* Template Selector */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .tpl-btn {
+      padding: 8px 9px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .tpl-btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(79, 140, 255, 0.5);
+    }
+
+    .tpl-btn.active {
+      background: rgba(79, 140, 255, 0.2);
+      border-color: rgba(79, 140, 255, 0.65);
+      color: #dbeafe;
+    }
+
+    /* Category Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 3px;
+      border-radius: 8px;
+    }
+
+    .tab-btn {
+      padding: 5px 4px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      background: rgba(79, 140, 255, 0.28);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .add-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    .add-btn {
+      padding: 7px 9px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .add-btn:hover {
+      background: var(--bg-hover);
+      border-color: rgba(79, 140, 255, 0.5);
+    }
+
+    /* Scene List */
+    .object-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .object-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 9px;
+      border-radius: 7px;
+      background: var(--bg-card);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .object-item:hover { background: var(--bg-hover); }
+    .object-item.selected {
+      background: rgba(79, 140, 255, 0.2);
+      border-color: rgba(79, 140, 255, 0.55);
+    }
+
+    .object-item .meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .object-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Form Controls */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .field label, .field-row label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus { border-color: var(--accent); }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      width: 34px;
+      height: 24px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+      padding: 1px;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .vec3-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .vec3-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .vec3-item span {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding-left: 2px;
+    }
+    .vec3-item span.x { color: #f87171; }
+    .vec3-item span.y { color: #4ade80; }
+    .vec3-item span.z { color: #60a5fa; }
+
+    .empty-state {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px 8px;
+      background: var(--bg-card);
+      border-radius: 8px;
+      border: 1px dashed var(--border);
+    }
+
+    /* Bottom Status Bar */
+    .statusbar {
+      position: fixed;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      height: 30px;
+      background: var(--bg-panel);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 15;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 10px;
+      margin: 0 2px;
+    }
+
+    .val-badge {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text);
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- Top Toolbar -->
+  <div class="topbar">
+    <a class="btn" href="./index.html" style="text-decoration:none;" title="返回作品集首頁">← 首頁</a>
+    <div class="divider"></div>
+    <button class="btn active" id="mode-translate" title="移動 (W)">✥ 移動</button>
+    <button class="btn" id="mode-rotate" title="旋轉 (E)">↻ 旋轉</button>
+    <button class="btn" id="mode-scale" title="縮放 (R)">⤢ 縮放</button>
+
+    <div class="divider"></div>
+
+    <button class="btn" id="cam-reset" title="重置視角">⌂ 重置</button>
+    <button class="btn" id="cam-top" title="俯視角">俯視</button>
+    <button class="btn" id="cam-front" title="前視角">前視</button>
+    <button class="btn" id="cam-focus" title="聚焦選取物件 (F)">◎ 聚焦</button>
+
+    <div class="divider"></div>
+
+    <button class="btn" id="btn-duplicate" title="複製選取物件 (Ctrl+D)" disabled>⧉ 複製</button>
+    <button class="btn danger" id="btn-delete" title="刪除選取物件 (Del)" disabled>✕ 刪除</button>
+  </div>
+
+  <!-- Left Panel: Templates, Object Library & Hierarchy -->
+  <aside class="panel left">
+    <div class="panel-header">
+      <span>場景與物件庫</span>
+      <button class="btn danger" id="btn-clear" style="padding: 3px 7px; font-size: 11px;">清空</button>
+    </div>
+    <div class="panel-body">
+      <!-- Scene Templates -->
+      <div>
+        <div class="section-title">場景範本（一鍵切換）</div>
+        <div class="template-grid">
+          <button class="tpl-btn active" data-tpl="city">🏙️ 迷你城市</button>
+          <button class="tpl-btn" data-tpl="nature">🌲 自然景觀</button>
+          <button class="tpl-btn" data-tpl="indoor">🛋️ 室內房間</button>
+          <button class="tpl-btn" data-tpl="empty">✨ 空白起手</button>
+        </div>
+      </div>
+
+      <!-- Categorized Object Library -->
+      <div>
+        <div class="section-title">新增物件</div>
+        <div class="tabs">
+          <button class="tab-btn active" data-cat="city">城市</button>
+          <button class="tab-btn" data-cat="nature">自然</button>
+          <button class="tab-btn" data-cat="indoor">室內</button>
+          <button class="tab-btn" data-cat="basic">幾何</button>
+        </div>
+        <div class="add-grid" id="add-grid"></div>
+      </div>
+
+      <!-- Scene Object List -->
+      <div style="flex: 1;">
+        <div class="section-title">場景物件 (<span id="obj-count">0</span>)</div>
+        <div class="object-list" id="object-list"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Panel: Inspector & Lighting -->
+  <aside class="panel right">
+    <div class="panel-header">
+      <span>屬性與燈光</span>
+    </div>
+    <div class="panel-body">
+      <div>
+        <div class="section-title">選取物件屬性</div>
+        <div id="inspector-empty" class="empty-state">
+          點擊場景中的物件，或從左側列表選取以進行移動、旋轉、縮放與改色。
+        </div>
+        <div id="inspector-content" style="display: none;">
+          <div class="field">
+            <label for="prop-name">名稱</label>
+            <input type="text" id="prop-name" />
+          </div>
+
+          <div class="field-row">
+            <label for="prop-color">主體顏色</label>
+            <input type="color" id="prop-color" value="#4f8cff" />
+          </div>
+
+          <div class="field">
+            <div class="field-row" style="margin-bottom: 2px;">
+              <label for="prop-roughness">粗糙度</label>
+              <span class="val-badge" id="val-roughness">0.50</span>
+            </div>
+            <input type="range" id="prop-roughness" min="0" max="1" step="0.01" value="0.5" />
+          </div>
+
+          <div class="field">
+            <div class="field-row" style="margin-bottom: 2px;">
+              <label for="prop-metalness">金屬度</label>
+              <span class="val-badge" id="val-metalness">0.10</span>
+            </div>
+            <input type="range" id="prop-metalness" min="0" max="1" step="0.01" value="0.1" />
+          </div>
+
+          <div class="field-row">
+            <label for="prop-wireframe">線框模式</label>
+            <input type="checkbox" id="prop-wireframe" />
+          </div>
+
+          <div class="field">
+            <label>位置 (Position)</label>
+            <div class="vec3-grid">
+              <div class="vec3-item"><span class="x">X</span><input type="number" id="pos-x" step="0.2" /></div>
+              <div class="vec3-item"><span class="y">Y</span><input type="number" id="pos-y" step="0.2" /></div>
+              <div class="vec3-item"><span class="z">Z</span><input type="number" id="pos-z" step="0.2" /></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>旋轉 (Rotation °)</label>
+            <div class="vec3-grid">
+              <div class="vec3-item"><span class="x">X</span><input type="number" id="rot-x" step="15" /></div>
+              <div class="vec3-item"><span class="y">Y</span><input type="number" id="rot-y" step="15" /></div>
+              <div class="vec3-item"><span class="z">Z</span><input type="number" id="rot-z" step="15" /></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>縮放 (Scale)</label>
+            <div class="vec3-grid">
+              <div class="vec3-item"><span class="x">X</span><input type="number" id="scl-x" step="0.1" /></div>
+              <div class="vec3-item"><span class="y">Y</span><input type="number" id="scl-y" step="0.1" /></div>
+              <div class="vec3-item"><span class="z">Z</span><input type="number" id="scl-z" step="0.1" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border);" />
+
+      <div>
+        <div class="section-title">燈光與環境</div>
+
+        <div class="field-row">
+          <label for="env-bg">天空 / 背景色</label>
+          <input type="color" id="env-bg" value="#1b2436" />
+        </div>
+
+        <div class="field">
+          <div class="field-row" style="margin-bottom: 2px;">
+            <label for="light-ambient">環境光強度</label>
+            <span class="val-badge" id="val-ambient">0.70</span>
+          </div>
+          <input type="range" id="light-ambient" min="0" max="2" step="0.05" value="0.7" />
+        </div>
+
+        <div class="field">
+          <div class="field-row" style="margin-bottom: 2px;">
+            <label for="light-sun">主光源強度</label>
+            <span class="val-badge" id="val-sun">1.80</span>
+          </div>
+          <input type="range" id="light-sun" min="0" max="4" step="0.1" value="1.8" />
+        </div>
+
+        <div class="field">
+          <div class="field-row" style="margin-bottom: 2px;">
+            <label for="light-angle">主光源角度</label>
+            <span class="val-badge" id="val-angle">45°</span>
+          </div>
+          <input type="range" id="light-angle" min="0" max="360" step="1" value="45" />
+        </div>
+
+        <div class="field-row">
+          <label for="toggle-grid">顯示網格地板</label>
+          <input type="checkbox" id="toggle-grid" checked />
+        </div>
+
+        <div class="field-row">
+          <label for="toggle-axes">顯示座標軸</label>
+          <input type="checkbox" id="toggle-axes" />
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom Status Bar -->
+  <div class="statusbar">
+    <div>操作：左鍵旋轉 · 右鍵平移 · 滾輪縮放 · 點擊選取物件</div>
+    <div>
+      快捷鍵：<span class="kbd">W</span>移動 <span class="kbd">E</span>旋轉 <span class="kbd">R</span>縮放 <span class="kbd">F</span>聚焦 <span class="kbd">Del</span>刪除 <span class="kbd">Esc</span>取消
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+    // --- 1. Scene, Camera, Renderer ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#1b2436');
+
+    const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 250);
+    let defaultCamPos = new THREE.Vector3(14, 11, 14);
+    let defaultTarget = new THREE.Vector3(0, 1, 0);
+    camera.position.copy(defaultCamPos);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    container.appendChild(renderer.domElement);
+
+    // --- 2. Controls ---
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.07;
+    orbit.target.copy(defaultTarget);
+    orbit.maxDistance = 100;
+    orbit.minDistance = 1.0;
+
+    const transformControls = new TransformControls(camera, renderer.domElement);
+    transformControls.addEventListener('dragging-changed', (e) => {
+      orbit.enabled = !e.value;
+    });
+    transformControls.addEventListener('objectChange', () => {
+      if (selectedObject) syncTransformInputs(selectedObject);
+    });
+    scene.add(transformControls.getHelper());
+
+    // --- 3. Lights & Helpers ---
+    const ambientLight = new THREE.HemisphereLight(0xdbeafe, 0x262b38, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff7ed, 1.8);
+    dirLight.position.set(12, 18, 12);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 60;
+    const d = 20;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+    dirLight.shadow.bias = -0.0005;
+    scene.add(dirLight);
+
+    const shadowFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(80, 80),
+      new THREE.ShadowMaterial({ opacity: 0.28 })
+    );
+    shadowFloor.rotation.x = -Math.PI / 2;
+    shadowFloor.position.y = -0.005;
+    shadowFloor.receiveShadow = true;
+    scene.add(shadowFloor);
+
+    const gridHelper = new THREE.GridHelper(32, 32, 0x4b5563, 0x262b38);
+    scene.add(gridHelper);
+
+    const axesHelper = new THREE.AxesHelper(5);
+    axesHelper.visible = false;
+    scene.add(axesHelper);
+
+    // --- 4. Concrete 3D Object Factories ---
+    function makeMat(color, roughness = 0.55, metalness = 0.1, extra = {}) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness, ...extra });
+    }
+
+    function addPart(group, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0]) {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(...pos);
+      m.rotation.set(...rot);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      group.add(m);
+      return m;
+    }
+
+    const OBJECT_CATALOG = {
+      city: [
+        { type: 'building', icon: '🏢', label: '高樓大廈' },
+        { type: 'house', icon: '🏠', label: '住宅小屋' },
+        { type: 'car', icon: '🚗', label: '汽車' },
+        { type: 'streetlamp', icon: '💡', label: '路燈' },
+        { type: 'road', icon: '🛣️', label: '道路段' },
+        { type: 'parkbench', icon: '🪑', label: '公園長椅' }
+      ],
+      nature: [
+        { type: 'pine', icon: '🌲', label: '松樹' },
+        { type: 'oak', icon: '🌳', label: '闊葉樹' },
+        { type: 'rock', icon: '🪨', label: '岩石' },
+        { type: 'cabin', icon: '🏡', label: '小木屋' },
+        { type: 'pond', icon: '💧', label: '水池' },
+        { type: 'cloud', icon: '☁️', label: '雲朵' }
+      ],
+      indoor: [
+        { type: 'desk', icon: '🖥️', label: '書桌' },
+        { type: 'chair', icon: '🪑', label: '椅子' },
+        { type: 'sofa', icon: '🛋️', label: '沙發' },
+        { type: 'floorlamp', icon: '🛋️', label: '立燈' },
+        { type: 'plant', icon: '🪴', label: '盆栽' },
+        { type: 'bookshelf', icon: '📚', label: '書櫃' }
+      ],
+      basic: [
+        { type: 'box', icon: '⬜', label: '立方體' },
+        { type: 'sphere', icon: '⚪', label: '球體' },
+        { type: 'cylinder', icon: '🛢️', label: '圓柱' },
+        { type: 'cone', icon: '🔺', label: '圓錐' },
+        { type: 'torus', icon: '⭕', label: '環面' },
+        { type: 'plane', icon: '▬', label: '平面' }
+      ]
+    };
+
+    function buildObject(type, options = {}) {
+      const g = new THREE.Group();
+      let primaryMat;
+      let label = type;
+
+      switch (type) {
+        // --- CITY ---
+        case 'building': {
+          label = '高樓大廈';
+          const h = options.height || (3.2 + Math.random() * 2.5);
+          primaryMat = makeMat(options.color || '#64748b', 0.5, 0.25);
+          addPart(g, new THREE.BoxGeometry(2.2, h, 2.2), primaryMat, [0, h / 2, 0]);
+          // Roof rim
+          addPart(g, new THREE.BoxGeometry(2.35, 0.16, 2.35), makeMat('#334155', 0.6, 0.2), [0, h + 0.08, 0]);
+          // Windows
+          const winMat = makeMat('#fde68a', 0.2, 0.4, { emissive: '#f59e0b', emissiveIntensity: 0.35 });
+          const floors = Math.floor(h / 0.75);
+          for (let f = 0; f < floors; f++) {
+            const wy = 0.6 + f * 0.7;
+            for (const wx of [-0.55, 0.55]) {
+              addPart(g, new THREE.BoxGeometry(0.45, 0.38, 2.24), winMat, [wx, wy, 0]);
+              addPart(g, new THREE.BoxGeometry(2.24, 0.38, 0.45), winMat, [0, wy, wx]);
+            }
+          }
+          break;
+        }
+        case 'house': {
+          label = '住宅小屋';
+          primaryMat = makeMat(options.color || '#e2e8f0', 0.7, 0.05);
+          addPart(g, new THREE.BoxGeometry(2.0, 1.5, 1.8), primaryMat, [0, 0.75, 0]);
+          const roofMat = makeMat('#c2410c', 0.75, 0.05);
+          addPart(g, new THREE.ConeGeometry(1.75, 1.1, 4), roofMat, [0, 2.05, 0], [0, Math.PI / 4, 0]);
+          addPart(g, new THREE.BoxGeometry(0.45, 0.8, 0.08), makeMat('#78350f', 0.7), [0, 0.4, 0.91]);
+          addPart(g, new THREE.BoxGeometry(0.42, 0.42, 0.08), makeMat('#93c5fd', 0.2, 0.3), [-0.55, 0.9, 0.91]);
+          addPart(g, new THREE.BoxGeometry(0.42, 0.42, 0.08), makeMat('#93c5fd', 0.2, 0.3), [0.55, 0.9, 0.91]);
+          break;
+        }
+        case 'car': {
+          label = '汽車';
+          primaryMat = makeMat(options.color || '#ef4444', 0.28, 0.45);
+          addPart(g, new THREE.BoxGeometry(1.8, 0.45, 0.95), primaryMat, [0, 0.38, 0]);
+          addPart(g, new THREE.BoxGeometry(1.0, 0.38, 0.84), makeMat('#cbd5e1', 0.2, 0.3), [-0.1, 0.78, 0]);
+          const wheelMat = makeMat('#111827', 0.85, 0.1);
+          for (const wx of [-0.55, 0.55]) {
+            for (const wz of [-0.48, 0.48]) {
+              addPart(g, new THREE.CylinderGeometry(0.2, 0.2, 0.14, 16), wheelMat, [wx, 0.2, wz], [Math.PI / 2, 0, 0]);
+            }
+          }
+          break;
+        }
+        case 'streetlamp': {
+          label = '路燈';
+          primaryMat = makeMat(options.color || '#334155', 0.4, 0.7);
+          addPart(g, new THREE.CylinderGeometry(0.05, 0.08, 2.6, 12), primaryMat, [0, 1.3, 0]);
+          addPart(g, new THREE.BoxGeometry(0.65, 0.06, 0.06), primaryMat, [0.3, 2.55, 0]);
+          addPart(g, new THREE.SphereGeometry(0.14, 16, 12), makeMat('#fef08a', 0.2, 0, { emissive: '#facc15', emissiveIntensity: 0.9 }), [0.58, 2.46, 0]);
+          break;
+        }
+        case 'road': {
+          label = '道路段';
+          primaryMat = makeMat(options.color || '#374151', 0.9, 0.05);
+          addPart(g, new THREE.BoxGeometry(4, 0.08, 2.6), primaryMat, [0, 0.04, 0]);
+          const lineMat = makeMat('#f8fafc', 0.8);
+          for (const lx of [-1.2, 0, 1.2]) {
+            addPart(g, new THREE.BoxGeometry(0.65, 0.09, 0.1), lineMat, [lx, 0.045, 0]);
+          }
+          break;
+        }
+        case 'parkbench': {
+          label = '公園長椅';
+          primaryMat = makeMat(options.color || '#92400e', 0.75, 0.05);
+          addPart(g, new THREE.BoxGeometry(1.4, 0.08, 0.45), primaryMat, [0, 0.42, 0]);
+          addPart(g, new THREE.BoxGeometry(1.4, 0.35, 0.07), primaryMat, [0, 0.68, -0.2]);
+          const legMat = makeMat('#1f2937', 0.5, 0.6);
+          for (const lx of [-0.58, 0.58]) {
+            addPart(g, new THREE.BoxGeometry(0.08, 0.42, 0.4), legMat, [lx, 0.21, 0]);
+          }
+          break;
+        }
+
+        // --- NATURE ---
+        case 'pine': {
+          label = '松樹';
+          primaryMat = makeMat(options.color || '#15803d', 0.8, 0.02);
+          addPart(g, new THREE.CylinderGeometry(0.14, 0.2, 0.9, 10), makeMat('#78350f', 0.9), [0, 0.45, 0]);
+          addPart(g, new THREE.ConeGeometry(0.95, 1.4, 7), primaryMat, [0, 1.45, 0]);
+          addPart(g, new THREE.ConeGeometry(0.75, 1.2, 7), primaryMat, [0, 2.2, 0]);
+          addPart(g, new THREE.ConeGeometry(0.5, 0.95, 7), primaryMat, [0, 2.85, 0]);
+          break;
+        }
+        case 'oak': {
+          label = '闊葉樹';
+          primaryMat = makeMat(options.color || '#22c55e', 0.8, 0.02);
+          addPart(g, new THREE.CylinderGeometry(0.16, 0.24, 1.3, 10), makeMat('#713f12', 0.9), [0, 0.65, 0]);
+          addPart(g, new THREE.DodecahedronGeometry(0.95, 1), primaryMat, [0, 1.9, 0]);
+          addPart(g, new THREE.DodecahedronGeometry(0.65, 1), primaryMat, [0.55, 1.65, 0.25]);
+          addPart(g, new THREE.DodecahedronGeometry(0.6, 1), primaryMat, [-0.5, 1.7, -0.2]);
+          break;
+        }
+        case 'rock': {
+          label = '岩石';
+          primaryMat = makeMat(options.color || '#6b7280', 0.9, 0.05);
+          const m = addPart(g, new THREE.DodecahedronGeometry(0.75, 0), primaryMat, [0, 0.45, 0]);
+          m.scale.set(1.2, 0.72, 1.0);
+          break;
+        }
+        case 'cabin': {
+          label = '小木屋';
+          primaryMat = makeMat(options.color || '#9a5b25', 0.85, 0.02);
+          addPart(g, new THREE.BoxGeometry(2.4, 1.5, 2.0), primaryMat, [0, 0.75, 0]);
+          addPart(g, new THREE.ConeGeometry(2.05, 1.25, 4), makeMat('#5c2d16', 0.85), [0, 2.12, 0], [0, Math.PI / 4, 0]);
+          addPart(g, new THREE.BoxGeometry(0.32, 0.9, 0.32), makeMat('#57534e', 0.9), [0.65, 2.3, -0.35]);
+          addPart(g, new THREE.BoxGeometry(0.5, 0.9, 0.08), makeMat('#451a03', 0.8), [0, 0.45, 1.01]);
+          addPart(g, new THREE.BoxGeometry(0.45, 0.45, 0.08), makeMat('#fef08a', 0.2, 0.2, { emissive: '#f59e0b', emissiveIntensity: 0.45 }), [-0.65, 0.9, 1.01]);
+          break;
+        }
+        case 'pond': {
+          label = '水池';
+          primaryMat = makeMat(options.color || '#38bdf8', 0.12, 0.25);
+          const m = addPart(g, new THREE.CylinderGeometry(2.0, 2.1, 0.12, 24), primaryMat, [0, 0.06, 0]);
+          m.scale.set(1.25, 1, 0.85);
+          break;
+        }
+        case 'cloud': {
+          label = '雲朵';
+          primaryMat = makeMat(options.color || '#f8fafc', 0.95, 0);
+          addPart(g, new THREE.SphereGeometry(0.65, 16, 12), primaryMat, [0, 0, 0]);
+          addPart(g, new THREE.SphereGeometry(0.5, 16, 12), primaryMat, [-0.55, -0.1, 0.08]);
+          addPart(g, new THREE.SphereGeometry(0.52, 16, 12), primaryMat, [0.58, -0.08, -0.05]);
+          break;
+        }
+
+        // --- INDOOR ---
+        case 'desk': {
+          label = '書桌';
+          primaryMat = makeMat(options.color || '#b48352', 0.6, 0.08);
+          addPart(g, new THREE.BoxGeometry(2.0, 0.08, 1.0), primaryMat, [0, 0.78, 0]);
+          const legMat = makeMat('#1f2937', 0.45, 0.6);
+          for (const lx of [-0.9, 0.9]) {
+            for (const lz of [-0.42, 0.42]) {
+              addPart(g, new THREE.BoxGeometry(0.06, 0.76, 0.06), legMat, [lx, 0.38, lz]);
+            }
+          }
+          // Monitor
+          addPart(g, new THREE.BoxGeometry(0.75, 0.46, 0.04), makeMat('#111827', 0.3, 0.4), [0, 1.18, -0.25]);
+          addPart(g, new THREE.BoxGeometry(0.08, 0.16, 0.06), legMat, [0, 0.88, -0.25]);
+          break;
+        }
+        case 'chair': {
+          label = '椅子';
+          primaryMat = makeMat(options.color || '#3b82f6', 0.65, 0.05);
+          addPart(g, new THREE.BoxGeometry(0.55, 0.08, 0.55), primaryMat, [0, 0.46, 0]);
+          addPart(g, new THREE.BoxGeometry(0.55, 0.55, 0.08), primaryMat, [0, 0.76, -0.24]);
+          const legMat = makeMat('#1f2937', 0.4, 0.6);
+          for (const lx of [-0.22, 0.22]) {
+            for (const lz of [-0.22, 0.22]) {
+              addPart(g, new THREE.BoxGeometry(0.05, 0.46, 0.05), legMat, [lx, 0.23, lz]);
+            }
+          }
+          break;
+        }
+        case 'sofa': {
+          label = '沙發';
+          primaryMat = makeMat(options.color || '#475569', 0.85, 0.02);
+          addPart(g, new THREE.BoxGeometry(2.2, 0.36, 0.95), primaryMat, [0, 0.28, 0]);
+          addPart(g, new THREE.BoxGeometry(2.2, 0.55, 0.22), primaryMat, [0, 0.66, -0.37]);
+          addPart(g, new THREE.BoxGeometry(0.22, 0.48, 0.95), primaryMat, [-1.0, 0.48, 0]);
+          addPart(g, new THREE.BoxGeometry(0.22, 0.48, 0.95), primaryMat, [1.0, 0.48, 0]);
+          const legMat = makeMat('#78350f', 0.7);
+          for (const lx of [-0.95, 0.95]) {
+            for (const lz of [-0.38, 0.38]) {
+              addPart(g, new THREE.CylinderGeometry(0.04, 0.03, 0.12, 8), legMat, [lx, 0.06, lz]);
+            }
+          }
+          break;
+        }
+        case 'floorlamp': {
+          label = '立燈';
+          primaryMat = makeMat(options.color || '#fef3c7', 0.5, 0, { emissive: '#f59e0b', emissiveIntensity: 0.45 });
+          const poleMat = makeMat('#1f2937', 0.35, 0.7);
+          addPart(g, new THREE.CylinderGeometry(0.24, 0.24, 0.05, 20), poleMat, [0, 0.025, 0]);
+          addPart(g, new THREE.CylinderGeometry(0.03, 0.03, 1.65, 12), poleMat, [0, 0.85, 0]);
+          addPart(g, new THREE.CylinderGeometry(0.18, 0.3, 0.38, 20, 1, true), primaryMat, [0, 1.72, 0]);
+          primaryMat.side = THREE.DoubleSide;
+          break;
+        }
+        case 'plant': {
+          label = '盆栽';
+          primaryMat = makeMat(options.color || '#16a34a', 0.75, 0.02);
+          addPart(g, new THREE.CylinderGeometry(0.22, 0.16, 0.35, 16), makeMat('#b45309', 0.8), [0, 0.175, 0]);
+          addPart(g, new THREE.DodecahedronGeometry(0.32, 1), primaryMat, [0, 0.55, 0]);
+          addPart(g, new THREE.DodecahedronGeometry(0.22, 1), primaryMat, [0.18, 0.68, 0.1]);
+          addPart(g, new THREE.DodecahedronGeometry(0.2, 1), primaryMat, [-0.16, 0.65, -0.08]);
+          break;
+        }
+        case 'bookshelf': {
+          label = '書櫃';
+          primaryMat = makeMat(options.color || '#92400e', 0.7, 0.05);
+          addPart(g, new THREE.BoxGeometry(1.4, 2.0, 0.42), primaryMat, [0, 1.0, 0]);
+          const bookColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+          for (let row = 0; row < 3; row++) {
+            const by = 0.45 + row * 0.55;
+            for (let b = 0; b < 5; b++) {
+              addPart(g, new THREE.BoxGeometry(0.18, 0.36, 0.28), makeMat(bookColors[(row + b) % bookColors.length], 0.6), [-0.45 + b * 0.22, by, 0.1]);
+            }
+          }
+          break;
+        }
+
+        // --- BASIC ---
+        case 'box':
+        case 'sphere':
+        case 'cylinder':
+        case 'cone':
+        case 'torus':
+        case 'plane':
+        default: {
+          const map = {
+            box: [new THREE.BoxGeometry(1, 1, 1), '立方體', 0.5],
+            sphere: [new THREE.SphereGeometry(0.6, 32, 24), '球體', 0.6],
+            cylinder: [new THREE.CylinderGeometry(0.5, 0.5, 1.2, 32), '圓柱', 0.6],
+            cone: [new THREE.ConeGeometry(0.6, 1.3, 32), '圓錐', 0.65],
+            torus: [new THREE.TorusGeometry(0.55, 0.2, 20, 48), '環面', 0.75],
+            plane: [new THREE.PlaneGeometry(3, 3), '平面', 0.02]
+          };
+          const [geo, lbl, defY] = map[type] || map.box;
+          label = lbl;
+          primaryMat = makeMat(options.color || '#4f8cff', 0.45, 0.15, {
+            side: type === 'plane' ? THREE.DoubleSide : THREE.FrontSide
+          });
+          const m = addPart(g, geo, primaryMat, [0, defY, 0]);
+          if (type === 'plane') m.rotation.x = -Math.PI / 2;
+          break;
+        }
+      }
+
+      g.name = options.name || `${label} ${objectCounter++}`;
+      g.userData.type = type;
+      g.userData.primaryMaterial = primaryMat;
+
+      if (options.position) g.position.set(...options.position);
+      if (options.rotation) g.rotation.set(...options.rotation);
+      if (options.scale) g.scale.set(...options.scale);
+
+      return g;
+    }
+
+    // --- 5. Scene Objects Management ---
+    const sceneObjects = [];
+    const envStaticObjects = [];
+    let selectedObject = null;
+    let objectCounter = 1;
+
+    function addObjectToScene(type, options = {}, autoSelect = true) {
+      const obj = buildObject(type, options);
+      if (!options.position) {
+        const offset = ((sceneObjects.length % 5) - 2) * 0.8;
+        obj.position.set(offset, type === 'cloud' ? 5.5 : 0, offset);
+      }
+      scene.add(obj);
+      sceneObjects.push(obj);
+      if (autoSelect) {
+        renderObjectList();
+        selectObject(obj);
+      }
+      return obj;
+    }
+
+    function disposeObject(obj) {
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry?.dispose();
+          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+          else child.material?.dispose();
+        }
+      });
+    }
+
+    function selectObject(obj) {
+      selectedObject = obj;
+      if (obj) transformControls.attach(obj);
+      else transformControls.detach();
+      updateInspector();
+      renderObjectList();
+      document.getElementById('btn-delete').disabled = !obj;
+      document.getElementById('btn-duplicate').disabled = !obj;
+    }
+
+    function deleteSelected() {
+      if (!selectedObject) return;
+      const idx = sceneObjects.indexOf(selectedObject);
+      if (idx !== -1) sceneObjects.splice(idx, 1);
+      transformControls.detach();
+      scene.remove(selectedObject);
+      disposeObject(selectedObject);
+      selectedObject = null;
+      updateInspector();
+      renderObjectList();
+      document.getElementById('btn-delete').disabled = true;
+      document.getElementById('btn-duplicate').disabled = true;
+    }
+
+    function duplicateSelected() {
+      if (!selectedObject) return;
+      const clone = selectedObject.clone(true);
+      // Clone materials individually so edits don't affect original
+      const matMap = new Map();
+      clone.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (!matMap.has(child.material)) {
+            matMap.set(child.material, child.material.clone());
+          }
+          child.material = matMap.get(child.material);
+        }
+      });
+      clone.userData = {
+        ...selectedObject.userData,
+        primaryMaterial: matMap.get(selectedObject.userData.primaryMaterial) || null
+      };
+      clone.name = `${selectedObject.name} 複本`;
+      clone.position.x += 1.5;
+      scene.add(clone);
+      sceneObjects.push(clone);
+      renderObjectList();
+      selectObject(clone);
+    }
+
+    function clearScene(clearEnv = false) {
+      transformControls.detach();
+      while (sceneObjects.length > 0) {
+        const obj = sceneObjects.pop();
+        scene.remove(obj);
+        disposeObject(obj);
+      }
+      if (clearEnv) {
+        while (envStaticObjects.length > 0) {
+          const env = envStaticObjects.pop();
+          scene.remove(env);
+          disposeObject(env);
+        }
+      }
+      selectedObject = null;
+      objectCounter = 1;
+      updateInspector();
+      renderObjectList();
+      document.getElementById('btn-delete').disabled = true;
+      document.getElementById('btn-duplicate').disabled = true;
+    }
+
+    function addEnvMesh(mesh) {
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      envStaticObjects.push(mesh);
+      return mesh;
+    }
+
+    // --- 6. Scene Templates ---
+    function loadTemplate(name) {
+      clearScene(true);
+
+      document.querySelectorAll('[data-tpl]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.tpl === name);
+      });
+
+      if (name === 'city') {
+        setEnv('#1b2436', 0.7, 1.8, 45, true);
+        defaultCamPos.set(14, 11, 14);
+        defaultTarget.set(0, 1.2, 0);
+
+        // City ground slab
+        const base = new THREE.Mesh(new THREE.BoxGeometry(18, 0.16, 18), makeMat('#475569', 0.9));
+        base.position.y = -0.08;
+        addEnvMesh(base);
+
+        // Roads
+        addObjectToScene('road', { name: '主幹道 1', position: [-4, 0, 0] }, false);
+        addObjectToScene('road', { name: '主幹道 2', position: [0, 0, 0] }, false);
+        addObjectToScene('road', { name: '主幹道 3', position: [4, 0, 0] }, false);
+
+        // Buildings
+        addObjectToScene('building', { name: '商業大樓 A', position: [-4.5, 0, -3.5], color: '#64748b', height: 5.5 }, false);
+        addObjectToScene('building', { name: '科技中心 B', position: [-1.2, 0, -3.8], color: '#475569', height: 4.0 }, false);
+        addObjectToScene('building', { name: '金融大廈 C', position: [3.2, 0, -3.6], color: '#334155', height: 6.2 }, false);
+        addObjectToScene('house', { name: '街角小屋', position: [-3.8, 0, 3.6], color: '#e2e8f0' }, false);
+        addObjectToScene('house', { name: '社區住宅', position: [3.8, 0, 3.6], color: '#fef3c7' }, false);
+
+        // Street details
+        addObjectToScene('car', { name: '紅色轎車', position: [-1.5, 0, 0.55], color: '#ef4444' }, false);
+        addObjectToScene('car', { name: '藍色轎車', position: [2.4, 0, -0.55], color: '#3b82f6', rotation: [0, Math.PI, 0] }, false);
+        addObjectToScene('streetlamp', { name: '路燈 1', position: [-2.5, 0, -1.6], rotation: [0, Math.PI / 2, 0] }, false);
+        addObjectToScene('streetlamp', { name: '路燈 2', position: [2.5, 0, 1.6], rotation: [0, -Math.PI / 2, 0] }, false);
+        addObjectToScene('oak', { name: '行道樹 1', position: [0, 0, 3.8] }, false);
+        addObjectToScene('parkbench', { name: '公園長椅', position: [0, 0, 2.5] }, false);
+
+        switchCategory('city');
+      } else if (name === 'nature') {
+        setEnv('#7dd3fc', 0.85, 2.0, 55, false);
+        defaultCamPos.set(13, 9, 13);
+        defaultTarget.set(0, 1, 0);
+
+        // Grassy island base
+        const terrain = new THREE.Mesh(new THREE.CylinderGeometry(10.5, 11.2, 0.5, 36), makeMat('#4d7c0f', 0.92));
+        terrain.position.y = -0.25;
+        addEnvMesh(terrain);
+
+        addObjectToScene('cabin', { name: '湖畔小木屋', position: [-2.6, 0, -2.0], rotation: [0, 0.35, 0] }, false);
+        addObjectToScene('pond', { name: '森林水池', position: [2.2, 0, 1.6] }, false);
+        addObjectToScene('pine', { name: '高聳松樹 1', position: [-5.2, 0, -3.4], scale: [1.15, 1.25, 1.15] }, false);
+        addObjectToScene('pine', { name: '高聳松樹 2', position: [-4.6, 0, 1.5], scale: [0.95, 1.05, 0.95] }, false);
+        addObjectToScene('pine', { name: '高聳松樹 3', position: [3.8, 0, -3.5], scale: [1.1, 1.2, 1.1] }, false);
+        addObjectToScene('oak', { name: '大橡樹 1', position: [0.6, 0, -4.2], scale: [1.2, 1.2, 1.2] }, false);
+        addObjectToScene('oak', { name: '大橡樹 2', position: [5.2, 0, 0.4] }, false);
+        addObjectToScene('rock', { name: '巨石 1', position: [0.2, 0, 3.2], scale: [1.1, 1.0, 1.1] }, false);
+        addObjectToScene('rock', { name: '小岩石', position: [4.2, 0, 2.9], scale: [0.65, 0.6, 0.65] }, false);
+        addObjectToScene('cloud', { name: '白雲 1', position: [-3.5, 5.8, -2.5], scale: [1.3, 1.1, 1.2] }, false);
+        addObjectToScene('cloud', { name: '白雲 2', position: [3.5, 6.4, -1.0], scale: [1.1, 1.0, 1.0] }, false);
+
+        switchCategory('nature');
+      } else if (name === 'indoor') {
+        setEnv('#18181b', 0.75, 1.5, 40, false);
+        defaultCamPos.set(6.5, 5.2, 6.5);
+        defaultTarget.set(0, 1.0, 0);
+
+        // Room floor & two cutaway walls
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.16, 7.2), makeMat('#a8845c', 0.72));
+        floor.position.y = -0.08;
+        addEnvMesh(floor);
+
+        const wallMat = makeMat('#e5e7eb', 0.88);
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.2, 3.4, 0.18), wallMat);
+        backWall.position.set(0, 1.7, -3.51);
+        backWall.castShadow = true;
+        addEnvMesh(backWall);
+
+        const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.4, 7.2), wallMat);
+        leftWall.position.set(-3.51, 1.7, 0);
+        leftWall.castShadow = true;
+        addEnvMesh(leftWall);
+
+        // Rug
+        const rug = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.03, 2.6), makeMat('#334155', 0.95));
+        rug.position.set(0.4, 0.015, 0.7);
+        addEnvMesh(rug);
+
+        // Furniture
+        addObjectToScene('sofa', { name: '客廳沙發', position: [0.4, 0, -2.2], color: '#475569' }, false);
+        addObjectToScene('floorlamp', { name: '角落立燈', position: [-2.4, 0, -2.5] }, false);
+        addObjectToScene('desk', { name: '工作書桌', position: [-2.4, 0, 1.1], rotation: [0, Math.PI / 2, 0] }, false);
+        addObjectToScene('chair', { name: '辦公椅', position: [-1.45, 0, 1.1], rotation: [0, -Math.PI / 2, 0], color: '#3b82f6' }, false);
+        addObjectToScene('bookshelf', { name: '木質書櫃', position: [2.4, 0, -3.1] }, false);
+        addObjectToScene('plant', { name: '室內盆栽', position: [2.5, 0, 1.9], scale: [1.3, 1.3, 1.3] }, false);
+
+        switchCategory('indoor');
+      } else {
+        // Empty
+        setEnv('#161922', 0.7, 1.8, 45, true);
+        defaultCamPos.set(7, 5.5, 7);
+        defaultTarget.set(0, 0.5, 0);
+        switchCategory('basic');
+      }
+
+      camera.position.copy(defaultCamPos);
+      orbit.target.copy(defaultTarget);
+      orbit.update();
+      renderObjectList();
+      selectObject(null);
+    }
+
+    function setEnv(bgHex, amb, sun, angleDeg, showGrid) {
+      scene.background = new THREE.Color(bgHex);
+      document.getElementById('env-bg').value = bgHex;
+
+      ambientLight.intensity = amb;
+      document.getElementById('light-ambient').value = amb;
+      document.getElementById('val-ambient').textContent = amb.toFixed(2);
+
+      dirLight.intensity = sun;
+      document.getElementById('light-sun').value = sun;
+      document.getElementById('val-sun').textContent = sun.toFixed(2);
+
+      const rad = THREE.MathUtils.degToRad(angleDeg);
+      dirLight.position.set(Math.cos(rad) * 16, 18, Math.sin(rad) * 16);
+      document.getElementById('light-angle').value = angleDeg;
+      document.getElementById('val-angle').textContent = `${angleDeg}°`;
+
+      gridHelper.visible = showGrid;
+      document.getElementById('toggle-grid').checked = showGrid;
+    }
+
+    // --- 7. UI Rendering ---
+    const addGridEl = document.getElementById('add-grid');
+    function switchCategory(cat) {
+      document.querySelectorAll('.tab-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.cat === cat);
+      });
+      addGridEl.innerHTML = '';
+      (OBJECT_CATALOG[cat] || []).forEach((item) => {
+        const btn = document.createElement('button');
+        btn.className = 'add-btn';
+        btn.innerHTML = `${item.icon} ${item.label}`;
+        btn.addEventListener('click', () => addObjectToScene(item.type));
+        addGridEl.appendChild(btn);
+      });
+    }
+
+    const objectListEl = document.getElementById('object-list');
+    const objCountEl = document.getElementById('obj-count');
+    const inspectorEmpty = document.getElementById('inspector-empty');
+    const inspectorContent = document.getElementById('inspector-content');
+
+    function renderObjectList() {
+      objCountEl.textContent = sceneObjects.length;
+      objectListEl.innerHTML = '';
+      if (sceneObjects.length === 0) {
+        objectListEl.innerHTML = '<div class="empty-state">場景目前是空的，請從上方選擇範本或新增物件！</div>';
+        return;
+      }
+      sceneObjects.forEach((obj) => {
+        const item = document.createElement('div');
+        item.className = 'object-item' + (obj === selectedObject ? ' selected' : '');
+        const mat = obj.userData.primaryMaterial;
+        const hex = mat ? '#' + mat.color.getHexString() : '#94a3b8';
+        item.innerHTML = `
+          <div class="meta">
+            <span class="color-dot" style="background:${hex}"></span>
+            <span class="object-name">${obj.name}</span>
+          </div>
+        `;
+        item.addEventListener('click', () => selectObject(obj));
+        objectListEl.appendChild(item);
+      });
+    }
+
+    function updateInspector() {
+      if (!selectedObject) {
+        inspectorEmpty.style.display = 'block';
+        inspectorContent.style.display = 'none';
+        return;
+      }
+      inspectorEmpty.style.display = 'none';
+      inspectorContent.style.display = 'block';
+
+      document.getElementById('prop-name').value = selectedObject.name;
+      const mat = selectedObject.userData.primaryMaterial;
+      if (mat) {
+        document.getElementById('prop-color').value = '#' + mat.color.getHexString();
+        document.getElementById('prop-roughness').value = mat.roughness;
+        document.getElementById('val-roughness').textContent = mat.roughness.toFixed(2);
+        document.getElementById('prop-metalness').value = mat.metalness;
+        document.getElementById('val-metalness').textContent = mat.metalness.toFixed(2);
+        document.getElementById('prop-wireframe').checked = mat.wireframe;
+      }
+      syncTransformInputs(selectedObject);
+    }
+
+    function syncTransformInputs(obj) {
+      document.getElementById('pos-x').value = obj.position.x.toFixed(2);
+      document.getElementById('pos-y').value = obj.position.y.toFixed(2);
+      document.getElementById('pos-z').value = obj.position.z.toFixed(2);
+
+      document.getElementById('rot-x').value = THREE.MathUtils.radToDeg(obj.rotation.x).toFixed(1);
+      document.getElementById('rot-y').value = THREE.MathUtils.radToDeg(obj.rotation.y).toFixed(1);
+      document.getElementById('rot-z').value = THREE.MathUtils.radToDeg(obj.rotation.z).toFixed(1);
+
+      document.getElementById('scl-x').value = obj.scale.x.toFixed(2);
+      document.getElementById('scl-y').value = obj.scale.y.toFixed(2);
+      document.getElementById('scl-z').value = obj.scale.z.toFixed(2);
+    }
+
+    // --- 8. Raycasting for Composite Objects ---
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      if (e.button !== 0) return;
+      if (Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 5) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(sceneObjects, true);
+      if (hits.length > 0) {
+        let target = hits[0].object;
+        while (target.parent && !sceneObjects.includes(target)) {
+          target = target.parent;
+        }
+        selectObject(sceneObjects.includes(target) ? target : null);
+      } else {
+        selectObject(null);
+      }
+    });
+
+    // --- 9. Event Listeners ---
+    function setTransformMode(mode) {
+      transformControls.setMode(mode);
+      ['translate', 'rotate', 'scale'].forEach((m) => {
+        document.getElementById(`mode-${m}`).classList.toggle('active', m === mode);
+      });
+    }
+
+    document.getElementById('mode-translate').addEventListener('click', () => setTransformMode('translate'));
+    document.getElementById('mode-rotate').addEventListener('click', () => setTransformMode('rotate'));
+    document.getElementById('mode-scale').addEventListener('click', () => setTransformMode('scale'));
+
+    document.getElementById('cam-reset').addEventListener('click', () => {
+      camera.position.copy(defaultCamPos);
+      orbit.target.copy(defaultTarget);
+      orbit.update();
+    });
+    document.getElementById('cam-top').addEventListener('click', () => {
+      camera.position.set(0, 18, 0.01);
+      orbit.target.set(0, 0, 0);
+      orbit.update();
+    });
+    document.getElementById('cam-front').addEventListener('click', () => {
+      camera.position.set(0, 4, 15);
+      orbit.target.set(0, 1.5, 0);
+      orbit.update();
+    });
+
+    function focusSelected() {
+      if (!selectedObject) return;
+      const box = new THREE.Box3().setFromObject(selectedObject);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3()).length();
+      const offset = camera.position.clone().sub(orbit.target).normalize().multiplyScalar(Math.max(size * 2.0, 3.5));
+      orbit.target.copy(center);
+      camera.position.copy(center).add(offset);
+      orbit.update();
+    }
+    document.getElementById('cam-focus').addEventListener('click', focusSelected);
+
+    document.getElementById('btn-delete').addEventListener('click', deleteSelected);
+    document.getElementById('btn-duplicate').addEventListener('click', duplicateSelected);
+    document.getElementById('btn-clear').addEventListener('click', () => clearScene(true));
+
+    document.querySelectorAll('[data-tpl]').forEach((btn) => {
+      btn.addEventListener('click', () => loadTemplate(btn.dataset.tpl));
+    });
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      btn.addEventListener('click', () => switchCategory(btn.dataset.cat));
+    });
+
+    // Inspector inputs
+    document.getElementById('prop-name').addEventListener('input', (e) => {
+      if (!selectedObject) return;
+      selectedObject.name = e.target.value;
+      renderObjectList();
+    });
+    document.getElementById('prop-color').addEventListener('input', (e) => {
+      const mat = selectedObject?.userData?.primaryMaterial;
+      if (!mat) return;
+      mat.color.set(e.target.value);
+      renderObjectList();
+    });
+    document.getElementById('prop-roughness').addEventListener('input', (e) => {
+      const mat = selectedObject?.userData?.primaryMaterial;
+      if (!mat) return;
+      const v = parseFloat(e.target.value);
+      mat.roughness = v;
+      document.getElementById('val-roughness').textContent = v.toFixed(2);
+    });
+    document.getElementById('prop-metalness').addEventListener('input', (e) => {
+      const mat = selectedObject?.userData?.primaryMaterial;
+      if (!mat) return;
+      const v = parseFloat(e.target.value);
+      mat.metalness = v;
+      document.getElementById('val-metalness').textContent = v.toFixed(2);
+    });
+    document.getElementById('prop-wireframe').addEventListener('change', (e) => {
+      if (!selectedObject) return;
+      selectedObject.traverse((c) => {
+        if (c.isMesh && c.material) c.material.wireframe = e.target.checked;
+      });
+    });
+
+    ['x', 'y', 'z'].forEach((axis) => {
+      document.getElementById(`pos-${axis}`).addEventListener('input', (e) => {
+        if (selectedObject) selectedObject.position[axis] = parseFloat(e.target.value) || 0;
+      });
+      document.getElementById(`rot-${axis}`).addEventListener('input', (e) => {
+        if (selectedObject) selectedObject.rotation[axis] = THREE.MathUtils.degToRad(parseFloat(e.target.value) || 0);
+      });
+      document.getElementById(`scl-${axis}`).addEventListener('input', (e) => {
+        if (selectedObject) selectedObject.scale[axis] = Math.max(0.05, parseFloat(e.target.value) || 0.05);
+      });
+    });
+
+    // Environment inputs
+    document.getElementById('env-bg').addEventListener('input', (e) => {
+      scene.background = new THREE.Color(e.target.value);
+    });
+    document.getElementById('light-ambient').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      ambientLight.intensity = v;
+      document.getElementById('val-ambient').textContent = v.toFixed(2);
+    });
+    document.getElementById('light-sun').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      dirLight.intensity = v;
+      document.getElementById('val-sun').textContent = v.toFixed(2);
+    });
+    document.getElementById('light-angle').addEventListener('input', (e) => {
+      const deg = parseFloat(e.target.value);
+      const rad = THREE.MathUtils.degToRad(deg);
+      dirLight.position.set(Math.cos(rad) * 16, 18, Math.sin(rad) * 16);
+      document.getElementById('val-angle').textContent = `${deg}°`;
+    });
+    document.getElementById('toggle-grid').addEventListener('change', (e) => {
+      gridHelper.visible = e.target.checked;
+    });
+    document.getElementById('toggle-axes').addEventListener('change', (e) => {
+      axesHelper.visible = e.target.checked;
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+      const key = e.key.toLowerCase();
+      if (key === 'w') setTransformMode('translate');
+      else if (key === 'e') setTransformMode('rotate');
+      else if (key === 'r') setTransformMode('scale');
+      else if (key === 'f') focusSelected();
+      else if (key === 'escape') selectObject(null);
+      else if (key === 'delete' || key === 'backspace') deleteSelected();
+      else if ((e.ctrlKey || e.metaKey) && key === 'd') {
+        e.preventDefault();
+        duplicateSelected();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- 10. Init ---
+    loadTemplate('city');
+
+    function animate() {
+      requestAnimationFrame(animate);
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
