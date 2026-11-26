@@ -952,18 +952,29 @@
       return new THREE.CanvasTexture(c);
     }
 
+    // 2.0 High-Res PBR Architectural Curtain-Wall Glass & Red-Brick Facade Textures
     function createCityWindowTexture(warmBias = 0.5) {
       const c = document.createElement('canvas');
-      c.width = 256; c.height = 512;
+      c.width = 512; c.height = 1024;
       const ctx = c.getContext('2d');
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(0, 0, 256, 512);
-      for (let row = 4; row < 504; row += 12) {
-        for (let col = 6; col < 248; col += 14) {
-          const lit = ((row * 31 + col * 17) % 100) / 100;
-          if (lit < 0.62) ctx.fillStyle = lit < warmBias * 0.62 ? '#fef08a' : '#bae6fd';
-          else ctx.fillStyle = '#1e293b';
-          ctx.fillRect(col, row, 9, 7);
+      ctx.fillStyle = '#3b4859';
+      ctx.fillRect(0, 0, 512, 1024);
+      // Horizontal floor spandrel bands & vertical aluminum mullions
+      for (let row = 0; row < 1024; row += 20) {
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(0, row, 512, 4);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, row + 4, 512, 14);
+        for (let col = 6; col < 504; col += 18) {
+          const h = ((row * 37 + col * 19) % 100) / 100;
+          if (h < 0.54) {
+            ctx.fillStyle = h < warmBias * 0.54 ? '#fef08a' : '#bae6fd';
+          } else if (h < 0.78) {
+            ctx.fillStyle = '#334c66'; // daytime sky-reflecting glass pane
+          } else {
+            ctx.fillStyle = '#172130';
+          }
+          ctx.fillRect(col, row + 5, 12, 11);
         }
       }
       const tex = new THREE.CanvasTexture(c);
@@ -972,6 +983,39 @@
     }
     const cityTexWarm = createCityWindowTexture(0.75);
     const cityTexCool = createCityWindowTexture(0.25);
+
+    function createBrickFacadeTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#8c2320';
+      ctx.fillRect(0, 0, 512, 256);
+      // Subtle brick course variation
+      for (let y = 0; y < 256; y += 8) {
+        ctx.fillStyle = y % 16 === 0 ? 'rgba(0,0,0,0.12)' : 'rgba(255,220,200,0.06)';
+        ctx.fillRect(0, y, 512, 2);
+      }
+      // White granite horizontal trim courses (iconic Tokyo Station Marunouchi style!)
+      ctx.fillStyle = '#e7e5e4';
+      ctx.fillRect(0, 14, 512, 12);
+      ctx.fillRect(0, 124, 512, 10);
+      ctx.fillRect(0, 232, 512, 14);
+      // Arched classical windows in two stories
+      for (const wy of [44, 152]) {
+        for (let wx = 18; wx < 496; wx += 34) {
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(wx - 2, wy - 2, 20, 56);
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(wx + 1, wy + 2, 14, 48);
+          ctx.fillStyle = 'rgba(254, 240, 138, 0.55)';
+          ctx.fillRect(wx + 3, wy + 5, 10, 42);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+    const brickFacadeTex = createBrickFacadeTexture();
 
     // 2.0 Procedural Tileable PBR Normal Map for Terrain Micro-Relief & Volcanic Scree
     function createTerrainNormalMap() {
@@ -2389,6 +2433,11 @@
     const pirateShip = new THREE.Group();
     pirateShip.position.set(14.2, WATER_Y, 19.6);
     pirateShip.rotation.y = 0.75;
+    // 2.0 Foaming Wake behind Pirate Ship
+    const wakeMat = new THREE.MeshBasicMaterial({ map: particleTex, color: '#e0f2fe', transparent: true, opacity: 0.55, depthWrite: false });
+    const pirateWake = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 2.2), wakeMat);
+    pirateWake.rotation.x = -Math.PI / 2; pirateWake.position.set(0, 0.04, -1.55);
+    pirateShip.add(pirateWake);
     root.add(pirateShip);
     const sailMat = new THREE.MeshStandardMaterial({ color: '#fef9c3', roughness: 0.75, side: THREE.DoubleSide });
     const hull = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.46, 2.25), hullMat); hull.position.y = 0.18;
@@ -2698,45 +2747,82 @@
     addSnowableRoof(kGate, new THREE.ConeGeometry(1.15, 0.48, 4), slateRoofMat, 1.12, Math.PI / 4, [1.2, 1, 0.75]);
     buddhaGroup.add(kGate);
 
-    // K3. Yokohama Minato Mirai 21 (Relocated South-Southwest to 43.8, 9.8 — Between Kamakura & Tokyo Bay!)
+    // K3. 2.0 HIGH-DETAIL YOKOHAMA MINATO MIRAI 21 (Landmark Tower, Queen's Square A/B/C, Sail Hotel, Cosmo Clock 21, Red Brick)
     const yokoGroup = new THREE.Group();
     kanagawaGroup.add(yokoGroup);
-    const cityMatWarm = new THREE.MeshStandardMaterial({ map: cityTexWarm, color: '#cbd5e1', emissive: '#fef08a', emissiveMap: cityTexWarm, emissiveIntensity: 0.15, roughness: 0.32, metalness: 0.42 });
-    const cityMatCool = new THREE.MeshStandardMaterial({ map: cityTexCool, color: '#cbd5e1', emissive: '#38bdf8', emissiveMap: cityTexCool, emissiveIntensity: 0.15, roughness: 0.3, metalness: 0.48 });
-    nightEmissives.push({ mat: cityMatWarm, day: 0.12, sunset: 0.78, night: 1.85 });
-    nightEmissives.push({ mat: cityMatCool, day: 0.12, sunset: 0.72, night: 1.75 });
+    const cityMatWarm = new THREE.MeshStandardMaterial({ map: cityTexWarm, color: '#dbe4ef', emissive: '#fef08a', emissiveMap: cityTexWarm, emissiveIntensity: 0.14, roughness: 0.24, metalness: 0.52, envMapIntensity: 1.2 });
+    const cityMatCool = new THREE.MeshStandardMaterial({ map: cityTexCool, color: '#dbe4ef', emissive: '#38bdf8', emissiveMap: cityTexCool, emissiveIntensity: 0.14, roughness: 0.22, metalness: 0.58, envMapIntensity: 1.35 });
+    const silverCladMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.34, metalness: 0.42, envMapIntensity: 1.1 });
+    nightEmissives.push({ mat: cityMatWarm, day: 0.1, sunset: 0.78, night: 1.9 });
+    nightEmissives.push({ mat: cityMatCool, day: 0.1, sunset: 0.72, night: 1.8 });
 
+    // 1. Yokohama Landmark Tower (Signature Tapered Pier Silhouette + Recessed Blue-Glass Center + Twin-Wing Notched Crown!)
     const lmGroup = new THREE.Group(); lmGroup.position.set(42.5, getTerrainHeight(42.5, 8.2), 8.2);
-    const lmBase = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.2, 2.1), cityMatCool); lmBase.position.y = 0.6;
-    const lmShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.38, 6.2, 4), cityMatCool); lmShaft.rotation.y = Math.PI / 4; lmShaft.position.y = 4.1; lmShaft.castShadow = true;
-    const lmCrown = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.45, 1.18), whiteMat); lmCrown.position.y = 7.35;
-    const lmBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); lmBeacon.position.y = 7.75;
-    lmGroup.add(lmBase, lmShaft, lmCrown, lmBeacon); yokoGroup.add(lmGroup);
+    const lmPodium = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.85, 2.5), silverCladMat); lmPodium.position.y = 0.42; lmPodium.castShadow = true;
+    // Tapered central reflective blue-glass core
+    const lmCore = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 1.18, 6.4, 4), cityMatCool);
+    lmCore.rotation.y = Math.PI / 4; lmCore.position.y = 4.0; lmCore.castShadow = true;
+    // 4 signature white-silver tapered corner structural piers (creates the iconic notched Landmark silhouette!)
+    for (const [cx, cz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.38, 6.65, 4), silverCladMat);
+      pier.rotation.y = Math.PI / 4;
+      pier.position.set(cx * 0.62, 4.1, cz * 0.62);
+      pier.rotation.z = cx * 0.045; pier.rotation.x = -cz * 0.045;
+      pier.castShadow = true; lmGroup.add(pier);
+    }
+    // Signature recessed rooftop notch crown + sky garden deck + twin aviation beacons
+    const lmCrownL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 1.18), silverCladMat); lmCrownL.position.set(-0.4, 7.42, 0);
+    const lmCrownR = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 1.18), silverCladMat); lmCrownR.position.set(0.4, 7.42, 0);
+    const lmCrownGlass = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.34, 1.12), cityMatCool); lmCrownGlass.position.y = 7.22;
+    const lmBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); lmBeacon.position.set(0, 7.82, 0);
+    lmGroup.add(lmPodium, lmCore, lmCrownL, lmCrownR, lmCrownGlass, lmBeacon); yokoGroup.add(lmGroup);
 
+    // 2. InterContinental Yokohama Grand Sail Hotel (Ribbed Curved White Sail + Glass Facade + Waterfront Podium!)
     const sailHotel = new THREE.Group(); sailHotel.position.set(45.8, getTerrainHeight(45.8, 10.2), 10.2); sailHotel.rotation.y = -0.35;
-    const sailBody = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 1.18, 4.2, 16, 1, false, -Math.PI * 0.4, Math.PI * 0.8), whiteMat);
-    sailBody.scale.set(1.4, 1.0, 0.55); sailBody.position.y = 2.1; sailBody.castShadow = true;
-    const sailGlass = new THREE.Mesh(new THREE.BoxGeometry(1.35, 3.8, 0.42), cityMatCool); sailGlass.position.y = 1.9;
-    sailHotel.add(sailBody, sailGlass); yokoGroup.add(sailHotel);
+    const sailPodium = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.55, 1.4), silverCladMat); sailPodium.position.y = 0.28; sailPodium.castShadow = true;
+    const sailBody = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 1.24, 4.4, 20, 1, false, -Math.PI * 0.42, Math.PI * 0.84), whiteMat);
+    sailBody.scale.set(1.45, 1.0, 0.54); sailBody.position.y = 2.45; sailBody.castShadow = true;
+    const sailGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 1.12, 4.1, 16), cityMatCool);
+    sailGlass.scale.set(1.36, 1.0, 0.46); sailGlass.position.y = 2.38;
+    const sailFin = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.5, 0.14), silverCladMat); sailFin.position.set(0, 2.5, 0.55);
+    sailHotel.add(sailPodium, sailBody, sailGlass, sailFin); yokoGroup.add(sailHotel);
 
+    // 3. Cosmo Clock 21 Giant Ferris Wheel (Illuminated Rim + 16 Gondola Pods + Glowing Digital Clock Hub!)
     const cosmoGroup = new THREE.Group(); cosmoGroup.position.set(44.6, getTerrainHeight(44.6, 8.8), 8.8); cosmoGroup.rotation.y = 0.45; yokoGroup.add(cosmoGroup);
-    const cosmoRotor = new THREE.Group(); cosmoRotor.position.y = 2.25; cosmoGroup.add(cosmoRotor);
+    const cosmoRotor = new THREE.Group(); cosmoRotor.position.y = 2.35; cosmoGroup.add(cosmoRotor);
     const cosmoRimMat = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#ec4899', emissiveIntensity: 0.45 });
-    nightEmissives.push({ mat: cosmoRimMat, day: 0.3, sunset: 1.1, night: 2.3 });
-    cosmoRotor.add(new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.075, 8, 32), cosmoRimMat));
-    for (let i = 0; i < 12; i++) { const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 3.3, 4), whiteMat); sp.rotation.z = (i / 12) * Math.PI * 2; cosmoRotor.add(sp); }
-    for (const sx of [-0.5, 0.5]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.08, 2.35, 6), whiteMat); leg.position.set(sx, 1.15, 0); leg.rotation.z = sx > 0 ? 0.2 : -0.2; cosmoGroup.add(leg); }
+    nightEmissives.push({ mat: cosmoRimMat, day: 0.3, sunset: 1.2, night: 2.5 });
+    cosmoRotor.add(new THREE.Mesh(new THREE.TorusGeometry(1.72, 0.075, 8, 36), cosmoRimMat));
+    cosmoRotor.add(new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.035, 6, 32), whiteMat));
+    const cosmoHub = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 16), new THREE.MeshStandardMaterial({ color: '#0f172a', emissive: '#38bdf8', emissiveIntensity: 0.9 }));
+    cosmoHub.rotation.x = Math.PI / 2; cosmoRotor.add(cosmoHub);
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 3.44, 4), whiteMat); sp.rotation.z = a; cosmoRotor.add(sp);
+      const pod = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 0.18), new THREE.MeshStandardMaterial({ color: podCols[i % 6] }));
+      pod.position.set(Math.cos(a) * 1.72, Math.sin(a) * 1.72, 0); cosmoRotor.add(pod);
+    }
+    for (const sx of [-0.55, 0.55]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 2.45, 6), whiteMat); leg.position.set(sx, 1.2, 0); leg.rotation.z = sx > 0 ? 0.22 : -0.22; cosmoGroup.add(leg); }
 
-    const brickMat = new THREE.MeshStandardMaterial({ color: '#991b1b', roughness: 0.78 });
+    // 4. Yokohama Red Brick Warehouses (Detailed Arched-Window Red-Brick Facade!)
+    const brickMat = new THREE.MeshStandardMaterial({ map: brickFacadeTex, color: '#e2d8d5', roughness: 0.68, metalness: 0.05 });
     for (const [rx, rz] of [[45.0, 12.6], [46.4, 12.9]]) {
       const wb = new THREE.Group(); wb.position.set(rx, getTerrainHeight(rx, rz), rz); wb.rotation.y = -0.25;
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.62, 2.2), brickMat); b.position.y = 0.31; b.castShadow = true; wb.add(b);
-      addSnowableRoof(wb, new THREE.ConeGeometry(0.7, 0.32, 4), slateRoofMat, 0.76, Math.PI / 4, [1.1, 1, 2.4]);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.68, 2.35), brickMat); b.position.y = 0.34; b.castShadow = true; wb.add(b);
+      addSnowableRoof(wb, new THREE.ConeGeometry(0.75, 0.34, 4), slateRoofMat, 0.82, Math.PI / 4, [1.1, 1, 2.45]);
       yokoGroup.add(wb);
     }
-    for (const [qx, qz, qh] of [[41.0, 9.8, 4.6], [41.6, 10.8, 3.8], [42.2, 11.8, 3.1], [41.2, 6.6, 3.4], [43.8, 6.0, 3.9]]) {
-      const qb = new THREE.Mesh(new THREE.BoxGeometry(0.95, qh, 0.95), cityMatWarm);
-      qb.position.set(qx, getTerrainHeight(qx, qz) + qh * 0.5, qz); qb.castShadow = true; yokoGroup.add(qb);
+    // 5. Queen's Square Towers A, B, C (Signature 3 Stepped Curved-Top White Towers!) + Bayfront Offices
+    for (const [qx, qz, qh, curved] of [[41.0, 9.8, 4.9, true], [41.7, 10.8, 4.0, true], [42.4, 11.8, 3.2, true], [41.2, 6.6, 3.6, false], [43.8, 6.0, 4.1, false]]) {
+      const qg = new THREE.Group(); qg.position.set(qx, getTerrainHeight(qx, qz), qz);
+      const qb = new THREE.Mesh(new THREE.BoxGeometry(0.95, qh, 0.95), curved ? cityMatCool : cityMatWarm);
+      qb.position.y = qh * 0.5; qb.castShadow = true; qg.add(qb);
+      const cap = curved
+        ? new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.96, 10, 1, false, 0, Math.PI), silverCladMat)
+        : new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 0.7), silverCladMat);
+      if (curved) { cap.rotation.z = Math.PI / 2; cap.position.y = qh; }
+      else cap.position.y = qh + 0.12;
+      qg.add(cap); yokoGroup.add(qg);
     }
 
     // =========================================================================
@@ -2745,79 +2831,121 @@
     const tokyoGroup = new THREE.Group();
     root.add(tokyoGroup);
 
-    // Red-and-White Tokyo Tower (45.5, y, -16.5)
+    // 2.0 Open-Lattice Red-and-White Tokyo Tower (45.5, y, -16.5)
     const ttGroup = new THREE.Group();
     ttGroup.position.set(45.5, getTerrainHeight(45.5, -16.5), -16.5);
-    const ttRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ff4500', emissiveIntensity: 0.32, roughness: 0.36 });
-    const ttWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fef3c7', emissiveIntensity: 0.25, roughness: 0.36 });
-    const ttDeckGlow = new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#f59e0b', emissiveIntensity: 0.6 });
+    const ttRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ff4500', emissiveIntensity: 0.32, roughness: 0.34, metalness: 0.35 });
+    const ttWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fef3c7', emissiveIntensity: 0.25, roughness: 0.34, metalness: 0.3 });
+    const ttLatticeRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ff4500', emissiveIntensity: 0.35, wireframe: true });
+    const ttLatticeWht = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fef3c7', emissiveIntensity: 0.28, wireframe: true });
+    const ttDeckGlow = new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#f59e0b', emissiveIntensity: 0.65 });
     nightEmissives.push({ mat: ttRed, day: 0.22, sunset: 1.05, night: 2.15 });
     nightEmissives.push({ mat: ttWhite, day: 0.16, sunset: 0.82, night: 1.75 });
-    nightEmissives.push({ mat: ttDeckGlow, day: 0.3, sunset: 1.2, night: 2.4 });
+    nightEmissives.push({ mat: ttLatticeRed, day: 0.22, sunset: 1.05, night: 2.2 });
+    nightEmissives.push({ mat: ttLatticeWht, day: 0.16, sunset: 0.85, night: 1.85 });
+    nightEmissives.push({ mat: ttDeckGlow, day: 0.3, sunset: 1.2, night: 2.6 });
+    // FootTown base building under the 4 splayed legs
+    const ttFoot = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.55, 1.75), silverCladMat); ttFoot.position.y = 0.28; ttFoot.castShadow = true; ttGroup.add(ttFoot);
     for (let i = 0; i < 4; i++) {
       const a = (i * Math.PI) / 2 + Math.PI / 4;
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 2.5, 6), ttRed);
-      leg.position.set(Math.cos(a) * 0.88, 1.15, Math.sin(a) * 0.88);
-      leg.rotation.z = Math.cos(a) * 0.32; leg.rotation.x = -Math.sin(a) * 0.32; leg.castShadow = true;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 2.75, 6), ttRed);
+      leg.position.set(Math.cos(a) * 0.92, 1.25, Math.sin(a) * 0.92);
+      leg.rotation.z = Math.cos(a) * 0.34; leg.rotation.x = -Math.sin(a) * 0.34; leg.castShadow = true;
       ttGroup.add(leg);
     }
-    [[2.1, 0.82, 1.08, 0.95, ttWhite], [3.0, 0.62, 0.82, 0.95, ttRed], [4.2, 0.44, 0.58, 1.15, ttWhite],
-     [5.35, 0.28, 0.44, 1.15, ttRed], [6.4, 0.16, 0.28, 1.0, ttWhite], [7.45, 0.04, 0.15, 1.2, ttRed]
+    [[2.1, 0.84, 1.12, 0.95, ttLatticeWht], [3.0, 0.62, 0.84, 0.95, ttLatticeRed], [4.2, 0.44, 0.58, 1.15, ttLatticeWht],
+     [5.35, 0.28, 0.44, 1.15, ttLatticeRed], [6.4, 0.16, 0.28, 1.0, ttLatticeWht], [7.55, 0.035, 0.15, 1.35, ttRed]
     ].forEach(([by, rt, rb, bh, mat]) => {
-      const seg = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, bh, 4), mat);
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, bh, 4, 3, mat.wireframe), mat);
       seg.rotation.y = Math.PI / 4; seg.position.y = by; seg.castShadow = true; ttGroup.add(seg);
     });
-    const ttMainDeck = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.36, 1.38), ttDeckGlow); ttMainDeck.position.y = 3.55;
-    const ttMainRoof = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.12, 1.48), ttRed); ttMainRoof.position.y = 3.76;
-    const ttTopDeck = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.28, 0.66), ttDeckGlow); ttTopDeck.position.y = 5.95;
-    const ttBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ff0000' })); ttBeacon.position.y = 8.15;
-    ttGroup.add(ttMainDeck, ttMainRoof, ttTopDeck, ttBeacon); tokyoGroup.add(ttGroup);
+    const ttCore = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.28, 6.2, 6), ttRed); ttCore.position.y = 3.5;
+    const ttMainDeck = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.44, 1.48), ttDeckGlow); ttMainDeck.position.y = 3.55;
+    const ttMainRoof = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.14, 1.58), ttRed); ttMainRoof.position.y = 3.82;
+    const ttTopDeck = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.32, 0.72), ttDeckGlow); ttTopDeck.position.y = 5.95;
+    const ttBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ff0000' })); ttBeacon.position.y = 8.32;
+    ttGroup.add(ttCore, ttMainDeck, ttMainRoof, ttTopDeck, ttBeacon); tokyoGroup.add(ttGroup);
 
-    // Tokyo Skytree (62.5, y, -29.0 — East of Asakusa across Sumida River!)
+    // 2.0 Open-Lattice Tokyo Skytree with Iki Blue & Miyabi Purple LED Illumination (62.5, y, -29.0)
     const skyGroup = new THREE.Group();
     skyGroup.position.set(62.5, getTerrainHeight(62.5, -29.0), -29.0);
-    const skySteel = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#38bdf8', emissiveIntensity: 0.2, metalness: 0.45, roughness: 0.28 });
-    nightEmissives.push({ mat: skySteel, day: 0.15, sunset: 0.75, night: 1.95 });
-    const skyShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.78, 7.6, 12), skySteel); skyShaft.position.y = 3.8; skyShaft.castShadow = true;
-    const skyPod1 = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.48, 0.42, 18), whiteMat); skyPod1.position.y = 5.2;
-    const skyPod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.36, 0.32, 18), whiteMat); skyPod2.position.y = 6.5;
-    const skySpire = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.16, 2.4, 8), skySteel); skySpire.position.y = 8.8;
-    skyGroup.add(skyShaft, skyPod1, skyPod2, skySpire); tokyoGroup.add(skyGroup);
+    const skySteel = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#38bdf8', emissiveIntensity: 0.2, metalness: 0.55, roughness: 0.25 });
+    const skyTrussMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', emissive: '#7dd3fc', emissiveIntensity: 0.22, wireframe: true });
+    const skyIkiGlow = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#38bdf8', emissiveIntensity: 0.45, roughness: 0.2 });
+    const skyMiyabiGlow = new THREE.MeshStandardMaterial({ color: '#a855f7', emissive: '#c084fc', emissiveIntensity: 0.45, roughness: 0.2 });
+    nightEmissives.push({ mat: skySteel, day: 0.12, sunset: 0.72, night: 1.85 });
+    nightEmissives.push({ mat: skyTrussMat, day: 0.14, sunset: 0.85, night: 2.1 });
+    nightEmissives.push({ mat: skyIkiGlow, day: 0.25, sunset: 1.35, night: 2.9 });
+    nightEmissives.push({ mat: skyMiyabiGlow, day: 0.22, sunset: 1.25, night: 2.8 });
+    // Solamachi Podium & 3-Legged Triangular Steel Base
+    const skyPodium = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.65, 0.52, 6), silverCladMat); skyPodium.position.y = 0.26; skyGroup.add(skyPodium);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.24, 2.6, 6), skySteel);
+      leg.position.set(Math.cos(a) * 0.72, 1.35, Math.sin(a) * 0.72);
+      leg.rotation.z = Math.cos(a) * 0.24; leg.rotation.x = -Math.sin(a) * 0.24; leg.castShadow = true; skyGroup.add(leg);
+    }
+    // Open Lattice Outer Steel Truss + Dual Illuminated Iki Blue / Miyabi Purple Core
+    const skyOuterTruss = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.88, 7.8, 12, 10, true), skyTrussMat); skyOuterTruss.position.y = 4.05;
+    const skyCoreLower = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.56, 3.6, 12), skyMiyabiGlow); skyCoreLower.position.y = 2.1;
+    const skyCoreUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.32, 4.1, 12), skyIkiGlow); skyCoreUpper.position.y = 5.85;
+    // Double Cantilevered Tembo Deck (350m) & Tembo Galleria (450m) Glass Rings
+    const skyPod1 = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.54, 0.46, 20), silverCladMat); skyPod1.position.y = 5.35;
+    const skyPod1Glass = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.58, 0.22, 20), skyIkiGlow); skyPod1Glass.position.y = 5.38;
+    const skyPod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.42, 0.36, 20), silverCladMat); skyPod2.position.y = 6.75;
+    const skyPod2Glass = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.44, 0.16, 20), skyMiyabiGlow); skyPod2Glass.position.y = 6.77;
+    const skySpire = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.16, 2.75, 8), skySteel); skySpire.position.y = 9.25;
+    const skyTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshBasicMaterial({ color: '#38bdf8' })); skyTip.position.y = 10.68;
+    skyGroup.add(skyOuterTruss, skyCoreLower, skyCoreUpper, skyPod1, skyPod1Glass, skyPod2, skyPod2Glass, skySpire, skyTip); tokyoGroup.add(skyGroup);
 
-    // Tokyo Station Marunouchi Red-Brick Building (東京車站 at 51.5, y, -20.5)
+    // 2.0 Grand Imperial Tokyo Station Marunouchi Red-Brick Facade (51.5, y, -20.5)
     const tsGroup = new THREE.Group();
     tsGroup.position.set(51.5, getTerrainHeight(51.5, -20.5), -20.5);
-    const tsPlaza = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.12, 3.6), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.85 }));
+    const tsPlaza = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.12, 4.2), new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.85 }));
     tsPlaza.position.y = 0.06; tsGroup.add(tsPlaza);
-    const tsMain = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.05, 1.15), brickMat); tsMain.position.set(0, 0.62, -0.35); tsMain.castShadow = true;
-    const tsCenter = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.32, 1.32), brickMat); tsCenter.position.set(0, 0.76, -0.35);
-    const tsTrim = new THREE.Mesh(new THREE.BoxGeometry(4.68, 0.12, 1.22), whiteMat); tsTrim.position.set(0, 0.85, -0.35);
-    const tsRoof = new THREE.Mesh(new THREE.BoxGeometry(4.7, 0.18, 1.24), slateRoofMat); tsRoof.position.set(0, 1.22, -0.35);
-    tsGroup.add(tsMain, tsCenter, tsTrim, tsRoof);
-    for (const dx of [-2.15, 2.15]) {
-      const pav = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.62, 1.25, 8), brickMat); pav.position.set(dx, 0.72, -0.35); pav.castShadow = true;
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.58, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), slateRoofMat); dome.position.set(dx, 1.32, -0.35);
-      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.35, 6), goldMat); fin.position.set(dx, 1.98, -0.35);
-      tsGroup.add(pav, dome, fin);
+    // Twin Marunouchi Forecourt Semicircular Rotary Islands
+    for (const rx of [-1.7, 1.7]) {
+      const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.58, 0.14, 14), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 }));
+      rot.position.set(rx, 0.14, 1.15); tsGroup.add(rot);
+    }
+    const tsMain = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.15, 1.25), brickMat); tsMain.position.set(0, 0.68, -0.45); tsMain.castShadow = true;
+    const tsCenter = new THREE.Mesh(new THREE.BoxGeometry(1.38, 1.48, 1.48), brickMat); tsCenter.position.set(0, 0.84, -0.45); tsCenter.castShadow = true;
+    const tsPediment = new THREE.Mesh(new THREE.ConeGeometry(0.92, 0.45, 4), slateRoofMat); tsPediment.rotation.y = Math.PI / 4; tsPediment.position.set(0, 1.78, -0.45);
+    const tsTrim = new THREE.Mesh(new THREE.BoxGeometry(5.1, 0.12, 1.32), whiteMat); tsTrim.position.set(0, 1.22, -0.45);
+    const tsRoof = new THREE.Mesh(new THREE.BoxGeometry(5.12, 0.22, 1.32), slateRoofMat); tsRoof.position.set(0, 1.38, -0.45);
+    tsGroup.add(tsMain, tsCenter, tsPediment, tsTrim, tsRoof);
+    for (const dx of [-2.35, 2.35]) {
+      const pav = new THREE.Mesh(new THREE.CylinderGeometry(0.64, 0.68, 1.4, 8), brickMat); pav.position.set(dx, 0.8, -0.45); pav.castShadow = true;
+      const pavBand = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.12, 8), whiteMat); pavBand.position.set(dx, 1.45, -0.45);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.56), slateRoofMat); dome.position.set(dx, 1.5, -0.45);
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 6), goldMat); fin.position.set(dx, 2.24, -0.45);
+      tsGroup.add(pav, pavBand, dome, fin);
     }
     tokyoGroup.add(tsGroup);
 
-    // Tokyo Dome White Air-Supported Stadium (東京巨蛋 at 49.5, y, -31.5)
+    // 2.0 Tokyo Dome Air-Supported Stadium + Adjacent LaQua Centerless Big-O Ferris Wheel (49.5, y, -31.5)
     const tdGroup = new THREE.Group();
     tdGroup.position.set(49.5, getTerrainHeight(49.5, -31.5), -31.5);
-    const tdBase = new THREE.Mesh(new THREE.CylinderGeometry(2.35, 2.5, 0.85, 24), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.7 }));
-    tdBase.position.y = 0.42; tdBase.castShadow = true;
-    const tdRoofMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#e0f2fe', emissiveIntensity: 0.18, roughness: 0.35 });
-    nightEmissives.push({ mat: tdRoofMat, day: 0.1, sunset: 0.45, night: 1.15 });
-    const tdRoof = new THREE.Mesh(new THREE.SphereGeometry(2.38, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.46), tdRoofMat);
-    tdRoof.scale.set(1.06, 0.46, 0.94); tdRoof.position.y = 0.78; tdRoof.castShadow = true;
-    const tdRibMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.5 });
-    for (let r = 0; r < 6; r++) {
-      const rib = new THREE.Mesh(new THREE.TorusGeometry(2.36, 0.035, 6, 24, Math.PI), tdRibMat);
-      rib.scale.set(1.06, 0.47, 0.94); rib.position.y = 0.79; rib.rotation.y = (r / 6) * Math.PI;
+    const tdBase = new THREE.Mesh(new THREE.CylinderGeometry(2.38, 2.65, 0.92, 28), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.62, metalness: 0.15 }));
+    tdBase.position.y = 0.46; tdBase.castShadow = true;
+    const tdGlassBelt = new THREE.Mesh(new THREE.CylinderGeometry(2.44, 2.58, 0.42, 28), cityMatCool); tdGlassBelt.position.y = 0.52;
+    const tdSignRing = new THREE.Mesh(new THREE.CylinderGeometry(2.42, 2.42, 0.12, 28), new THREE.MeshStandardMaterial({ color: '#15803d', emissive: '#22c55e', emissiveIntensity: 0.45 }));
+    tdSignRing.position.y = 0.86;
+    const tdRoofMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#e0f2fe', emissiveIntensity: 0.18, roughness: 0.32 });
+    nightEmissives.push({ mat: tdRoofMat, day: 0.1, sunset: 0.45, night: 1.25 });
+    const tdRoof = new THREE.Mesh(new THREE.SphereGeometry(2.42, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.46), tdRoofMat);
+    tdRoof.scale.set(1.06, 0.48, 0.94); tdRoof.position.y = 0.85; tdRoof.castShadow = true;
+    const tdRibMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.45 });
+    for (let r = 0; r < 10; r++) {
+      const rib = new THREE.Mesh(new THREE.TorusGeometry(2.41, 0.032, 6, 28, Math.PI), tdRibMat);
+      rib.scale.set(1.06, 0.49, 0.94); rib.position.y = 0.86; rib.rotation.y = (r / 10) * Math.PI;
       tdGroup.add(rib);
     }
-    tdGroup.add(tdBase, tdRoof); tokyoGroup.add(tdGroup);
+    // Tokyo Dome City LaQua Centerless Big-O Ferris Wheel (無軸心摩天輪!)
+    const laquaWheel = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.085, 8, 28), cosmoRimMat);
+    laquaWheel.position.set(-2.55, 1.55, -1.65); laquaWheel.rotation.y = 0.35;
+    const laquaBase = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.65, 1.05), silverCladMat); laquaBase.position.set(-2.55, 0.32, -1.65);
+    tdGroup.add(tdBase, tdGlassBelt, tdSignRing, tdRoof, laquaWheel, laquaBase); tokyoGroup.add(tdGroup);
 
     // Asakusa Kaminarimon Gate, Giant Red Lantern & Senso-ji (淺草雷門 at 57.5, y, -27.5)
     const asaGroup = new THREE.Group();
@@ -2886,29 +3014,46 @@
     const fujiTvSphere = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 14), new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.78, roughness: 0.18 }));
     fujiTvSphere.position.set(0.15, 1.45, 0.25); odaibaGroup.add(fujiTvBody, fujiTvSphere); tokyoGroup.add(odaibaGroup);
 
-    // Expanded Dense 138-Skyscraper Greater Tokyo Skyline (Shinjuku / Marunouchi / Ginza / Ueno / Sumida)
-    for (let i = 0; i < 138; i++) {
+    // 2.0 Diverse 155-Skyscraper Greater Tokyo Skyline (Stepped Towers, Rooftop HVAC, Helipads & Aviation Beacons!)
+    const beaconRedMat = new THREE.MeshBasicMaterial({ color: '#ef4444' });
+    const hvacMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.72 });
+    for (let i = 0; i < 155; i++) {
       const bx = randRange(39.0, 65.5), bz = randRange(-44.5, -11.5);
-      if (Math.hypot(bx - 45.5, bz + 16.5) < 2.4) continue; // Tokyo Tower
-      if (Math.hypot(bx - 51.5, bz + 20.5) < 3.4) continue; // Tokyo Station
-      if (Math.hypot(bx - 49.5, bz + 31.5) < 3.5) continue; // Tokyo Dome
+      if (Math.hypot(bx - 45.5, bz + 16.5) < 2.5) continue; // Tokyo Tower
+      if (Math.hypot(bx - 51.5, bz + 20.5) < 3.6) continue; // Tokyo Station
+      if (Math.hypot(bx - 49.5, bz + 31.5) < 3.8) continue; // Tokyo Dome + LaQua
       if (Math.hypot(bx - 57.5, bz + 27.5) < 3.5) continue; // Asakusa Kaminarimon
-      if (Math.hypot(bx - 62.5, bz + 29.0) < 2.5) continue; // Tokyo Skytree
-      if (Math.hypot(bx - 59.0, bz + 11.5) < 4.2) continue; // Tokyo Disney Resort (Relocated West!)
-      const bw = randRange(0.55, 1.25), bd = randRange(0.55, 1.25);
-      const bh = randRange(1.0, 4.6) * (bz < -14 && bz > -34 && bx < 58 ? 1.18 : 0.88);
+      if (Math.hypot(bx - 62.5, bz + 29.0) < 2.6) continue; // Tokyo Skytree
+      if (Math.hypot(bx - 59.0, bz + 11.5) < 4.6) continue; // Tokyo Disney Resort + Mt. Prometheus
+      const bw = randRange(0.58, 1.32), bd = randRange(0.58, 1.32);
+      const bh = randRange(1.1, 4.9) * (bz < -14 && bz > -34 && bx < 58 ? 1.18 : 0.88);
       const bMat = i % 2 === 0 ? cityMatWarm : cityMatCool;
       const gy = getTerrainHeight(bx, bz);
       if (gy < WATER_Y + 0.15) continue;
-      const bldg = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), bMat);
+      const bldg = new THREE.Mesh(
+        i % 7 === 0 ? new THREE.CylinderGeometry(bw * 0.52, bw * 0.56, bh, 12) : new THREE.BoxGeometry(bw, bh, bd),
+        bMat
+      );
       bldg.position.set(bx, gy + bh * 0.5, bz); bldg.castShadow = true; bldg.receiveShadow = true; tokyoGroup.add(bldg);
-      if (bh > 2.4) {
-        const crown = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.68, bh * 0.22, bd * 0.68), bMat);
-        crown.position.set(bx, gy + bh + bh * 0.11, bz); tokyoGroup.add(crown);
-        if (i % 4 === 0) {
-          const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.95, 5), whiteMat);
-          spire.position.set(bx, gy + bh + bh * 0.22 + 0.45, bz); tokyoGroup.add(spire);
+      // Rooftop parapet trim / HVAC mechanical penthouse / spire / red aviation beacon
+      const parapet = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.03, 0.08, bd * 1.03), silverCladMat);
+      parapet.position.set(bx, gy + bh + 0.04, bz);
+      if (i % 7 !== 0) tokyoGroup.add(parapet);
+      if (bh > 2.3) {
+        const crownH = bh * 0.2;
+        const crown = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.66, crownH, bd * 0.66), i % 3 === 0 ? silverCladMat : bMat);
+        crown.position.set(bx, gy + bh + crownH * 0.5, bz); crown.castShadow = true; tokyoGroup.add(crown);
+        if (i % 3 === 0) {
+          const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.038, 1.05, 5), silverCladMat);
+          spire.position.set(bx, gy + bh + crownH + 0.5, bz); tokyoGroup.add(spire);
         }
+        if (bh > 3.6 && i % 2 === 0) {
+          const bcn = new THREE.Mesh(new THREE.SphereGeometry(0.065, 6, 6), beaconRedMat);
+          bcn.position.set(bx, gy + bh + crownH + (i % 3 === 0 ? 1.02 : 0.12), bz); tokyoGroup.add(bcn);
+        }
+      } else {
+        const hvac = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.36, 0.16, bd * 0.32), hvacMat);
+        hvac.position.set(bx, gy + bh + 0.1, bz); tokyoGroup.add(hvac);
       }
     }
 
@@ -3031,6 +3176,10 @@
     const mcBridge = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.18, 0.42), mcCabinGlow); mcBridge.position.set(0, 1.16, 1.15);
     const mcPool = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.72), mcPoolMat); mcPool.position.set(0, 1.34, 0.15);
     megaCruise.add(mcHull, mcBow, mcDeck1, mcWin1, mcDeck2, mcWin2, mcDeck3, mcBridge, mcPool);
+    // 2.0 V-Shaped Foaming Ocean Wake behind Giant Luxury Cruise Liner!
+    const mcWake = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 7.2), wakeMat);
+    mcWake.rotation.x = -Math.PI / 2; mcWake.position.set(0, 0.05, -5.2);
+    megaCruise.add(mcWake);
     for (const fz of [-0.45, -1.05]) {
       const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 0.58, 10), vermilionMat);
       funnel.position.set(0, 1.56, fz); funnel.rotation.x = -0.18; funnel.castShadow = true;
@@ -3112,20 +3261,35 @@
       }
     }
 
-    // B. Tokyo Disney Resort / Cinderella Castle (Relocated West to 59.0, y, -11.5)
+    // B. 2.0 Tokyo Disney Resort: 7-Turret Cinderella Castle + DisneySea Mt. Prometheus Volcano (59.0, y, -11.5)
     const disGroup = new THREE.Group();
     disGroup.position.set(59.0, getTerrainHeight(59.0, -11.5), -11.5);
-    const castleBlue = new THREE.MeshStandardMaterial({ color: '#2563eb', emissive: '#60a5fa', emissiveIntensity: 0.28, roughness: 0.35 });
-    nightEmissives.push({ mat: castleBlue, day: 0.15, sunset: 0.9, night: 2.1 });
-    const cBase = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.95, 2.2), whiteMat); cBase.position.y = 0.48; cBase.castShadow = true;
-    const cMainT = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.54, 2.4, 10), whiteMat); cMainT.position.y = 1.95; cMainT.castShadow = true;
-    const cMainSpire = new THREE.Mesh(new THREE.ConeGeometry(0.48, 1.45, 10), castleBlue); cMainSpire.position.y = 3.85;
-    disGroup.add(cBase, cMainT, cMainSpire);
-    for (const [tx, tz] of [[-0.95, -0.85], [0.95, -0.85], [-0.95, 0.85], [0.95, 0.85]]) {
-      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 1.55, 8), whiteMat); st.position.set(tx, 1.25, tz);
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.82, 8), castleBlue); sp.position.set(tx, 2.4, tz);
+    const castleStone = new THREE.MeshStandardMaterial({ color: '#f5efe6', roughness: 0.52 });
+    const castleBlue = new THREE.MeshStandardMaterial({ color: '#2563eb', emissive: '#60a5fa', emissiveIntensity: 0.3, roughness: 0.32, metalness: 0.2 });
+    nightEmissives.push({ mat: castleBlue, day: 0.15, sunset: 0.95, night: 2.3 });
+    // Cinderella Castle Fortress Base, Arched Gate & 7 Soaring Turrets
+    const cPlaza = new THREE.Mesh(new THREE.CylinderGeometry(2.65, 2.8, 0.12, 24), new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.82 }));
+    cPlaza.position.set(-0.6, 0.06, 0); disGroup.add(cPlaza);
+    const cBase = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.98, 2.25), castleStone); cBase.position.set(-0.6, 0.52, 0); cBase.castShadow = true;
+    const cUpper = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.85, 1.5), castleStone); cUpper.position.set(-0.6, 1.38, 0); cUpper.castShadow = true;
+    const cMainT = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.5, 2.55, 12), castleStone); cMainT.position.set(-0.6, 2.2, 0); cMainT.castShadow = true;
+    const cMainSpire = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.55, 12), castleBlue); cMainSpire.position.set(-0.6, 4.18, 0);
+    const cGoldTip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 6), goldMat); cGoldTip.position.set(-0.6, 5.1, 0);
+    disGroup.add(cBase, cUpper, cMainT, cMainSpire, cGoldTip);
+    for (const [tx, tz, th] of [[-1.55, -0.88, 1.65], [0.35, -0.88, 1.65], [-1.55, 0.88, 1.55], [0.35, 0.88, 1.55], [-1.15, 0.0, 2.15], [-0.05, 0.0, 2.15]]) {
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, th, 8), castleStone); st.position.set(tx, 0.5 + th * 0.5, tz); st.castShadow = true;
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.82, 8), castleBlue); sp.position.set(tx, 0.5 + th + 0.38, tz);
       disGroup.add(st, sp);
     }
+    // Tokyo DisneySea Mt. Prometheus Volcano (普羅米修斯火山!) right beside Cinderella Castle
+    const promVolcano = new THREE.Mesh(
+      new THREE.ConeGeometry(1.55, 2.45, 9),
+      new THREE.MeshStandardMaterial({ color: '#6b4c3b', roughness: 0.92 })
+    );
+    promVolcano.position.set(2.15, 1.2, 0.35); promVolcano.castShadow = true;
+    const promGlow = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), new THREE.MeshStandardMaterial({ color: '#f97316', emissive: '#ea580c', emissiveIntensity: 1.5 }));
+    promGlow.position.set(2.15, 2.38, 0.35);
+    disGroup.add(promVolcano, promGlow);
     bayEastGroup.add(disGroup);
 
     // C. Makuhari New City & Makuhari Messe (Relocated to former Disney coords: 67.5, y, -11.5)
@@ -3391,11 +3555,17 @@
 
     const hTermGlow = new THREE.MeshStandardMaterial({ color: '#e0f2fe', emissive: '#38bdf8', emissiveIntensity: 0.25, roughness: 0.25 });
     nightEmissives.push({ mat: hTermGlow, day: 0.18, sunset: 0.95, night: 2.1 });
-    const hTerminal = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.56, 0.95), whiteMat); hTerminal.position.set(-0.4, hRunwayY + 0.28, -1.65); hTerminal.castShadow = true;
-    const hTermGlass = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.32, 0.99), hTermGlow); hTermGlass.position.set(-0.4, hRunwayY + 0.28, -1.65);
-    hanedaGroup.add(hTerminal, hTermGlass);
-    for (let jb = -1.8; jb <= 1.0; jb += 0.95) {
-      const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.52), whiteMat); bridge.position.set(jb, hRunwayY + 0.22, -0.95); hanedaGroup.add(bridge);
+    const hTerminal = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.58, 0.98), silverCladMat); hTerminal.position.set(-0.4, hRunwayY + 0.29, -1.65); hTerminal.castShadow = true;
+    const hTermGlass = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.34, 1.02), hTermGlow); hTermGlass.position.set(-0.4, hRunwayY + 0.29, -1.65);
+    const hTermArch = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.54, 4.7, 10, 1, false, 0, Math.PI), silverCladMat);
+    hTermArch.rotation.z = Math.PI / 2; hTermArch.scale.set(0.35, 1.0, 1.0); hTermArch.position.set(-0.4, hRunwayY + 0.58, -1.65);
+    // Yellow taxiway centerline stripe connecting apron to runway
+    const taxiLineMat = new THREE.MeshBasicMaterial({ color: '#facc15' });
+    const hTaxiLine = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 0.06), taxiLineMat);
+    hTaxiLine.rotation.x = -Math.PI / 2; hTaxiLine.position.set(-0.2, hRunwayY + 0.02, -0.02);
+    hanedaGroup.add(hTerminal, hTermGlass, hTermArch, hTaxiLine);
+    for (let jb = -2.2; jb <= 1.4; jb += 0.9) {
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.55), whiteMat); bridge.position.set(jb, hRunwayY + 0.22, -0.95); hanedaGroup.add(bridge);
     }
     const hTower = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 2.25, 10), whiteMat); hTower.position.set(3.2, hRunwayY + 1.12, -1.45); hTower.castShadow = true;
     const hCab = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.26, 0.34, 12), new THREE.MeshStandardMaterial({ color: '#0ea5e9', emissive: '#38bdf8', emissiveIntensity: 0.45, roughness: 0.15 }));
@@ -3403,13 +3573,16 @@
     const hTowerBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); hTowerBeacon.position.set(3.2, hRunwayY + 2.68, -1.45);
     hanedaGroup.add(hTower, hCab, hTowerBeacon);
 
-    for (const px of [-1.8, 0.1]) {
-      const pj = new THREE.Group(); pj.position.set(px, hRunwayY + 0.12, -0.58);
-      const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.65, 8), whiteMat); pf.rotation.x = Math.PI / 2;
-      const pw = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.02, 0.16), whiteMat);
-      const pt = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.18, 0.14), vermilionMat); pt.position.set(0, 0.1, -0.26);
-      pj.add(pf, pw, pt); hanedaGroup.add(pj);
+    function addParkedAirliner(parent, px, py, pz, isANA) {
+      const pj = new THREE.Group(); pj.position.set(px, py, pz);
+      const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.78, 8), whiteMat); pf.rotation.x = Math.PI / 2; pf.castShadow = true;
+      const pw = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.024, 0.18), whiteMat); pw.position.z = 0.04;
+      const pStab = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.018, 0.1), whiteMat); pStab.position.set(0, 0.02, -0.34);
+      const pt = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.22, 0.16), isANA ? shinkansenStripeMat : vermilionMat); pt.position.set(0, 0.11, -0.32);
+      pj.add(pf, pw, pStab, pt); parent.add(pj);
     }
+    // 4 Parked ANA & JAL Airliners at Haneda Gates
+    [[-2.2, true], [-1.3, false], [-0.4, true], [0.5, false]].forEach(([px, ana]) => addParkedAirliner(hanedaGroup, px, hRunwayY + 0.12, -0.58, ana));
 
     hanedaGroup.updateMatrixWorld(true);
     const rwyWorldTouch = hanedaGroup.localToWorld(new THREE.Vector3(-3.6, hRunwayY + 0.16, 0.95));
@@ -3447,10 +3620,14 @@
     const nApron = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.03, 1.8), new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.82 }));
     nApron.position.set(-0.2, nRunwayY - 0.005, -0.78); naritaGroup.add(nApron);
 
-    const nTerm = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.64, 1.1), whiteMat); nTerm.position.set(-0.3, nRunwayY + 0.32, -1.85); nTerm.castShadow = true;
-    const nTermGlass = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.36, 1.14), hTermGlow); nTermGlass.position.set(-0.3, nRunwayY + 0.32, -1.85);
-    naritaGroup.add(nTerm, nTermGlass);
-    for (let jb = -2.2; jb <= 1.6; jb += 0.95) {
+    const nTerm = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.66, 1.14), silverCladMat); nTerm.position.set(-0.3, nRunwayY + 0.33, -1.85); nTerm.castShadow = true;
+    const nTermGlass = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.38, 1.18), hTermGlow); nTermGlass.position.set(-0.3, nRunwayY + 0.33, -1.85);
+    const nTermArch = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 5.7, 10, 1, false, 0, Math.PI), silverCladMat);
+    nTermArch.rotation.z = Math.PI / 2; nTermArch.scale.set(0.36, 1.0, 1.0); nTermArch.position.set(-0.3, nRunwayY + 0.66, -1.85);
+    const nTaxiLine = new THREE.Mesh(new THREE.PlaneGeometry(8.2, 0.06), taxiLineMat);
+    nTaxiLine.rotation.x = -Math.PI / 2; nTaxiLine.position.set(-0.2, nRunwayY + 0.02, 0.08);
+    naritaGroup.add(nTerm, nTermGlass, nTermArch, nTaxiLine);
+    for (let jb = -2.4; jb <= 1.8; jb += 0.95) {
       const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.14, 0.58), whiteMat); bridge.position.set(jb, nRunwayY + 0.24, -1.05); naritaGroup.add(bridge);
     }
     const nTower = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 2.75, 10), whiteMat); nTower.position.set(3.8, nRunwayY + 1.38, -1.65); nTower.castShadow = true;
@@ -3459,13 +3636,8 @@
     const nBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); nBeacon.position.set(3.8, nRunwayY + 3.22, -1.65);
     naritaGroup.add(nTower, nCab, nBeacon);
 
-    for (const px of [-2.1, 0.4]) {
-      const pj = new THREE.Group(); pj.position.set(px, nRunwayY + 0.12, -0.62);
-      const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.68, 8), whiteMat); pf.rotation.x = Math.PI / 2;
-      const pw = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.02, 0.16), whiteMat);
-      const pt = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.18, 0.14), shinkansenStripeMat); pt.position.set(0, 0.1, -0.26);
-      pj.add(pf, pw, pt); naritaGroup.add(pj);
-    }
+    // 4 Parked International Airliners at Narita Gates
+    [[-2.4, false], [-1.45, true], [-0.5, false], [0.45, true]].forEach(([px, ana]) => addParkedAirliner(naritaGroup, px, nRunwayY + 0.12, -0.62, ana));
 
     naritaGroup.updateMatrixWorld(true);
     const nRwyTouch = naritaGroup.localToWorld(new THREE.Vector3(-4.2, nRunwayY + 0.16, 1.1));
@@ -3582,9 +3754,9 @@
     const sakuraPts = [], maplePts = [], pinePts = [];
 
     const sakZones = [
-      [4.5, -24.0, 4.4, 46], [-6.5, -20.5, 4.5, 36], [-13.5, -22.5, 3.8, 28],
-      [5.8, -11.5, 3.6, 24], [-31.5, 25.0, 3.8, 24], [41.2, 23.5, 3.4, 20],
-      [57.5, -24.5, 3.0, 18], [82.0, 12.0, 5.0, 26], [77.5, -19.5, 4.2, 22]
+      [4.5, -24.0, 4.8, 72], [-6.5, -20.5, 5.0, 56], [-13.5, -22.5, 4.2, 42],
+      [5.8, -11.5, 4.0, 36], [-31.5, 25.0, 4.2, 36], [41.2, 23.5, 3.8, 32],
+      [57.5, -24.5, 3.2, 24], [82.0, 12.0, 5.5, 40], [77.5, -19.5, 4.6, 36]
     ];
     sakZones.forEach(([zx, zz, zr, zn]) => {
       for (let i = 0; i < zn; i++) {
@@ -3592,11 +3764,11 @@
         const tx = zx + Math.cos(a) * d, tz = zz + Math.sin(a) * d;
         if (Math.hypot(tx - 77.5, tz + 19.5) < 3.1) continue;
         const ty = getTerrainHeight(tx, tz);
-        if (ty > WATER_Y + 0.2 && tx > X_MIN + 1 && tx < X_MAX - 1 && Math.abs(tz) < D / 2 - 1) sakuraPts.push([tx, ty, tz, randRange(0.78, 1.35)]);
+        if (ty > WATER_Y + 0.2 && tx > X_MIN + 1 && tx < X_MAX - 1 && Math.abs(tz) < D / 2 - 1) sakuraPts.push([tx, ty, tz, randRange(0.75, 1.38)]);
       }
     });
 
-    const mapZones = [[-40.5, -28.0, 4.8, 30], [-29.0, 9.5, 3.8, 26], [3.0, -25.0, 3.2, 18], [41.2, 21.8, 3.2, 18], [15.0, 26.0, 4.0, 20], [82.5, 22.0, 5.5, 26]];
+    const mapZones = [[-40.5, -28.0, 5.2, 48], [-29.0, 9.5, 4.4, 42], [3.0, -25.0, 3.6, 28], [41.2, 21.8, 3.5, 28], [15.0, 26.0, 4.4, 34], [82.5, 22.0, 6.0, 44]];
     mapZones.forEach(([zx, zz, zr, zn]) => {
       for (let i = 0; i < zn; i++) {
         const a = rand() * 6.28, d = Math.sqrt(rand()) * zr;
@@ -3604,29 +3776,29 @@
         if (Math.hypot(tx - 77.5, tz + 19.5) < 3.1) continue;
         const ty = getTerrainHeight(tx, tz);
         if (Math.hypot(tx + 40.5, tz + 28.0) < 2.6 || Math.hypot(tx - 41.2, tz - 23.0) < 2.6) continue;
-        if (ty > WATER_Y + 0.2 && tx > X_MIN + 1 && tx < X_MAX - 1 && Math.abs(tz) < D / 2 - 1) maplePts.push([tx, ty, tz, randRange(0.78, 1.25)]);
+        if (ty > WATER_Y + 0.2 && tx > X_MIN + 1 && tx < X_MAX - 1 && Math.abs(tz) < D / 2 - 1) maplePts.push([tx, ty, tz, randRange(0.75, 1.3)]);
       }
     });
 
-    // Extra dense primeval pines specifically inside Aokigahara Jukai (between Motosuko & Saiko!)
-    for (let i = 0; i < 220; i++) {
+    // 2.0 Extra Dense Primeval Canopy inside Aokigahara Jukai (750 trees!)
+    for (let i = 0; i < 750; i++) {
       const a = rand() * 6.28, d = Math.sqrt(rand());
-      const tx = -26.5 + Math.cos(a) * d * 8.5;
-      const tz = -15.0 + Math.sin(a) * d * 6.5;
+      const tx = -26.5 + Math.cos(a) * d * 9.5;
+      const tz = -15.0 + Math.sin(a) * d * 7.2;
       const ty = getTerrainHeight(tx, tz);
-      if (ty > WATER_Y + 0.28 && ty < 4.5 && Math.hypot(tx + 26.0, tz + 14.5) > 2.0) {
-        pinePts.push([tx, ty, tz, randRange(0.85, 1.48)]);
+      if (ty > WATER_Y + 0.25 && ty < 4.8 && Math.hypot(tx + 26.0, tz + 14.5) > 2.0) {
+        pinePts.push([tx, ty, tz, randRange(0.78, 1.52)]);
       }
     }
 
-    // General scattered pines across the 156x96 landscape (including Miura & Boso Peninsulas!)
-    for (let i = 0; i < 1050; i++) {
-      const tx = randRange(X_MIN + 1.5, X_MAX - 2.5), tz = randRange(-46.5, 45.5);
+    // 2.0 Dense Lush Organic Forest Carpet across the 156x96 Landscape (3,600+ trees!)
+    for (let i = 0; i < 3600; i++) {
+      const tx = randRange(X_MIN + 1.2, X_MAX - 2.0), tz = randRange(-46.5, 45.5);
       if (tx > 37.5 && tx < 66.5 && tz < -9.5) continue;      // Greater Tokyo urban zone
       if (tx > 39.5 && tx < 48.0 && tz > 4.5 && tz < 14.5) continue; // Relocated Yokohama Minato Mirai urban zone
       const ty = getTerrainHeight(tx, tz);
       const fr = Math.hypot(tx - FUJI_X, tz - FUJI_Z);
-      if (ty < WATER_Y + 0.3 || ty > 5.4 || fr < 11.8) continue;
+      if (ty < WATER_Y + 0.28 || ty > 5.8 || fr < 11.2) continue;
       if (Math.hypot(tx - 14.5, tz - 4.5) < 5.2) continue;    // Speedway
       if (Math.hypot(tx - 6.8, tz - 12.2) < 5.4) continue;    // Gotemba Outlets
       if (Math.hypot(tx - 8.5, tz - 47.8) < 4.0) continue;    // Izu volcanic cutaway
@@ -3646,26 +3818,73 @@
       if (Math.hypot(tx - 77.5, tz + 19.5) < 4.2) continue;   // Naritasan Shinsho-ji Temple
       if (Math.hypot(tx - 81.5, tz + 39.5) < 3.8) continue;   // Ushiku Daibutsu Park
       if (Math.hypot(tx - 87.5, tz + 26.5) < 7.2) continue;   // Narita Airport
-      pinePts.push([tx, ty, tz, randRange(0.78, 1.42)]);
+      if (Math.hypot(tx - 37.0, tz - 6.0) < 3.6) continue;    // Shin-Yokohama Station
+      pinePts.push([tx, ty, tz, randRange(0.72, 1.48)]);
     }
 
+    // 2.0 Multi-Tier Organic Merged Tree Geometries (1 draw call per species!)
+    function buildLayeredPineGeometry() {
+      const c1 = new THREE.ConeGeometry(0.46, 0.68, 7); c1.translate(0, 0.0, 0);
+      const c2 = new THREE.ConeGeometry(0.36, 0.62, 7); c2.rotateY(0.5); c2.translate(0, 0.36, 0);
+      const c3 = new THREE.ConeGeometry(0.24, 0.52, 7); c3.rotateY(1.0); c3.translate(0, 0.68, 0);
+      return BufferGeometryUtils.mergeGeometries([c1, c2, c3]);
+    }
+    function buildOrganicClumpGeometry() {
+      const p1 = new THREE.DodecahedronGeometry(0.38, 1); p1.translate(0, 0.08, 0);
+      const p2 = new THREE.DodecahedronGeometry(0.28, 1); p2.translate(0.24, -0.02, 0.14);
+      const p3 = new THREE.DodecahedronGeometry(0.27, 1); p3.translate(-0.22, 0.02, -0.16);
+      const p4 = new THREE.DodecahedronGeometry(0.25, 1); p4.translate(-0.08, 0.24, 0.18);
+      return BufferGeometryUtils.mergeGeometries([p1, p2, p3, p4]);
+    }
+    const pineCrownGeo = buildLayeredPineGeometry();
+    const clumpCrownGeo = buildOrganicClumpGeometry();
+
     const dummy = new THREE.Object3D();
+    const instCol = new THREE.Color();
     const foliageMaterials = [];
     function createInstancedTrees(pts, springHex, summerHex, autumnHex, winterHex, isPine) {
-      const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.085, 0.58, 6), new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.9 }), pts.length);
-      const crownMat = new THREE.MeshStandardMaterial({ color: springHex, roughness: 0.84 });
+      const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.085, 0.56, 5), new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.92 }), pts.length);
+      const crownMat = new THREE.MeshStandardMaterial({ color: springHex, roughness: 0.86, envMapIntensity: 0.35 });
       foliageMaterials.push({ mat: crownMat, spring: new THREE.Color(springHex), summer: new THREE.Color(summerHex), autumn: new THREE.Color(autumnHex), winter: new THREE.Color(winterHex) });
-      const crownInst = new THREE.InstancedMesh(isPine ? new THREE.ConeGeometry(0.44, 1.25, 7) : new THREE.DodecahedronGeometry(0.48, 1), crownMat, pts.length);
+      const crownInst = new THREE.InstancedMesh(isPine ? pineCrownGeo : clumpCrownGeo, crownMat, pts.length);
       trunkInst.castShadow = crownInst.castShadow = crownInst.receiveShadow = true;
       pts.forEach(([tx, ty, tz, sc], i) => {
-        dummy.position.set(tx, ty + 0.25 * sc, tz); dummy.scale.setScalar(sc); dummy.rotation.set(0, rand() * 3.14, 0); dummy.updateMatrix(); trunkInst.setMatrixAt(i, dummy.matrix);
-        dummy.position.set(tx, ty + (isPine ? 0.9 : 0.7) * sc, tz); dummy.scale.set(sc * 1.08, sc * 0.95, sc * 1.08); dummy.updateMatrix(); crownInst.setMatrixAt(i, dummy.matrix);
+        const rotY = rand() * 6.28;
+        dummy.position.set(tx, ty + 0.24 * sc, tz); dummy.scale.setScalar(sc); dummy.rotation.set(0, rotY, 0); dummy.updateMatrix(); trunkInst.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(tx, ty + (isPine ? 0.56 : 0.68) * sc, tz);
+        dummy.scale.set(sc * randRange(0.92, 1.15), sc * randRange(0.88, 1.14), sc * randRange(0.92, 1.15));
+        dummy.rotation.set(randRange(-0.06, 0.06), rotY, randRange(-0.06, 0.06));
+        dummy.updateMatrix(); crownInst.setMatrixAt(i, dummy.matrix);
+        // Per-instance subtle natural tone variation (multiplied by seasonal mat.color!)
+        const lum = randRange(0.76, 1.14);
+        instCol.setRGB(lum * randRange(0.94, 1.05), lum * randRange(0.95, 1.06), lum * randRange(0.92, 1.04));
+        crownInst.setColorAt(i, instCol);
       });
+      crownInst.instanceColor.needsUpdate = true;
       root.add(trunkInst, crownInst);
     }
     createInstancedTrees(sakuraPts, '#f472b6', '#22c55e', '#f97316', '#ffffff', false);
     createInstancedTrees(maplePts, '#4ade80', '#15803d', '#dc2626', '#ffffff', false);
-    createInstancedTrees(pinePts, '#2d5c22', '#14532d', '#3f6212', '#dbeafe', true);
+    createInstancedTrees(pinePts, '#2b5922', '#14522b', '#416114', '#dce9f7', true);
+
+    // 2.0 Drifting Soft 3D Volumetric Cumulus Clouds High Above the Diorama
+    const skyClouds = [];
+    const cloudMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, metalness: 0.0, transparent: true, opacity: 0.72, depthWrite: false });
+    const cloudGeo = new THREE.IcosahedronGeometry(1.0, 2);
+    for (let c = 0; c < 14; c++) {
+      const cg = new THREE.Group();
+      const puffs = 4 + (c % 3);
+      for (let p = 0; p < puffs; p++) {
+        const pm = new THREE.Mesh(cloudGeo, cloudMat);
+        pm.position.set((p - puffs * 0.5) * 2.4 + randRange(-0.8, 0.8), randRange(-0.4, 0.7), randRange(-1.4, 1.4));
+        pm.scale.set(randRange(2.4, 4.4), randRange(0.95, 1.65), randRange(1.9, 3.2));
+        cg.add(pm);
+      }
+      const cx = randRange(X_MIN - 20, X_MAX + 20), cy = randRange(34, 46), cz = randRange(-58, 52);
+      cg.position.set(cx, cy, cz);
+      root.add(cg);
+      skyClouds.push({ group: cg, speed: randRange(0.35, 0.85) });
+    }
 
     // =========================================================================
     // 12. VOLCANIC STEAM, ATAMI ONSEN STEAM, SHIRAITO MIST & WEATHER PARTICLES
@@ -3904,7 +4123,7 @@
       const wsp = seasonWeights.spring, wsu = seasonWeights.summer, wau = seasonWeights.autumn, wwi = seasonWeights.winter;
       const wDay = timeWeights.day, wSun = timeWeights.sunset, wNit = timeWeights.night;
 
-      // 1. Blended sky & fog color across both 4 seasons and 3 times of day
+      // 1. Blended sky dome, fog & cloud colors across both 4 seasons and 3 times of day
       let bgR = 0, bgG = 0, bgB = 0;
       for (let ti = 0; ti < TIME_KEYS.length; ti++) {
         const tk = TIME_KEYS[ti], wt = timeWeights[tk];
@@ -3917,6 +4136,32 @@
       tmpBgCol.setRGB(bgR, bgG, bgB);
       scene.background.copy(tmpBgCol);
       scene.fog.color.copy(tmpBgCol);
+
+      // 2.0 Sky Dome Zenith / Horizon / Stars + IBL Intensity + Cinematic Bloom + Cloud Tinting
+      skyUniforms.uZenith.value.setRGB(
+        0.22 * wDay + 0.19 * wSun + 0.02 * wNit,
+        0.48 * wDay + 0.14 * wSun + 0.04 * wNit,
+        0.86 * wDay + 0.28 * wSun + 0.12 * wNit
+      );
+      skyUniforms.uHorizon.value.setRGB(
+        bgR * 0.65 + (0.85 * wDay + 0.96 * wSun + 0.08 * wNit) * 0.35,
+        bgG * 0.65 + (0.91 * wDay + 0.44 * wSun + 0.12 * wNit) * 0.35,
+        bgB * 0.65 + (0.97 * wDay + 0.26 * wSun + 0.22 * wNit) * 0.35
+      );
+      skyUniforms.uGround.value.setRGB(
+        0.42 * wDay + 0.22 * wSun + 0.04 * wNit,
+        0.38 * wDay + 0.16 * wSun + 0.05 * wNit,
+        0.34 * wDay + 0.18 * wSun + 0.08 * wNit
+      );
+      skyUniforms.uStarInt.value = wNit;
+      scene.environmentIntensity = 0.78 * wDay + 0.56 * wSun + 0.26 * wNit;
+      bloomPass.strength = 0.15 * wDay + 0.36 * wSun + 0.56 * wNit;
+      cloudMat.color.setRGB(
+        1.0 * wDay + 1.0 * wSun + 0.18 * wNit,
+        1.0 * wDay + 0.68 * wSun + 0.24 * wNit,
+        1.0 * wDay + 0.54 * wSun + 0.42 * wNit
+      );
+      cloudMat.opacity = 0.72 * wDay + 0.66 * wSun + 0.38 * wNit;
 
       // 2. Smooth lighting & solar/lunar arc interpolation
       const tcD = TIME_CONFIG.day, tcS = TIME_CONFIG.sunset, tcN = TIME_CONFIG.night;
@@ -3941,6 +4186,8 @@
         if (tmpSunPos.y < 28) tmpSunPos.y = 28;
       }
       sunLight.position.copy(tmpSunPos);
+      skyUniforms.uSunDir.value.copy(tmpSunPos).normalize();
+      skyUniforms.uSunCol.value.copy(tmpSunCol);
 
       fillLight.intensity = tcD.fillInt * wDay + tcS.fillInt * wSun + tcN.fillInt * wNit;
       const tokyoInt = tcD.tokyoInt * wDay + tcS.tokyoInt * wSun + tcN.tokyoInt * wNit;
@@ -4156,6 +4403,7 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
     });
 
     // =========================================================================
@@ -4502,7 +4750,13 @@
           aquaticSwimmers.forEach((f) => { f.a += dt * f.s; f.mesh.position.set(f.cx + Math.cos(f.a) * f.r, f.y, f.cz + Math.sin(f.a) * f.r); f.mesh.rotation.y = -f.a; });
           caveKoi.forEach((k) => { k.angle += dt * 0.9; k.mesh.position.set(15.5 + Math.cos(k.angle) * k.r * 1.8, -7.45, D / 2 - 1.0 + Math.sin(k.angle) * 0.55); k.mesh.rotation.y = -k.angle; });
 
-          // 7. Birds & Steam Plumes (incl. Atami Onsen Steam!)
+          // 7. Birds, Drifting 3D Sky Clouds, Animated Water Waves & Steam Plumes
+          waterNormalTex.offset.x += dt * 0.018;
+          waterNormalTex.offset.y += dt * 0.011;
+          skyClouds.forEach((cl) => {
+            cl.group.position.x += dt * cl.speed;
+            if (cl.group.position.x > X_MAX + 32) cl.group.position.x = X_MIN - 32;
+          });
           skyBirds.forEach((b) => { b.a += dt * b.s; b.mesh.position.set(b.cx + Math.cos(b.a) * b.r, b.y + Math.sin(t * 2 + b.a) * 0.28, b.cz + Math.sin(b.a) * b.r); b.mesh.rotation.y = -b.a; });
           for (let i = 0; i < steamParticles.length; i++) {
             const sp = steamParticles[i], s = sp.src;
@@ -4583,7 +4837,7 @@
         });
       }
 
-      renderer.render(scene, camera);
+      composer.render();
     }
 
     applyAtmosphereSmooth();
