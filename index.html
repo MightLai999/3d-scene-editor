@@ -255,6 +255,30 @@
     </header>
 
     <section class="grid">
+      <!-- New Branch Project Card: 3D-scene-20 (Exact Copy to Start Fresh!) -->
+      <a class="card featured" href="./3D-scene-20/index.html" data-scene="fuji-20">
+        <div class="preview-stage" id="stage-fuji-20">
+          <span class="preview-badge" style="border-color: rgba(16,185,129,0.55); color: #a7f3d0;">★ 新專案目錄 · 3D-scene-20（獨立起點版本）</span>
+          <span class="preview-hint">LIVE 3D PANORAMA PREVIEW</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">3D-scene-20｜富士山・伊豆・東京灣・房總半島 超廣域立體全景圖</h2>
+          <p class="card-desc">完整複製自關東至富士山超厚切面立體模型（現與旗艦版內容完全相同，作為獨立新專案起點）：包含富士五湖、箱根蘆之湖海賊船、熱海溫泉、伊豆半島、江之電、鎌倉大佛、三浦橫須賀軍港、東京車站／巨蛋／雷門／晴空塔、東京迪士尼、幕張新都心、三井 OUTLET 木更津、成田機場與牛久大佛；支援巨無霸客機機長視角、新幹線四站停靠駕駛視角與巨型郵輪六大海域巡航。</p>
+          <div class="tags">
+            <span class="tag">📁 獨立目錄 3D-scene-20/</span>
+            <span class="tag">✈️ 羽田⇄富士山⇄成田 機長視角</span>
+            <span class="tag">🚅 新幹線四站停靠 駕駛視角</span>
+            <span class="tag">🛳️ 巨型郵輪跨海巡航</span>
+            <span class="tag">☸️ 牛久大佛 · 🛍️ 三井木更津</span>
+            <span class="tag">🪑 胡桃木抽屜展示桌 · 超厚地層</span>
+          </div>
+          <div class="card-cta">
+            <span>進入 3D-scene-20 新專案</span>
+            <span class="arrow">→</span>
+          </div>
+        </div>
+      </a>
+
       <!-- Featured Flagship Card: Mt. Fuji Grand 100km Panorama -->
       <a class="card featured" href="./mt-fuji-grand-panorama.html" data-scene="fuji-grand">
         <div class="preview-stage" id="stage-fuji-grand">
@@ -407,8 +431,8 @@
       views.push(view);
     }
 
-    // --- 0. Featured Mini Grand Mt. Fuji 100km Panorama ---
-    setupPreviewScene('stage-fuji-grand', (g) => {
+    // --- 0. Featured Mini Grand Mt. Fuji Panorama (shared by original & 3D-scene-20 copy) ---
+    function buildFujiGrandPreview(g) {
       const wood = new THREE.MeshStandardMaterial({ color: '#6c4223', roughness: 0.5 });
       const plinth = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.42, 4.4), wood);
       plinth.position.y = -0.95;
@@ -479,7 +503,9 @@
       );
       skyTree.position.set(2.15, 0.65, -1.45);
       g.add(cityPad, tTower, skyTree);
-    });
+    }
+    setupPreviewScene('stage-fuji-20', buildFujiGrandPreview);
+    setupPreviewScene('stage-fuji-grand', buildFujiGrandPreview);
 
     // --- 1. Mini Mt. Fuji Diorama ---
     setupPreviewScene('stage-fuji', (g) => {
