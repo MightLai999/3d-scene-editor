@@ -1823,46 +1823,23 @@
     // =========================================================================
     // 8. DEEP MAGMA CHAMBER, TECTONIC FAULTS, KOI AQUIFER, CRYSTAL GROTTO & ICE CAVERN
     // =========================================================================
-    const magmaMat = new THREE.MeshStandardMaterial({ color: '#ff4500', emissive: new THREE.Color('#ff6a00'), emissiveIntensity: 2.0, roughness: 0.3 });
-    // Deep Primary Magma Chamber
-    const magmaChamber = new THREE.Mesh(new THREE.SphereGeometry(3.8, 22, 14), magmaMat);
-    magmaChamber.scale.set(2.3, 0.52, 0.2);
-    magmaChamber.position.set(8.5, -9.8, D / 2 + 0.05);
+    const magmaMat = new THREE.MeshStandardMaterial({ color: '#ff4500', emissive: new THREE.Color('#ff6a00'), emissiveIntensity: 1.75, roughness: 0.32 });
+    // Deep Primary Magma Chamber (tucked cleanly inside deep seabed bedrock — never poking into water!)
+    const magmaChamber = new THREE.Mesh(new THREE.SphereGeometry(3.2, 22, 14), magmaMat);
+    magmaChamber.scale.set(1.85, 0.36, 0.16);
+    magmaChamber.position.set(8.5, -10.1, D / 2 + 0.05);
     root.add(magmaChamber);
-    // Secondary Upper Magma Reservoir
-    const magmaUpper = new THREE.Mesh(new THREE.SphereGeometry(2.1, 16, 12), magmaMat);
-    magmaUpper.scale.set(1.6, 0.42, 0.18);
-    magmaUpper.position.set(8.5, -5.6, D / 2 + 0.05);
-    root.add(magmaUpper);
 
     function addMagmaBranch(pts, r) {
       root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 28, r, 8, false), magmaMat));
     }
-    // Main central volcanic conduit from deep mantle up to Izu cone
+    // Subtle deep sub-seabed magma veins spreading horizontally beneath Suruga & Sagami Troughs (strictly deep underground!)
     addMagmaBranch([
-      new THREE.Vector3(8.5, -10.2, D / 2 + 0.06),
-      new THREE.Vector3(8.2, -7.2, D / 2 + 0.06),
-      new THREE.Vector3(8.6, -3.5, D / 2 + 0.06),
-      new THREE.Vector3(8.45, 0.4, D / 2 + 0.06),
-      new THREE.Vector3(8.5, getTerrainHeight(8.5, D / 2) - 0.05, D / 2 + 0.06)
-    ], 0.36);
-    // Side dikes & deep tectonic magma veins spreading beneath Suruga & Sagami Troughs
-    addMagmaBranch([
-      new THREE.Vector3(8.2, -5.4, D / 2 + 0.06),
-      new THREE.Vector3(6.2, -2.5, D / 2 + 0.06),
-      new THREE.Vector3(5.6, 0.9, D / 2 + 0.06)
-    ], 0.17);
-    addMagmaBranch([
-      new THREE.Vector3(8.7, -4.6, D / 2 + 0.06),
-      new THREE.Vector3(10.3, -1.8, D / 2 + 0.06),
-      new THREE.Vector3(11.0, 1.4, D / 2 + 0.06)
-    ], 0.16);
-    addMagmaBranch([
-      new THREE.Vector3(5.5, -9.8, D / 2 + 0.06),
-      new THREE.Vector3(-4.0, -9.2, D / 2 + 0.06),
-      new THREE.Vector3(-16.0, -8.6, D / 2 + 0.06),
-      new THREE.Vector3(-28.0, -9.4, D / 2 + 0.06)
-    ], 0.18);
+      new THREE.Vector3(5.5, -10.1, D / 2 + 0.06),
+      new THREE.Vector3(-4.0, -9.5, D / 2 + 0.06),
+      new THREE.Vector3(-16.0, -9.0, D / 2 + 0.06),
+      new THREE.Vector3(-28.0, -9.7, D / 2 + 0.06)
+    ], 0.15);
     addMagmaBranch([
       new THREE.Vector3(11.5, -9.7, D / 2 + 0.06),
       new THREE.Vector3(24.0, -9.0, D / 2 + 0.06),
