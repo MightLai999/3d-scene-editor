@@ -984,6 +984,89 @@
     const cityTexWarm = createCityWindowTexture(0.75);
     const cityTexCool = createCityWindowTexture(0.25);
 
+    // 2.0 Additional Diverse Architectural Facade Textures (Marunouchi Mullion Glass, Cream Office, Silver Ribbon)
+    function createMarunouchiGlassTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 1024;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#1e354d';
+      ctx.fillRect(0, 0, 512, 1024);
+      // Horizontal floor spandrel bands
+      for (let row = 0; row < 1024; row += 22) {
+        ctx.fillStyle = '#47627d';
+        ctx.fillRect(0, row, 512, 4);
+        ctx.fillStyle = '#294866';
+        ctx.fillRect(0, row + 4, 512, 18);
+        for (let col = 4; col < 512; col += 16) {
+          const h = Math.sin(row * 19.3 + col * 41.7) * 43758.5453;
+          const f = h - Math.floor(h);
+          if (f < 0.28) ctx.fillStyle = '#bae6fd';
+          else if (f < 0.42) ctx.fillStyle = '#fef3c7';
+          else if (f < 0.72) ctx.fillStyle = '#385d80';
+          else ctx.fillStyle = '#1b3147';
+          ctx.fillRect(col, row + 5, 10, 15);
+        }
+      }
+      // Crisp silver vertical curtain-wall mullions (signature GranTokyo / Marunouchi look!)
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.78)';
+      for (let col = 0; col < 512; col += 16) ctx.fillRect(col, 0, 3, 1024);
+      ctx.fillStyle = 'rgba(241, 245, 249, 0.92)';
+      for (let col = 0; col < 512; col += 128) ctx.fillRect(col, 0, 6, 1024);
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function createCreamOfficeTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 1024;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#e5dfd3';
+      ctx.fillRect(0, 0, 512, 1024);
+      for (let row = 0; row < 1024; row += 28) {
+        ctx.fillStyle = '#d4cbb8';
+        ctx.fillRect(0, row, 512, 5);
+        for (let col = 8; col < 504; col += 24) {
+          const h = Math.sin(row * 13.7 + col * 53.1) * 43758.5453;
+          const f = h - Math.floor(h);
+          ctx.fillStyle = f < 0.36 ? '#fef08a' : (f < 0.68 ? '#3b4e63' : '#1f2937');
+          ctx.fillRect(col, row + 7, 15, 14);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function createSilverRibbonTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 1024;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, 512, 1024);
+      for (let row = 0; row < 1024; row += 24) {
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(0, row, 512, 8);
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, row + 8, 512, 14);
+        for (let col = 4; col < 508; col += 20) {
+          const h = Math.sin(row * 29.1 + col * 17.3) * 43758.5453;
+          const f = h - Math.floor(h);
+          if (f < 0.42) {
+            ctx.fillStyle = f < 0.2 ? '#e0f2fe' : '#fde68a';
+            ctx.fillRect(col, row + 9, 15, 11);
+          }
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    const cityTexMarunouchi = createMarunouchiGlassTexture();
+    const cityTexCream = createCreamOfficeTexture();
+    const cityTexSilver = createSilverRibbonTexture();
+
     function createBrickFacadeTexture() {
       const c = document.createElement('canvas');
       c.width = 512; c.height = 256;
@@ -1054,47 +1137,101 @@
     }
     const terrainNormalTex = createTerrainNormalMap();
 
-    // 2.0 Procedural Tileable Animated Ocean Wave Normal Map (Multi-Octave Wave Interference!)
-    function createWaterNormalMap() {
-      const sz = 256, c = document.createElement('canvas');
-      c.width = sz; c.height = sz;
-      const ctx = c.getContext('2d');
-      const img = ctx.createImageData(sz, sz);
-      const h = new Float32Array(sz * sz);
-      const waves = [
-        [2, 3, 0.32], [5, -4, 0.24], [-7, 6, 0.18],
-        [11, 9, 0.12], [-15, -13, 0.09], [21, -17, 0.06]
-      ];
-      for (let y = 0; y < sz; y++) {
-        for (let x = 0; x < sz; x++) {
-          const u = (x / sz) * Math.PI * 2, v = (y / sz) * Math.PI * 2;
-          let val = 0;
-          for (let w = 0; w < waves.length; w++) {
-            val += Math.sin(u * waves[w][0] + v * waves[w][1] + w * 1.7) * waves[w][2];
+    // 2.0 Seamless Tileable Voronoi/Worley Cellular Ocean Caustics & Organic Ripple Normal Map!
+    function createVoronoiWaterMaps() {
+      const sz = 256;
+      // Deterministic seeded cell centers for two tileable Worley layers (coarse + fine)
+      function makeCells(gridN, seed) {
+        const pts = [];
+        for (let gy = 0; gy < gridN; gy++) {
+          for (let gx = 0; gx < gridN; gx++) {
+            const h1 = Math.sin((gx * 127.1 + gy * 311.7 + seed) * 1.13) * 43758.5453;
+            const h2 = Math.sin((gx * 269.5 + gy * 183.3 + seed) * 1.37) * 43758.5453;
+            pts.push([gx + 0.15 + (h1 - Math.floor(h1)) * 0.7, gy + 0.15 + (h2 - Math.floor(h2)) * 0.7]);
           }
-          h[y * sz + x] = val;
+        }
+        return pts;
+      }
+      function worleySample(u, v, gridN, pts) {
+        const fx = u * gridN, fy = v * gridN;
+        const ix = Math.floor(fx), iy = Math.floor(fy);
+        let d1 = 9.0, d2 = 9.0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const cx = (ix + dx + gridN) % gridN;
+            const cy = (iy + dy + gridN) % gridN;
+            const p = pts[cy * gridN + cx];
+            const px = p[0] + (ix + dx - cx);
+            const py = p[1] + (iy + dy - cy);
+            const d = Math.hypot(fx - px, fy - py);
+            if (d < d1) { d2 = d1; d1 = d; }
+            else if (d < d2) { d2 = d; }
+          }
+        }
+        return [d1, d2 - d1]; // [cell basin height, distance to caustic ridge]
+      }
+      const cellsA = makeCells(7, 11.3), cellsB = makeCells(12, 47.9);
+      const h = new Float32Array(sz * sz);
+      const colCanvas = document.createElement('canvas'); colCanvas.width = sz; colCanvas.height = sz;
+      const colCtx = colCanvas.getContext('2d');
+      const colImg = colCtx.createImageData(sz, sz);
+
+      for (let y = 0; y < sz; y++) {
+        const v = y / sz;
+        for (let x = 0; x < sz; x++) {
+          const u = x / sz;
+          // Organic domain warp so caustic webs curve like liquid water (zero straight lines!)
+          const wu = (u + Math.sin(v * Math.PI * 4) * 0.018 + Math.cos((u + v) * Math.PI * 6) * 0.01 + 1) % 1;
+          const wv = (v + Math.cos(u * Math.PI * 4) * 0.018 + Math.sin((u - v) * Math.PI * 6) * 0.01 + 1) % 1;
+          const [f1A, edgeA] = worleySample(wu, wv, 7, cellsA);
+          const [f1B, edgeB] = worleySample((wu + 0.37) % 1, (wv + 0.61) % 1, 12, cellsB);
+
+          // Smooth rounded cellular ripple height for Normal Map
+          h[y * sz + x] = f1A * f1A * 0.68 + f1B * f1B * 0.32;
+
+          // Soft analogous-tone liquid caustic shimmer (gentle cyan-blue blend, no harsh white web!)
+          const ridgeA = Math.pow(Math.max(0, 1.0 - edgeA * 3.6), 2.0) * 0.48;
+          const ridgeB = Math.pow(Math.max(0, 1.0 - edgeB * 3.4), 2.2) * 0.24;
+          const caustic = Math.min(1.0, ridgeA + ridgeB);
+          const sparkle = Math.pow(Math.min(1.0, ridgeA * 1.4), 3.5) * 0.28;
+
+          // Subtle analogous deep-cerulean to soft-aqua palette (silky natural ocean look!)
+          const idx = (y * sz + x) * 4;
+          colImg.data[idx]     = Math.min(255, Math.round(16 + caustic * 56 + sparkle * 38));
+          colImg.data[idx + 1] = Math.min(255, Math.round(126 + caustic * 52 + sparkle * 26));
+          colImg.data[idx + 2] = Math.min(255, Math.round(188 + caustic * 36 + sparkle * 16));
+          colImg.data[idx + 3] = 255;
         }
       }
+      colCtx.putImageData(colImg, 0, 0);
+      const causticTex = new THREE.CanvasTexture(colCanvas);
+      causticTex.wrapS = causticTex.wrapT = THREE.RepeatWrapping;
+      causticTex.repeat.set(22, 14);
+      causticTex.colorSpace = THREE.SRGBColorSpace;
+
+      const normCanvas = document.createElement('canvas'); normCanvas.width = sz; normCanvas.height = sz;
+      const normCtx = normCanvas.getContext('2d');
+      const normImg = normCtx.createImageData(sz, sz);
       for (let y = 0; y < sz; y++) {
         for (let x = 0; x < sz; x++) {
           const hL = h[y * sz + ((x - 1 + sz) % sz)], hR = h[y * sz + ((x + 1) % sz)];
           const hD = h[((y - 1 + sz) % sz) * sz + x], hU = h[((y + 1) % sz) * sz + x];
-          let nx = (hL - hR) * 2.8, ny = (hD - hU) * 2.8, nz = 1.0;
+          let nx = (hL - hR) * 3.6, ny = (hD - hU) * 3.6, nz = 1.0;
           const len = Math.hypot(nx, ny, nz);
           const idx = (y * sz + x) * 4;
-          img.data[idx]     = Math.round(((nx / len) * 0.5 + 0.5) * 255);
-          img.data[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
-          img.data[idx + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
-          img.data[idx + 3] = 255;
+          normImg.data[idx]     = Math.round(((nx / len) * 0.5 + 0.5) * 255);
+          normImg.data[idx + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255);
+          normImg.data[idx + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255);
+          normImg.data[idx + 3] = 255;
         }
       }
-      ctx.putImageData(img, 0, 0);
-      const tex = new THREE.CanvasTexture(c);
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(18, 12);
-      return tex;
+      normCtx.putImageData(normImg, 0, 0);
+      const normalTex = new THREE.CanvasTexture(normCanvas);
+      normalTex.wrapS = normalTex.wrapT = THREE.RepeatWrapping;
+      normalTex.repeat.set(22, 14);
+      return { causticTex, normalTex };
     }
-    const waterNormalTex = createWaterNormalMap();
+    const { causticTex: waterCausticTex, normalTex: waterNormalTex } = createVoronoiWaterMaps();
 
     // =========================================================================
     // 4. EAST-EXPANDED GRAND DIORAMA (156 x 96, THICK BASE) & TRUE-GEOGRAPHY TERRAIN
@@ -1815,19 +1952,20 @@
     // 9. 2.0 ANIMATED NORMAL-MAP OCEAN, RESIN LAKES, SHIP WAKES & RICH SEABED
     // =========================================================================
     const waterMat = new THREE.MeshPhysicalMaterial({
-      color: '#0b7eb8',
-      roughness: 0.11,
-      metalness: 0.14,
-      transmission: 0.58,
+      color: '#bfeaff',
+      map: waterCausticTex,
+      roughness: 0.14,
+      metalness: 0.08,
+      transmission: 0.52,
       transparent: true,
-      opacity: 0.82,
+      opacity: 0.80,
       ior: 1.33,
-      thickness: 4.8,
-      clearcoat: 0.88,
-      clearcoatRoughness: 0.12,
+      thickness: 4.6,
+      clearcoat: 0.92,
+      clearcoatRoughness: 0.10,
       normalMap: waterNormalTex,
-      normalScale: new THREE.Vector2(0.42, 0.42),
-      envMapIntensity: 1.55
+      normalScale: new THREE.Vector2(0.36, 0.36),
+      envMapIntensity: 1.45
     });
     const waterSideMat = new THREE.MeshPhysicalMaterial({
       color: '#0b7eb8', roughness: 0.07, metalness: 0.05, transmission: 0.65,
@@ -1855,6 +1993,125 @@
       root.add(surf);
     })();
 
+    // 2.0 Organic Naruto-Style Turbulent Tidal Whirlpools (最多 3 個、大小差距達 3 倍、每次隨機深海位置、不規則破碎泡沫外型!)
+    function createOrganicWhirlpoolTexture(seed) {
+      const sz = 256, c = document.createElement('canvas');
+      c.width = sz; c.height = sz;
+      const ctx = c.getContext('2d');
+      let s = seed * 9301 + 49297;
+      const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+      const cx = sz * (0.47 + rnd() * 0.06), cy = sz * (0.47 + rnd() * 0.06);
+
+      // 1. Irregular churning turquoise-emerald tidal halo (signature Naruto whirlpool teal!)
+      for (let k = 0; k < 5; k++) {
+        const ox = cx + (rnd() - 0.5) * 26, oy = cy + (rnd() - 0.5) * 26;
+        const rad = sz * (0.30 + rnd() * 0.16);
+        const g = ctx.createRadialGradient(ox, oy, 4, ox, oy, rad);
+        g.addColorStop(0, 'rgba(13, 148, 136, 0.24)');
+        g.addColorStop(0.55, 'rgba(45, 212, 191, 0.20)');
+        g.addColorStop(1, 'rgba(45, 212, 191, 0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, sz, sz);
+      }
+      // 2. Deep indigo off-center vortex eye
+      const eye = ctx.createRadialGradient(cx, cy, 2, cx, cy, sz * 0.28);
+      eye.addColorStop(0, 'rgba(6, 36, 68, 0.62)');
+      eye.addColorStop(0.45, 'rgba(12, 74, 110, 0.28)');
+      eye.addColorStop(1, 'rgba(12, 74, 110, 0)');
+      ctx.fillStyle = eye;
+      ctx.fillRect(0, 0, sz, sz);
+
+      // 3. Asymmetric broken turbulent foam ribbons (non-uniform length, wobble & thickness!)
+      const ribbonCount = 14 + Math.floor(rnd() * 6);
+      for (let i = 0; i < ribbonCount; i++) {
+        const startA = rnd() * Math.PI * 2;
+        const startR = 8 + rnd() * (sz * 0.24);
+        const spanA = 0.65 + rnd() * 1.85;
+        const rGrow = 16 + rnd() * 44;
+        const steps = 28;
+        ctx.beginPath();
+        for (let st = 0; st <= steps; st++) {
+          const f = st / steps;
+          const wobble = Math.sin(f * Math.PI * (3 + rnd() * 3) + i) * (2.5 + f * 5.5);
+          const ang = startA + f * spanA;
+          const r = startR + f * rGrow + wobble;
+          const px = cx + Math.cos(ang) * r * (1.0 + Math.sin(ang * 2 + seed) * 0.12);
+          const py = cy + Math.sin(ang) * r * (1.0 - Math.cos(ang * 2 - seed) * 0.10);
+          if (st === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        const alpha = (0.24 + rnd() * 0.42) * (1.0 - startR / (sz * 0.5));
+        ctx.strokeStyle = i % 3 === 0 ? `rgba(240, 253, 255, ${alpha.toFixed(2)})` : `rgba(186, 245, 250, ${(alpha * 0.85).toFixed(2)})`;
+        ctx.lineWidth = 1.6 + rnd() * 4.8;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+
+      // 4. Scattered sea-foam spray flecks along turbulent shear bands
+      for (let p = 0; p < 140; p++) {
+        const a = rnd() * Math.PI * 2;
+        const r = 10 + Math.pow(rnd(), 0.72) * (sz * 0.40);
+        const px = cx + Math.cos(a) * r + (rnd() - 0.5) * 8;
+        const py = cy + Math.sin(a) * r + (rnd() - 0.5) * 8;
+        const fade = Math.max(0, 1 - r / (sz * 0.46));
+        ctx.fillStyle = `rgba(236, 254, 255, ${(fade * (0.18 + rnd() * 0.42)).toFixed(2)})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 0.8 + rnd() * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const oceanWhirlpools = [];
+    // Strictly <= 3 whirlpools with ~3x size range (Large ~4.5, Medium ~2.7, Small ~1.5) at random deep-sea positions!
+    const whirlpoolSizes = [
+      4.2 + Math.random() * 0.9,  // Giant Naruto-style vortex
+      2.4 + Math.random() * 0.7,  // Medium tidal eddy
+      1.4 + Math.random() * 0.4   // Small compact eddy (~1/3 size of giant!)
+    ];
+    const placedWP = [];
+    for (let i = 0; i < whirlpoolSizes.length; i++) {
+      let wx = 0, wz = 0, found = false;
+      for (let tries = 0; tries < 120; tries++) {
+        const tx = X_MIN + 8 + Math.random() * (W - 16);
+        const tz = -12 + Math.random() * (D / 2 + 8);
+        if (getTerrainHeight(tx, tz) < WATER_Y - 1.5 &&
+            Math.hypot(tx - 62.5, tz - 2.8) > 6.5 && // clear of Umihotaru
+            placedWP.every(([px, pz]) => Math.hypot(tx - px, tz - pz) > 18.0)) {
+          wx = tx; wz = tz; found = true; break;
+        }
+      }
+      if (!found) continue;
+      placedWP.push([wx, wz]);
+      const radius = whirlpoolSizes[i];
+      const dir = Math.random() < 0.5 ? 1 : -1;
+      const texA = createOrganicWhirlpoolTexture(i * 17 + Math.random() * 100);
+      const texB = createOrganicWhirlpoolTexture(i * 31 + 55 + Math.random() * 100);
+      const matA = new THREE.MeshBasicMaterial({
+        map: texA, transparent: true, opacity: 0.82, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2
+      });
+      const matB = new THREE.MeshBasicMaterial({
+        map: texB, transparent: true, opacity: 0.62, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3
+      });
+      const wpGroup = new THREE.Group();
+      wpGroup.position.set(wx, WATER_Y + 0.035, wz);
+      wpGroup.rotation.y = Math.random() * Math.PI * 2;
+      // Non-circular organic oval stretch along local tidal current!
+      const stretchX = 1.08 + Math.random() * 0.34, stretchZ = 0.82 + Math.random() * 0.22;
+      wpGroup.scale.set(stretchX, 1.0, stretchZ);
+      const outer = new THREE.Mesh(new THREE.PlaneGeometry(radius * 2, radius * 2), matA);
+      outer.rotation.x = -Math.PI / 2;
+      const inner = new THREE.Mesh(new THREE.PlaneGeometry(radius * 1.25, radius * 1.25), matB);
+      inner.rotation.x = -Math.PI / 2; inner.position.y = 0.008;
+      wpGroup.add(outer, inner);
+      root.add(wpGroup);
+      oceanWhirlpools.push({ outer, inner, speed: (0.38 + Math.random() * 0.45) * dir, phase: Math.random() * 6.28 });
+    }
+
     function buildWaterSidePane(axis, fixedCoord, start, end, steps, flip) {
       const pos = [], ind = [];
       for (let i = 0; i <= steps; i++) {
@@ -1881,32 +2138,227 @@
     // East wall water pane: Pacific Ocean along Boso coast
     buildWaterSidePane('x', X_MAX, -34.0, D / 2, 200, true);
 
+    // =========================================================================
+    // 2.0 TOKYO BAY & MIURA/BOSO EDOMAE MARINE LIFE (依「東京すし街道・江戶灣」生態圖鑑建模!)
+    // =========================================================================
+    const edoMarineSwimmers = [];
+    const eyeDarkMat = new THREE.MeshBasicMaterial({ color: '#090d16' });
+    const eyeGoldMat = new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#eab308', emissiveIntensity: 0.45, roughness: 0.15, metalness: 0.6 });
+    const finSilverMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.25, metalness: 0.55, side: THREE.DoubleSide });
+
+    // Helper: Generic Sculpted Fish Builder (facing +Z forward!)
+    function buildSculptedFish({ len = 1.2, h = 0.34, w = 0.2, backCol = '#1e3a5f', bellyCol = '#e2e8f0', finCol = '#64748b', goldEye = false, tailFork = 0.38 }) {
+      const fg = new THREE.Group();
+      const backMat = new THREE.MeshStandardMaterial({ color: backCol, roughness: 0.24, metalness: 0.48 });
+      const bellyMat = new THREE.MeshStandardMaterial({ color: bellyCol, roughness: 0.22, metalness: 0.55 });
+      const fMat = new THREE.MeshStandardMaterial({ color: finCol, roughness: 0.3, metalness: 0.35, side: THREE.DoubleSide });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10), backMat);
+      body.scale.set(w, h, len); fg.add(body);
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.47, 12, 8), bellyMat);
+      belly.scale.set(w * 0.92, h * 0.68, len * 0.88); belly.position.y = -h * 0.14; fg.add(belly);
+      // Dorsal Fin
+      const dorsal = new THREE.Mesh(new THREE.ConeGeometry(len * 0.14, h * 0.72, 4), fMat);
+      dorsal.scale.set(0.18, 1.0, 1.35); dorsal.position.set(0, h * 0.54, -len * 0.04); dorsal.rotation.x = -0.35; fg.add(dorsal);
+      // Forked Tail Fin (upper & lower lobes)
+      const tailGroup = new THREE.Group();
+      tailGroup.position.set(0, 0, -len * 0.48);
+      for (const s of [-1, 1]) {
+        const lobe = new THREE.Mesh(new THREE.ConeGeometry(h * 0.24, tailFork, 4), fMat);
+        lobe.scale.set(0.16, 1.0, 1.0);
+        lobe.rotation.x = -Math.PI / 2 + s * 0.52;
+        lobe.position.set(0, s * tailFork * 0.24, -tailFork * 0.42);
+        tailGroup.add(lobe);
+      }
+      fg.add(tailGroup);
+      // Pectoral Fins & Eyes
+      for (const s of [-1, 1]) {
+        const pec = new THREE.Mesh(new THREE.ConeGeometry(h * 0.18, len * 0.24, 3), fMat);
+        pec.scale.set(0.2, 1.0, 0.8); pec.position.set(s * w * 0.48, -h * 0.12, len * 0.08);
+        pec.rotation.z = s * 1.1; pec.rotation.x = -0.4; fg.add(pec);
+        const eyeR = goldEye ? h * 0.17 : h * 0.11;
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(eyeR, 8, 8), goldEye ? eyeGoldMat : eyeDarkMat);
+        eye.position.set(s * w * 0.36, h * 0.1, len * 0.34); fg.add(eye);
+        if (goldEye) {
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(eyeR * 0.55, 6, 6), eyeDarkMat);
+          pupil.position.set(s * (w * 0.36 + eyeR * 0.55), h * 0.1, len * 0.35); fg.add(pupil);
+        }
+      }
+      return { group: fg, tail: tailGroup };
+    }
+
+    // 1. 豐洲・江戶灣北部：本まぐろ（黑鮪魚 Bluefin Tuna — Deep Indigo & Gleaming Silver）
+    [[57.0, -1.65, 3.2, 2.2], [60.2, -2.0, 6.8, 2.5], [56.2, -1.45, -1.2, 1.8]].forEach(([cx, cy, cz, r], i) => {
+      const { group, tail } = buildSculptedFish({ len: 1.55, h: 0.44, w: 0.3, backCol: '#172554', bellyCol: '#f1f5f9', finCol: '#334155', tailFork: 0.5 });
+      root.add(group);
+      edoMarineSwimmers.push({ mesh: group, tail, cx, cz, y: cy, r, a: i * 2.1, s: 0.52 + i * 0.06, wobble: 0.22 });
+    });
+
+    // 2. 本牧・橫濱近海：江戶前穴子（星鰻 Anago Conger Eel — Sinuous Curved Body）
+    const anagoMat = new THREE.MeshStandardMaterial({ color: '#6b6652', roughness: 0.35, metalness: 0.25 });
+    const anagoCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0.72), new THREE.Vector3(0.14, 0.02, 0.28),
+      new THREE.Vector3(-0.15, -0.02, -0.18), new THREE.Vector3(0.1, 0, -0.62), new THREE.Vector3(0, 0, -0.95)
+    ]);
+    const anagoGeo = new THREE.TubeGeometry(anagoCurve, 24, 0.068, 8, false);
+    [[52.2, -1.8, 12.6, 1.5], [54.0, -2.0, 14.4, 1.7], [51.8, -1.7, 15.8, 1.4], [54.8, -2.1, 13.0, 1.6]].forEach(([cx, cy, cz, r], i) => {
+      const eg = new THREE.Group();
+      const body = new THREE.Mesh(anagoGeo, anagoMat);
+      const head = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.22, 8), anagoMat);
+      head.rotation.x = Math.PI / 2; head.position.set(0, 0, 0.8);
+      eg.add(body, head); root.add(eg);
+      edoMarineSwimmers.push({ mesh: eg, tail: null, cx, cz, y: cy, r, a: i * 1.6, s: 0.44, wobble: 0.3 });
+    });
+
+    // 3. 小柴・橫須賀近海：太刀魚（白帶魚 Tachiuo — Mirror-Chrome Ribbon Blade!）
+    const tachiuoMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.1, metalness: 0.94, envMapIntensity: 1.6 });
+    const tachiCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.04, 0.85), new THREE.Vector3(0.06, 0.02, 0.3),
+      new THREE.Vector3(-0.07, -0.01, -0.25), new THREE.Vector3(0.04, -0.03, -0.85)
+    ]);
+    const tachiGeo = new THREE.TubeGeometry(tachiCurve, 20, 0.055, 6, false);
+    [[54.8, -1.6, 17.5, 1.6], [56.2, -1.9, 19.2, 1.8], [55.2, -2.1, 20.8, 1.5], [57.0, -1.7, 18.0, 1.7], [54.2, -1.8, 19.6, 1.4]].forEach(([cx, cy, cz, r], i) => {
+      const tg = new THREE.Group();
+      const blade = new THREE.Mesh(tachiGeo, tachiuoMat); blade.scale.set(0.35, 1.8, 1.0);
+      tg.add(blade); root.add(tg);
+      edoMarineSwimmers.push({ mesh: tg, tail: null, cx, cz, y: cy, r, a: i * 1.25, s: 0.58, wobble: 0.25 });
+    });
+
+    // 4. 佐島・三浦半島西側相模灣：まだこ（真章魚 Common Octopus — Bulbous Mantle + 8 Curled Tentacles!）
+    const octoMat = new THREE.MeshStandardMaterial({ color: '#d95b6a', roughness: 0.42, metalness: 0.08 });
+    function createMadakoOctopus() {
+      const og = new THREE.Group();
+      const mantle = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), octoMat);
+      mantle.scale.set(0.95, 1.12, 1.25); mantle.position.set(0, 0.14, 0.12); og.add(mantle);
+      for (const s of [-1, 1]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.048, 6, 6), eyeDarkMat);
+        eye.position.set(s * 0.16, 0.1, 0.32); og.add(eye);
+      }
+      for (let t = 0; t < 8; t++) {
+        const ang = (t / 8) * Math.PI * 2;
+        const c = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(Math.cos(ang) * 0.14, 0.0, Math.sin(ang) * 0.14),
+          new THREE.Vector3(Math.cos(ang) * 0.36, -0.06, Math.sin(ang) * 0.36 - 0.15),
+          new THREE.Vector3(Math.cos(ang + 0.35) * 0.56, 0.04, Math.sin(ang + 0.35) * 0.52 - 0.28),
+          new THREE.Vector3(Math.cos(ang + 0.6) * 0.48, -0.04, Math.sin(ang + 0.6) * 0.44 - 0.38)
+        ]);
+        og.add(new THREE.Mesh(new THREE.TubeGeometry(c, 12, 0.036, 5, false), octoMat));
+      }
+      return og;
+    }
+    [[39.5, -2.2, 33.8, 1.5], [42.0, -2.1, 36.2, 1.7], [37.4, -2.4, 36.6, 1.4]].forEach(([cx, cy, cz, r], i) => {
+      const oct = createMadakoOctopus(); root.add(oct);
+      edoMarineSwimmers.push({ mesh: oct, tail: null, cx, cz, y: cy, r, a: i * 2.0, s: 0.28, wobble: 0.12 });
+    });
+
+    // 5. 三崎・三浦半島南端：黒むつ（黑鯥 Kuromutsu — Deep Charcoal-Silver with Large Dark Eyes）
+    [[48.5, -2.6, 36.5, 1.8], [51.2, -2.8, 38.2, 2.0], [52.8, -2.5, 35.8, 1.6], [49.8, -2.9, 39.2, 1.9]].forEach(([cx, cy, cz, r], i) => {
+      const { group, tail } = buildSculptedFish({ len: 0.95, h: 0.32, w: 0.2, backCol: '#27272a', bellyCol: '#a1a1aa', finCol: '#3f3f46', tailFork: 0.34 });
+      root.add(group);
+      edoMarineSwimmers.push({ mesh: group, tail, cx, cz, y: cy, r, a: i * 1.5, s: 0.46, wobble: 0.2 });
+    });
+
+    // 6. 木更津近海：すずき（日本鱸魚 Japanese Sea Bass）＆ あさり（淺蜊蛤蜊床）
+    [[65.8, -1.5, 6.2, 1.7], [67.8, -1.7, 8.5, 1.8], [66.2, -1.4, 10.2, 1.5], [68.4, -1.6, 5.4, 1.6]].forEach(([cx, cy, cz, r], i) => {
+      const { group, tail } = buildSculptedFish({ len: 1.15, h: 0.28, w: 0.18, backCol: '#64748b', bellyCol: '#f1f5f9', finCol: '#94a3b8', tailFork: 0.34 });
+      root.add(group);
+      edoMarineSwimmers.push({ mesh: group, tail, cx, cz, y: cy, r, a: i * 1.55, s: 0.5, wobble: 0.2 });
+    });
+    const clamCols = ['#d6c7b2', '#a89f91', '#e7e0d2', '#8c7d6b'];
+    [[67.5, 5.2], [68.6, 7.6], [66.8, 9.4]].forEach(([bx, bz]) => {
+      for (let c = 0; c < 11; c++) {
+        const cx = bx + randRange(-1.4, 1.4), cz = bz + randRange(-1.4, 1.4);
+        const by = getTerrainHeight(cx, cz);
+        if (by < WATER_Y - 0.35) {
+          const clam = new THREE.Mesh(new THREE.SphereGeometry(randRange(0.11, 0.17), 8, 6), new THREE.MeshStandardMaterial({ color: clamCols[c % 4], roughness: 0.72 }));
+          clam.scale.set(1.2, 0.55, 0.95); clam.position.set(cx, by + 0.08, cz); clam.rotation.y = randRange(0, 6.28);
+          root.add(clam);
+        }
+      }
+    });
+
+    // 7. 富津岬淺灘：牡蠣（富津牡蠣礁床 — Ruffled Grey-Olive Shells & Pearlescent Interiors）
+    const oysterOuterMat = new THREE.MeshStandardMaterial({ color: '#78716c', roughness: 0.85 });
+    const oysterPearlMat = new THREE.MeshStandardMaterial({ color: '#fef9c3', roughness: 0.25, metalness: 0.25 });
+    [[68.0, 14.8], [67.2, 16.6], [69.0, 17.8]].forEach(([bx, bz]) => {
+      for (let k = 0; k < 10; k++) {
+        const ox = bx + randRange(-1.3, 1.3), oz = bz + randRange(-1.3, 1.3);
+        const by = getTerrainHeight(ox, oz);
+        if (by < WATER_Y - 0.35) {
+          const og = new THREE.Group(); og.position.set(ox, by + 0.1, oz); og.rotation.y = randRange(0, 6.28);
+          const sh = new THREE.Mesh(new THREE.DodecahedronGeometry(randRange(0.16, 0.24), 0), oysterOuterMat);
+          sh.scale.set(1.4, 0.35, 0.88); og.add(sh);
+          if (k % 3 === 0) {
+            const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), oysterPearlMat);
+            pearl.scale.set(1.2, 0.32, 0.72); pearl.position.y = 0.06; og.add(pearl);
+          }
+          root.add(og);
+        }
+      }
+    });
+
+    // 8. 竹岡沖：スミイカ（墨烏賊 Cuttlefish）＆ アジ（竹筴魚 Horse Mackerel with Gold Tail）
+    const squidMat = new THREE.MeshStandardMaterial({ color: '#f3e8ff', emissive: '#c084fc', emissiveIntensity: 0.12, roughness: 0.22, transparent: true, opacity: 0.88 });
+    [[65.5, -1.9, 22.0, 1.5], [67.8, -2.1, 24.2, 1.7], [66.2, -1.8, 25.8, 1.4]].forEach(([cx, cy, cz, r], i) => {
+      const sg = new THREE.Group();
+      const mantle = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), squidMat);
+      mantle.scale.set(0.82, 0.52, 1.65); sg.add(mantle);
+      const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.02, 12), squidMat);
+      skirt.scale.set(1.05, 1.0, 1.45); sg.add(skirt);
+      for (let t = 0; t < 6; t++) {
+        const a = ((t - 2.5) / 3) * 0.45;
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.025, 0.38, 5), squidMat);
+        arm.rotation.x = Math.PI / 2; arm.position.set(Math.sin(a) * 0.12, -0.02, -0.44); sg.add(arm);
+      }
+      root.add(sg);
+      edoMarineSwimmers.push({ mesh: sg, tail: null, cx, cz, y: cy, r, a: i * 2.1, s: 0.36, wobble: 0.15 });
+    });
+    [[64.8, -1.5, 22.8, 1.3], [65.6, -1.6, 23.5, 1.4], [66.5, -1.4, 22.4, 1.2], [67.2, -1.7, 25.0, 1.5], [65.2, -1.5, 24.6, 1.3]].forEach(([cx, cy, cz, r], i) => {
+      const { group, tail } = buildSculptedFish({ len: 0.72, h: 0.22, w: 0.14, backCol: '#65a30d', bellyCol: '#f1f5f9', finCol: '#eab308', tailFork: 0.26 });
+      root.add(group);
+      edoMarineSwimmers.push({ mesh: group, tail, cx, cz, y: cy, r, a: i * 1.2, s: 0.72, wobble: 0.28 });
+    });
+
+    // 9. 富浦～館山（房總西南深海）：金目鯛（Kinmedai — Vibrant Crimson Red + Gleaming Golden Eyes!）
+    [[67.5, -2.4, 31.5, 1.9], [70.2, -2.7, 33.8, 2.1], [72.5, -2.5, 35.6, 1.8], [68.8, -2.8, 36.8, 2.0], [71.4, -2.3, 32.0, 1.7]].forEach(([cx, cy, cz, r], i) => {
+      const { group, tail } = buildSculptedFish({ len: 1.05, h: 0.38, w: 0.2, backCol: '#dc2626', bellyCol: '#fca5a5', finCol: '#ef4444', goldEye: true, tailFork: 0.44 });
+      root.add(group);
+      edoMarineSwimmers.push({ mesh: group, tail, cx, cz, y: cy, r, a: i * 1.3, s: 0.48, wobble: 0.22 });
+    });
+
+    // Supporting Schooling Fish in Kawaguchiko & Suruga Bay (2.0 Sculpted Fish!)
     const aquaticSwimmers = [];
-    const fishPalette = ['#f97316', '#f8fafc', '#ef4444', '#fbbf24', '#38bdf8', '#a855f7'];
-    for (let i = 0; i < 48; i++) {
-      const m = new THREE.Mesh(
-        new THREE.ConeGeometry(0.11, 0.44, 6),
-        new THREE.MeshStandardMaterial({ color: fishPalette[i % fishPalette.length], roughness: 0.35 })
-      );
-      m.rotation.z = -Math.PI / 2;
+    const reefFishStyles = [
+      { backCol: '#ea580c', bellyCol: '#fed7aa', finCol: '#f97316' },
+      { backCol: '#0284c7', bellyCol: '#e0f2fe', finCol: '#38bdf8' },
+      { backCol: '#ca8a04', bellyCol: '#fef9c3', finCol: '#facc15' },
+      { backCol: '#475569', bellyCol: '#f1f5f9', finCol: '#94a3b8' }
+    ];
+    for (let i = 0; i < 24; i++) {
+      const st = reefFishStyles[i % reefFishStyles.length];
+      const { group: m } = buildSculptedFish({ len: 0.52, h: 0.17, w: 0.11, ...st, tailFork: 0.18 });
       let cx, cz, fy;
       if (i < 10) { cx = randRange(-12.0, -1.0); cz = randRange(-29.0, -24.0); fy = randRange(-1.7, -0.6); }
-      else if (i < 22) { cx = randRange(-40.0, 2.0); cz = randRange(38.0, 46.0); fy = randRange(-3.8, -0.8); }
-      else if (i < 36) { cx = randRange(22.0, 68.0); cz = randRange(30.0, 46.0); fy = randRange(-4.2, -0.8); }
-      else { cx = randRange(54.0, 70.0); cz = randRange(-6.0, 24.0); fy = randRange(-2.8, -0.7); }
+      else { cx = randRange(-40.0, 2.0); cz = randRange(38.0, 46.0); fy = randRange(-3.8, -0.8); }
       root.add(m);
       aquaticSwimmers.push({ mesh: m, cx, cz, y: fy, r: randRange(0.8, 2.4), a: rand() * 6.28, s: randRange(0.55, 1.15) });
     }
 
-    // Manta Rays gliding smoothly in Sagami Bay & Tokyo Bay
+    // Manta Rays gliding smoothly in Sagami Bay & Tokyo Bay (2.0 Sculpted Diamond Wing Silhouette!)
     const mantaRays = [];
-    const mantaMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.35, metalness: 0.15 });
+    const mantaMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.32, metalness: 0.18 });
+    const mantaWingShape = new THREE.Shape();
+    mantaWingShape.moveTo(0, 0.55);
+    mantaWingShape.quadraticCurveTo(0.45, 0.32, 1.15, -0.05);
+    mantaWingShape.quadraticCurveTo(0.45, -0.25, 0, -0.52);
+    mantaWingShape.quadraticCurveTo(-0.45, -0.25, -1.15, -0.05);
+    mantaWingShape.quadraticCurveTo(-0.45, 0.32, 0, 0.55);
+    const mantaWingGeo = new THREE.ExtrudeGeometry(mantaWingShape, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 });
+    mantaWingGeo.rotateX(Math.PI / 2);
     for (let i = 0; i < 4; i++) {
       const mg = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.ConeGeometry(0.72, 1.1, 4), mantaMat);
-      body.scale.set(1.5, 0.14, 1.0); body.rotation.y = Math.PI / 4;
-      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 1.1, 5), mantaMat);
-      tail.rotation.x = Math.PI / 2; tail.position.z = -0.85;
+      const body = new THREE.Mesh(mantaWingGeo, mantaMat);
+      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.032, 1.05, 5), mantaMat);
+      tail.rotation.x = Math.PI / 2; tail.position.z = -0.92;
       mg.add(body, tail); root.add(mg);
       const zones = [[31, 42, -2.8], [58, 14, -2.2], [62, 34, -3.1], [-18, 43, -3.2]];
       mantaRays.push({ mesh: mg, cx: zones[i][0], cz: zones[i][1], y: zones[i][2], r: 2.8 + i * 0.5, a: i * 1.5, s: 0.32 + i * 0.05 });
@@ -1915,27 +2367,75 @@
     // Sea Turtles near Izu & Boso Coral Reefs
     const seaTurtles = [];
     const turtleShellMat = new THREE.MeshStandardMaterial({ color: '#3f6212', roughness: 0.6 });
-    const turtleSkinMat = new THREE.MeshStandardMaterial({ color: '#84cc16', roughness: 0.7 });
+    const turtleSkinMat = new THREE.MeshStandardMaterial({ color: '#65a30d', roughness: 0.65 });
     for (let i = 0; i < 4; i++) {
       const tg = new THREE.Group();
-      const shell = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), turtleShellMat); shell.scale.set(1.0, 0.45, 1.25);
+      const shell = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8), turtleShellMat); shell.scale.set(1.0, 0.42, 1.25);
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), turtleSkinMat); head.position.set(0, 0.02, 0.44);
       for (const s of [-1, 1]) {
-        const flip = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.05, 0.16), turtleSkinMat);
-        flip.position.set(s * 0.32, 0, 0.12); flip.rotation.y = s * -0.4; tg.add(flip);
+        const flip = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), turtleSkinMat);
+        flip.scale.set(1.85, 0.22, 0.72); flip.position.set(s * 0.34, -0.02, 0.14); flip.rotation.y = s * -0.45; tg.add(flip);
+        const rear = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 5), turtleSkinMat);
+        rear.scale.set(1.2, 0.2, 0.8); rear.position.set(s * 0.18, -0.03, -0.34); rear.rotation.y = s * 0.35; tg.add(rear);
       }
       tg.add(shell, head); root.add(tg);
       const tPos = [[23, 41, -1.8], [72, 38, -2.1], [-4, 42, -1.9], [65, 22, -1.7]];
       seaTurtles.push({ mesh: tg, cx: tPos[i][0], cz: tPos[i][1], y: tPos[i][2], r: 1.8, a: i * 1.8, s: 0.38 });
     }
 
-    // Suruga Bay Whale & Pacific/Boso Second Whale!
-    const whale = new THREE.Group();
-    const wBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.54, 2.5, 8, 14), new THREE.MeshStandardMaterial({ color: '#1e3a5f', roughness: 0.4 }));
-    wBody.rotation.z = Math.PI / 2;
-    const wTail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 1.25), new THREE.MeshStandardMaterial({ color: '#1e3a5f' }));
-    wTail.position.x = -1.65;
-    whale.add(wBody, wTail);
+    // 2.0 Sculpted Organic Humpback / Blue Whales (Suruga Bay & Pacific/Boso — Facing +X!)
+    function createSculptedWhale() {
+      const wg = new THREE.Group();
+      const wBackMat = new THREE.MeshStandardMaterial({ color: '#1b365d', roughness: 0.32, metalness: 0.22 });
+      const wBellyMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.42, metalness: 0.12 });
+      // Tapered LatheGeometry whale torso (+Y revolved -> rotated to +X head forward!)
+      const wProfile = [
+        new THREE.Vector2(0.01, -2.15), // Tail stock tip
+        new THREE.Vector2(0.09, -1.72),
+        new THREE.Vector2(0.22, -1.15),
+        new THREE.Vector2(0.38, -0.45),
+        new THREE.Vector2(0.50,  0.32),
+        new THREE.Vector2(0.52,  0.98),
+        new THREE.Vector2(0.42,  1.48),
+        new THREE.Vector2(0.24,  1.78),
+        new THREE.Vector2(0.01,  1.92)  // Rounded whale snout
+      ];
+      const torso = new THREE.Mesh(new THREE.LatheGeometry(wProfile, 18), wBackMat);
+      torso.rotation.z = -Math.PI / 2;
+      torso.scale.set(1.0, 0.88, 0.92);
+      wg.add(torso);
+      // Pleated pale belly underside
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.46, 14, 10), wBellyMat);
+      belly.scale.set(2.45, 0.55, 0.78); belly.position.set(0.32, -0.18, 0); wg.add(belly);
+      // Small curved dorsal fin
+      const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.34, 5), wBackMat);
+      dorsal.scale.set(1.3, 1.0, 0.26); dorsal.rotation.z = 0.45; dorsal.position.set(-0.62, 0.42, 0); wg.add(dorsal);
+      // Swept-back pectoral flippers (left & right along ±Z)
+      const flipShape = new THREE.Shape();
+      flipShape.moveTo(0, 0); flipShape.quadraticCurveTo(0.25, 0.55, -0.35, 1.15);
+      flipShape.quadraticCurveTo(-0.52, 0.65, -0.32, 0); flipShape.closePath();
+      const flipGeo = new THREE.ExtrudeGeometry(flipShape, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 1 });
+      for (const s of [-1, 1]) {
+        const fl = new THREE.Mesh(flipGeo, wBackMat);
+        fl.rotation.x = s * (Math.PI / 2 - 0.18);
+        fl.position.set(0.42, -0.14, s * 0.36);
+        wg.add(fl);
+      }
+      // Wide Crescent Horizontal Tail Flukes at -X
+      const flukeShape = new THREE.Shape();
+      flukeShape.moveTo(0.15, 0);
+      flukeShape.quadraticCurveTo(-0.1, 0.68, -0.58, 1.05);
+      flukeShape.quadraticCurveTo(-0.34, 0.35, -0.22, 0);
+      flukeShape.quadraticCurveTo(-0.34, -0.35, -0.58, -1.05);
+      flukeShape.quadraticCurveTo(-0.1, -0.68, 0.15, 0);
+      const flukeGeo = new THREE.ExtrudeGeometry(flukeShape, { depth: 0.05, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 1 });
+      flukeGeo.rotateX(Math.PI / 2);
+      const fluke = new THREE.Mesh(flukeGeo, wBackMat);
+      fluke.position.set(-2.05, 0.02, 0);
+      wg.add(fluke);
+      return wg;
+    }
+    const whale = createSculptedWhale();
     whale.position.set(-14.0, -2.4, 43.5);
     root.add(whale);
 
@@ -1943,60 +2443,116 @@
     pacificWhale.position.set(66.0, -2.8, 43.5);
     root.add(pacificWhale);
 
+    // 2.0 Sculpted Leaping Bottlenose Dolphins (Aligned with leaping arc!)
     const dolphins = [];
-    const dolphinMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.25, metalness: 0.2 });
+    const dolphinMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.24, metalness: 0.28 });
+    const dolphinBellyMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.3 });
+    const dolphProfile = [
+      new THREE.Vector2(0.01, -0.58), new THREE.Vector2(0.045, -0.38),
+      new THREE.Vector2(0.11, -0.12), new THREE.Vector2(0.145, 0.14),
+      new THREE.Vector2(0.12, 0.34),  new THREE.Vector2(0.055, 0.46),
+      new THREE.Vector2(0.028, 0.56), new THREE.Vector2(0.008, 0.62) // Pointed rostrum beak
+    ];
+    const dolphBodyGeo = new THREE.LatheGeometry(dolphProfile, 14);
     const dolphinCoords = [[-24, 41.5], [-10, 44.0], [25, 41.5], [34, 43.5], [58, 39.5], [96, 39.0]];
     for (let i = 0; i < dolphinCoords.length; i++) {
-      const d = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.58, 6, 10), dolphinMat);
-      d.rotation.z = Math.PI / 2;
-      root.add(d);
-      dolphins.push({ mesh: d, bx: dolphinCoords[i][0], bz: dolphinCoords[i][1], phase: i * 1.35 });
+      const dg = new THREE.Group();
+      const inner = new THREE.Group();
+      inner.rotation.z = -Math.PI / 2; // Compensates animation's +PI/2 so inner -X faces forward along leap!
+      const body = new THREE.Mesh(dolphBodyGeo, dolphinMat); body.rotation.z = Math.PI / 2; inner.add(body);
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 8), dolphinBellyMat);
+      belly.scale.set(2.4, 0.55, 0.72); belly.position.set(-0.08, -0.06, 0); inner.add(belly);
+      const dFin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 4), dolphinMat);
+      dFin.scale.set(1.2, 1.0, 0.25); dFin.rotation.z = -0.45; dFin.position.set(0.05, 0.16, 0); inner.add(dFin);
+      const dFluke = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.025, 0.34), dolphinMat);
+      dFluke.position.set(0.55, 0, 0); inner.add(dFluke);
+      dg.add(inner); root.add(dg);
+      dolphins.push({ mesh: dg, bx: dolphinCoords[i][0], bz: dolphinCoords[i][1], phase: i * 1.35 });
     }
 
-    // Lush Multi-Colored Seabed Coral Reefs, Kelp Forests & Deep Hydrothermal Smoker Vents!
-    const coralPalette = ['#f97316', '#ec4899', '#10b981', '#eab308', '#a855f7', '#fb7185'];
-    for (let i = 0; i < 92; i++) {
+    // 2.0 Natural Seabed Reef Boulders & Delicate Branching Coral Sprigs (Replaces 1.0 Neon Polyhedron Balls!)
+    const rockPalette = ['#475569', '#57534e', '#64748b', '#52525b'];
+    const naturalCoralPalette = ['#e07a5f', '#d4a373', '#d88c9a', '#52796f', '#c97b63'];
+    for (let i = 0; i < 68; i++) {
       let cx, cz;
-      if (i < 24) { cx = randRange(-46.0, 2.0); cz = randRange(37.0, 46.5); }
-      else if (i < 52) { cx = randRange(21.0, 68.0); cz = randRange(32.0, 46.5); }
-      else if (i < 74) { cx = randRange(53.0, 72.0); cz = randRange(-8.0, 28.0); }
+      if (i < 18) { cx = randRange(-46.0, 2.0); cz = randRange(37.0, 46.5); }
+      else if (i < 40) { cx = randRange(21.0, 68.0); cz = randRange(32.0, 46.5); }
+      else if (i < 56) { cx = randRange(53.0, 72.0); cz = randRange(-6.0, 28.0); }
       else { cx = randRange(78.0, 102.0); cz = randRange(36.0, 46.5); }
       const by = getTerrainHeight(cx, cz);
-      if (by < WATER_Y - 0.5) {
-        const cr = new THREE.Mesh(
-          new THREE.DodecahedronGeometry(randRange(0.24, 0.56), 0),
-          new THREE.MeshStandardMaterial({ color: coralPalette[i % coralPalette.length], roughness: 0.8 })
+      if (by < WATER_Y - 0.65) {
+        const rg = new THREE.Group();
+        rg.position.set(cx, by, cz);
+        rg.rotation.y = randRange(0, 6.28);
+        // Natural flattened reef boulder base nestled into the seabed
+        const rockR = randRange(0.28, 0.55);
+        const rock = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(rockR, 1),
+          new THREE.MeshStandardMaterial({ color: rockPalette[i % rockPalette.length], roughness: 0.92 })
         );
-        cr.position.set(cx, by + 0.24, cz);
-        root.add(cr);
+        rock.scale.set(randRange(1.0, 1.45), randRange(0.35, 0.58), randRange(0.9, 1.35));
+        rock.position.y = rockR * 0.18;
+        rg.add(rock);
+        // Organic branching staghorn coral sprigs growing from the reef boulder
+        if (i % 2 === 0) {
+          const cMat = new THREE.MeshStandardMaterial({ color: naturalCoralPalette[i % naturalCoralPalette.length], roughness: 0.78 });
+          for (let b = 0; b < 5; b++) {
+            const ba = (b / 5) * Math.PI * 2 + randRange(-0.25, 0.25);
+            const bh = randRange(0.28, 0.52);
+            const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.042, bh, 5), cMat);
+            branch.position.set(Math.cos(ba) * 0.14, rockR * 0.35 + bh * 0.42, Math.sin(ba) * 0.14);
+            branch.rotation.z = Math.cos(ba) * -0.42;
+            branch.rotation.x = Math.sin(ba) * 0.42;
+            rg.add(branch);
+          }
+        }
+        root.add(rg);
       }
     }
 
-    // Underwater Swaying Kelp / Seaweed Forests
-    const kelpMat = new THREE.MeshStandardMaterial({ color: '#15803d', roughness: 0.75 });
-    for (let i = 0; i < 56; i++) {
-      const kx = i < 20 ? randRange(-42, 0) : (i < 40 ? randRange(24, 68) : randRange(54, 72));
-      const kz = i < 40 ? randRange(35, 46.5) : randRange(2, 26);
+    // 2.0 Organic Undulating Curved Kelp Fronds (Replaces 1.0 Straight Green Rods!)
+    const kelpMat1 = new THREE.MeshStandardMaterial({ color: '#1b4332', roughness: 0.82 });
+    const kelpMat2 = new THREE.MeshStandardMaterial({ color: '#2d6a4f', roughness: 0.8 });
+    const kelpCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.12, 0.42, 0.05),
+      new THREE.Vector3(-0.08, 0.88, -0.06), new THREE.Vector3(0.14, 1.35, 0.04), new THREE.Vector3(0.02, 1.75, 0)
+    ]);
+    const kelpBladeGeo = new THREE.TubeGeometry(kelpCurve, 14, 0.042, 5, false);
+    for (let i = 0; i < 42; i++) {
+      const kx = i < 14 ? randRange(-42, 0) : (i < 30 ? randRange(24, 68) : randRange(54, 72));
+      const kz = i < 30 ? randRange(35, 46.5) : randRange(2, 26);
       const ky = getTerrainHeight(kx, kz);
-      if (ky < WATER_Y - 1.2) {
-        const kh = randRange(0.9, 2.1);
-        const kelp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.08, kh, 5), kelpMat);
-        kelp.position.set(kx, ky + kh * 0.5, kz);
-        kelp.rotation.z = randRange(-0.18, 0.18);
-        root.add(kelp);
+      if (ky < WATER_Y - 1.35) {
+        const kg = new THREE.Group(); kg.position.set(kx, ky, kz);
+        const sc = randRange(0.55, 1.12);
+        for (let f = 0; f < 3; f++) {
+          const frond = new THREE.Mesh(kelpBladeGeo, f % 2 === 0 ? kelpMat1 : kelpMat2);
+          frond.scale.set(0.55, sc, 1.4);
+          frond.rotation.y = (f / 3) * Math.PI * 2 + randRange(-0.3, 0.3);
+          frond.position.set(randRange(-0.12, 0.12), 0, randRange(-0.12, 0.12));
+          kg.add(frond);
+        }
+        root.add(kg);
       }
     }
 
-    // Deep-Sea Hydrothermal Vents (Black Smokers) on Suruga / Sagami / Pacific Trough Floor
-    const ventMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.92 });
-    const ventGlowMat = new THREE.MeshStandardMaterial({ color: '#f97316', emissive: '#ea580c', emissiveIntensity: 1.4 });
+    // 2.0 Deep-Sea Volcanic Hydrothermal Chimney Clusters (Natural Basalt Spires + Recessed Fissure Glow)
+    const ventMat = new THREE.MeshStandardMaterial({ color: '#27272a', roughness: 0.95 });
+    const ventGlowMat = new THREE.MeshStandardMaterial({ color: '#c2410c', emissive: '#ea580c', emissiveIntensity: 0.85, roughness: 0.8 });
+    const ventSmokeMat = new THREE.MeshStandardMaterial({ color: '#1e293b', transparent: true, opacity: 0.28, depthWrite: false });
     for (const [vx, vz] of [[-22, 45.2], [-6, 45.8], [34, 45.4], [61, 44.8], [88, 45.5], [101, 24.0]]) {
       const vy = getTerrainHeight(vx, vz);
-      if (vy < WATER_Y - 2.0) {
+      if (vy < WATER_Y - 2.2) {
         const vg = new THREE.Group(); vg.position.set(vx, vy, vz);
-        const chim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.62, 1.45, 7), ventMat); chim.position.y = 0.72;
-        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), ventGlowMat); tip.position.y = 1.45;
-        vg.add(chim, tip); root.add(vg);
+        for (const [ox, oz, ch, cr] of [[0, 0, 1.25, 0.34], [0.36, 0.22, 0.82, 0.24], [-0.32, 0.18, 0.68, 0.22]]) {
+          const sp = new THREE.Mesh(new THREE.CylinderGeometry(cr * 0.42, cr, ch, 7), ventMat);
+          sp.position.set(ox, ch * 0.5, oz); vg.add(sp);
+        }
+        const throat = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 7), ventGlowMat);
+        throat.position.set(0, 1.24, 0); vg.add(throat);
+        const plume = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), ventSmokeMat);
+        plume.scale.set(1.0, 1.6, 1.0); plume.position.set(0.08, 1.72, 0); vg.add(plume);
+        root.add(vg);
       }
     }
 
@@ -2551,7 +3107,7 @@
     const shinkansenRaw = [
       [-51.8, 30.8], [-42.5, 29.9], [-33.5, 29.3], [-24.0, 29.0], [-8.0, 28.5],
       [6.0, 28.5], [19.5, 27.5], [27.0, 22.0], [32.5, 15.0],
-      [37.0, 6.0], [39.5, -4.0], [45.0, -13.5], [51.5, -20.5]
+      [37.0, 6.0], [39.5, -4.0], [47.2, -9.2], [52.95, -14.8], [52.95, -20.5], [52.95, -23.0]
     ];
     const shinkansenPts = shinkansenRaw.map(([sx, sz]) => new THREE.Vector3(sx, Math.max(1.05, Math.min(2.6, getTerrainHeight(sx, sz) + 0.34)), sz));
     const shinkansenCurve = new THREE.CatmullRomCurve3(shinkansenPts);
@@ -2619,7 +3175,7 @@
     const uShinFuji = buildShinkansenStation(-33.5, 29.3, 1.0);
     const uAtami    = buildShinkansenStation(15.0, 28.2, 0.88);
     const uShinYoko = buildShinkansenStation(37.0, 6.0, 1.06);
-    const uTokyo    = 0.962;
+    const uTokyo    = findNearestCurveU(shinkansenCurve, 52.95, -20.5);
 
     // 4-Station Piecewise Timetable Schedule (Total 74s round-trip at 1.0x speed; never goes west past Shin-Fuji!)
     const SHINK_SCHEDULE = [
@@ -2752,9 +3308,17 @@
     kanagawaGroup.add(yokoGroup);
     const cityMatWarm = new THREE.MeshStandardMaterial({ map: cityTexWarm, color: '#dbe4ef', emissive: '#fef08a', emissiveMap: cityTexWarm, emissiveIntensity: 0.14, roughness: 0.24, metalness: 0.52, envMapIntensity: 1.2 });
     const cityMatCool = new THREE.MeshStandardMaterial({ map: cityTexCool, color: '#dbe4ef', emissive: '#38bdf8', emissiveMap: cityTexCool, emissiveIntensity: 0.14, roughness: 0.22, metalness: 0.58, envMapIntensity: 1.35 });
+    const cityMatMarunouchi = new THREE.MeshStandardMaterial({ map: cityTexMarunouchi, color: '#d8e6f5', emissive: '#7dd3fc', emissiveMap: cityTexMarunouchi, emissiveIntensity: 0.12, roughness: 0.18, metalness: 0.68, envMapIntensity: 1.5 });
+    const cityMatCream = new THREE.MeshStandardMaterial({ map: cityTexCream, color: '#f2ece1', emissive: '#fde68a', emissiveMap: cityTexCream, emissiveIntensity: 0.1, roughness: 0.42, metalness: 0.18, envMapIntensity: 0.9 });
+    const cityMatSilver = new THREE.MeshStandardMaterial({ map: cityTexSilver, color: '#e2e8f0', emissive: '#e0f2fe', emissiveMap: cityTexSilver, emissiveIntensity: 0.12, roughness: 0.28, metalness: 0.48, envMapIntensity: 1.25 });
+    const cityPalette = [cityMatMarunouchi, cityMatCool, cityMatWarm, cityMatSilver, cityMatCream];
     const silverCladMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.34, metalness: 0.42, envMapIntensity: 1.1 });
+    const darkRoofTrimMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.55, metalness: 0.35 });
     nightEmissives.push({ mat: cityMatWarm, day: 0.1, sunset: 0.78, night: 1.9 });
     nightEmissives.push({ mat: cityMatCool, day: 0.1, sunset: 0.72, night: 1.8 });
+    nightEmissives.push({ mat: cityMatMarunouchi, day: 0.08, sunset: 0.68, night: 1.75 });
+    nightEmissives.push({ mat: cityMatCream, day: 0.08, sunset: 0.72, night: 1.65 });
+    nightEmissives.push({ mat: cityMatSilver, day: 0.09, sunset: 0.7, night: 1.72 });
 
     // 1. Yokohama Landmark Tower (Signature Tapered Pier Silhouette + Recessed Blue-Glass Center + Twin-Wing Notched Crown!)
     const lmGroup = new THREE.Group(); lmGroup.position.set(42.5, getTerrainHeight(42.5, 8.2), 8.2);
@@ -2831,9 +3395,9 @@
     const tokyoGroup = new THREE.Group();
     root.add(tokyoGroup);
 
-    // 2.0 Open-Lattice Red-and-White Tokyo Tower (45.5, y, -16.5)
+    // 2.0 Open-Lattice Red-and-White Tokyo Tower (Relocated South to 45.5, y, -13.2)
     const ttGroup = new THREE.Group();
-    ttGroup.position.set(45.5, getTerrainHeight(45.5, -16.5), -16.5);
+    ttGroup.position.set(45.5, getTerrainHeight(45.5, -13.2), -13.2);
     const ttRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ff4500', emissiveIntensity: 0.32, roughness: 0.34, metalness: 0.35 });
     const ttWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#fef3c7', emissiveIntensity: 0.25, roughness: 0.34, metalness: 0.3 });
     const ttLatticeRed = new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ff4500', emissiveIntensity: 0.35, wireframe: true });
@@ -2844,13 +3408,16 @@
     nightEmissives.push({ mat: ttLatticeRed, day: 0.22, sunset: 1.05, night: 2.2 });
     nightEmissives.push({ mat: ttLatticeWht, day: 0.16, sunset: 0.85, night: 1.85 });
     nightEmissives.push({ mat: ttDeckGlow, day: 0.3, sunset: 1.2, night: 2.6 });
-    // FootTown base building under the 4 splayed legs
-    const ttFoot = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.55, 1.75), silverCladMat); ttFoot.position.y = 0.28; ttFoot.castShadow = true; ttGroup.add(ttFoot);
+    // FootTown base building under the 4 splayed legs (warm brown facade with white vertical entrance ribs)
+    const ttFoot = new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.58, 1.78), new THREE.MeshStandardMaterial({ color: '#6b4f3d', roughness: 0.65 })); ttFoot.position.y = 0.29; ttFoot.castShadow = true; ttGroup.add(ttFoot);
+    for (const rx of [-0.45, -0.15, 0.15, 0.45]) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 1.84), whiteMat); rib.position.set(rx, 0.25, 0); ttGroup.add(rib);
+    }
     for (let i = 0; i < 4; i++) {
       const a = (i * Math.PI) / 2 + Math.PI / 4;
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, 2.75, 6), ttRed);
-      leg.position.set(Math.cos(a) * 0.92, 1.25, Math.sin(a) * 0.92);
-      leg.rotation.z = Math.cos(a) * 0.34; leg.rotation.x = -Math.sin(a) * 0.34; leg.castShadow = true;
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.24, 2.85, 6), ttRed);
+      leg.position.set(Math.cos(a) * 0.96, 1.28, Math.sin(a) * 0.96);
+      leg.rotation.z = Math.cos(a) * 0.35; leg.rotation.x = -Math.sin(a) * 0.35; leg.castShadow = true;
       ttGroup.add(leg);
     }
     [[2.1, 0.84, 1.12, 0.95, ttLatticeWht], [3.0, 0.62, 0.84, 0.95, ttLatticeRed], [4.2, 0.44, 0.58, 1.15, ttLatticeWht],
@@ -2860,15 +3427,77 @@
       seg.rotation.y = Math.PI / 4; seg.position.y = by; seg.castShadow = true; ttGroup.add(seg);
     });
     const ttCore = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.28, 6.2, 6), ttRed); ttCore.position.y = 3.5;
-    const ttMainDeck = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.44, 1.48), ttDeckGlow); ttMainDeck.position.y = 3.55;
-    const ttMainRoof = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.14, 1.58), ttRed); ttMainRoof.position.y = 3.82;
-    const ttTopDeck = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.32, 0.72), ttDeckGlow); ttTopDeck.position.y = 5.95;
+    const ttMainDeck = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.44, 1.52), ttDeckGlow); ttMainDeck.position.y = 3.55;
+    const ttMainRoof = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.14, 1.62), whiteMat); ttMainRoof.position.y = 3.82;
+    const ttTopDeck = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.34, 0.76), ttDeckGlow); ttTopDeck.position.y = 5.95;
     const ttBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ff0000' })); ttBeacon.position.y = 8.32;
     ttGroup.add(ttCore, ttMainDeck, ttMainRoof, ttTopDeck, ttBeacon); tokyoGroup.add(ttGroup);
 
-    // 2.0 Open-Lattice Tokyo Skytree with Iki Blue & Miyabi Purple LED Illumination (62.5, y, -29.0)
+    // 2.0 Zojo-ji Temple (增上寺) & Shiba Park Sakura Lawn right beside Tokyo Tower (Relocated South to 42.0, y, -12.8)
+    const zojoGroup = new THREE.Group();
+    const zjX = 42.0, zjZ = -12.8;
+    zojoGroup.position.set(zjX, getTerrainHeight(zjX, zjZ), zjZ);
+    const zjRedWood = new THREE.MeshStandardMaterial({ color: '#7f1d1d', roughness: 0.62 });
+    const zjTileBlue = new THREE.MeshStandardMaterial({ color: '#3b5568', roughness: 0.55, metalness: 0.18 });
+    const zjLawnMat = new THREE.MeshStandardMaterial({ color: '#65a30d', roughness: 0.9 });
+    const zjSakuraMat = new THREE.MeshStandardMaterial({ color: '#f9a8d4', roughness: 0.78 });
+    const zjStoneMat = new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.88 });
+    // Shiba Park Lawn & Stone Forecourt connecting toward Tokyo Tower
+    const zjLawn = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.08, 4.4), zjLawnMat);
+    zjLawn.position.set(1.1, 0.04, 0.35); zjLawn.receiveShadow = true; zojoGroup.add(zjLawn);
+    const zjPath = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.1, 1.45), zjStoneMat);
+    zjPath.position.set(0.6, 0.06, 0.55); zojoGroup.add(zjPath);
+    // Zojo-ji Daiden Main Hall (增上寺大殿: two-story dark-red hall + double upturned blue-grey tiled roofs + gold ridge finials)
+    const zjBase = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.24, 1.75), zjStoneMat); zjBase.position.set(-0.35, 0.12, -0.35); zjBase.castShadow = true;
+    const zjStairs = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.2, 0.38), zjStoneMat); zjStairs.position.set(-0.35, 0.1, 0.65);
+    const zjFloor1 = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.58, 1.42), zjRedWood); zjFloor1.position.set(-0.35, 0.52, -0.35); zjFloor1.castShadow = true;
+    const zjRoof1 = new THREE.Mesh(new THREE.ConeGeometry(1.92, 0.56, 4), zjTileBlue);
+    zjRoof1.rotation.y = Math.PI / 4; zjRoof1.scale.set(1.25, 1.0, 0.88); zjRoof1.position.set(-0.35, 1.02, -0.35); zjRoof1.castShadow = true;
+    const zjFloor2 = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.52, 1.08), zjRedWood); zjFloor2.position.set(-0.35, 1.38, -0.35); zjFloor2.castShadow = true;
+    const zjRoof2 = new THREE.Mesh(new THREE.ConeGeometry(1.62, 0.68, 4), zjTileBlue);
+    zjRoof2.rotation.y = Math.PI / 4; zjRoof2.scale.set(1.24, 1.0, 0.85); zjRoof2.position.set(-0.35, 1.92, -0.35); zjRoof2.castShadow = true;
+    const zjRidge = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.1, 0.12), zjTileBlue); zjRidge.position.set(-0.35, 2.24, -0.35);
+    for (const fx of [-1.05, 0.35]) {
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 6), goldMat); fin.position.set(fx, 2.34, -0.35); zojoGroup.add(fin);
+    }
+    // Secondary Temple Pavilion (安國殿 / 三解脫門 side hall)
+    const zjSubHall = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.48, 0.88), zjRedWood); zjSubHall.position.set(1.45, 0.32, -0.95); zjSubHall.castShadow = true;
+    const zjSubRoof = new THREE.Mesh(new THREE.ConeGeometry(1.08, 0.45, 4), zjTileBlue);
+    zjSubRoof.rotation.y = Math.PI / 4; zjSubRoof.scale.set(1.22, 1.0, 0.85); zjSubRoof.position.set(1.45, 0.76, -0.95); zjSubRoof.castShadow = true;
+    zojoGroup.add(zjBase, zjStairs, zjFloor1, zjRoof1, zjFloor2, zjRoof2, zjRidge, zjSubHall, zjSubRoof);
+    // Lush Shiba Park Sakura Blossoms framing Zojo-ji & Tokyo Tower!
+    [[-1.65, 0.95], [-0.95, 1.35], [0.45, 1.45], [1.45, 1.15], [2.15, 0.45], [2.25, -0.65], [0.85, -0.05], [-1.7, -0.85], [2.95, 1.25], [3.65, 1.1]].forEach(([sx, sz], idx) => {
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.36, 5), bridgeWoodMat); tr.position.set(sx, 0.22, sz);
+      const cr = new THREE.Mesh(new THREE.DodecahedronGeometry(0.28 + (idx % 3) * 0.06, 1), zjSakuraMat); cr.position.set(sx, 0.5, sz); cr.castShadow = true;
+      zojoGroup.add(tr, cr);
+    });
+    tokyoGroup.add(zojoGroup);
+
+    // 2.0 Azabudai Hills Mori JP Tower (麻布台之丘 — 330m Japan's Tallest Supertall!) & Toranomon/Shiba High-Rises
+    const azabuGroup = new THREE.Group();
+    const azX = 41.8, azZ = -17.2;
+    azabuGroup.position.set(azX, getTerrainHeight(azX, azZ), azZ);
+    // Lush green undulating Heatherwick-style terraced podium
+    const azPod = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.55, 2.2), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 }));
+    azPod.position.y = 0.28; azPod.castShadow = true;
+    const azPodGlass = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.36, 2.05), cityMatMarunouchi); azPodGlass.position.y = 0.22;
+    // Sculpted Curved Lotus-Petal Tapered Glass Tower (signature Azabudai Hills silhouette!)
+    const azCore = new THREE.Mesh(new THREE.BoxGeometry(1.42, 7.6, 1.32), cityMatMarunouchi); azCore.position.y = 4.1; azCore.castShadow = true;
+    const azCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.96, 1.15, 8), cityMatSilver); azCrown.position.y = 8.42; azCrown.castShadow = true;
+    const azCrownGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.71, 0.92, 0.28, 8), new THREE.MeshStandardMaterial({ color: '#fef9c3', emissive: '#fde68a', emissiveIntensity: 0.6 }));
+    azCrownGlow.position.y = 8.68;
+    // Signature vertical white curved petal ribs on the 4 facades
+    for (const [rx, rz] of [[-0.72, 0], [0.72, 0], [0, -0.68], [0, 0.68]]) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(rx ? 0.08 : 0.42, 7.8, rz ? 0.08 : 0.42), silverCladMat);
+      rib.position.set(rx, 4.2, rz); azabuGroup.add(rib);
+    }
+    const azBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), new THREE.MeshBasicMaterial({ color: '#ef4444' })); azBeacon.position.y = 9.08;
+    azabuGroup.add(azPod, azPodGlass, azCore, azCrown, azCrownGlow, azBeacon);
+    tokyoGroup.add(azabuGroup);
+
+    // 2.0 Open-Lattice Tokyo Skytree with Iki Blue & Miyabi Purple LED Illumination (Moved North to 62.5, y, -33.8)
     const skyGroup = new THREE.Group();
-    skyGroup.position.set(62.5, getTerrainHeight(62.5, -29.0), -29.0);
+    skyGroup.position.set(62.5, getTerrainHeight(62.5, -33.8), -33.8);
     const skySteel = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#38bdf8', emissiveIntensity: 0.2, metalness: 0.55, roughness: 0.25 });
     const skyTrussMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', emissive: '#7dd3fc', emissiveIntensity: 0.22, wireframe: true });
     const skyIkiGlow = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#38bdf8', emissiveIntensity: 0.45, roughness: 0.2 });
@@ -2898,58 +3527,257 @@
     const skyTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshBasicMaterial({ color: '#38bdf8' })); skyTip.position.y = 10.68;
     skyGroup.add(skyOuterTruss, skyCoreLower, skyCoreUpper, skyPod1, skyPod1Glass, skyPod2, skyPod2Glass, skySpire, skyTip); tokyoGroup.add(skyGroup);
 
-    // 2.0 Grand Imperial Tokyo Station Marunouchi Red-Brick Facade (51.5, y, -20.5)
+    // 2.0 Grand Imperial Tokyo Station (Rotated 90°: Marunouchi Red-Brick Facing West -X, Shinkansen Platform Directly Behind, Modern Yaesu GranRoof Facing East +X!)
     const tsGroup = new THREE.Group();
     tsGroup.position.set(51.5, getTerrainHeight(51.5, -20.5), -20.5);
-    const tsPlaza = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.12, 4.2), new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.85 }));
-    tsPlaza.position.y = 0.06; tsGroup.add(tsPlaza);
-    // Twin Marunouchi Forecourt Semicircular Rotary Islands
-    for (const rx of [-1.7, 1.7]) {
-      const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.58, 0.14, 14), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 }));
-      rot.position.set(rx, 0.14, 1.15); tsGroup.add(rot);
+    tsGroup.rotation.y = -Math.PI / 2; // Local +Z -> West (-X Marunouchi), Local -Z -> East (+X Yaesu), Local X -> North-South!
+    const tsPlaza = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.12, 8.2), new THREE.MeshStandardMaterial({ color: '#e5e0d8', roughness: 0.85 }));
+    tsPlaza.position.set(0, 0.06, -0.4); tsPlaza.receiveShadow = true; tsGroup.add(tsPlaza);
+    // Crisp Rectangular Marunouchi West Forecourt Lawns & Boulevard Trees (朝西丸之內口廣場)
+    const tsLawnMat = new THREE.MeshStandardMaterial({ color: '#65a30d', roughness: 0.9 });
+    for (const rx of [-1.85, 1.85]) {
+      const lawn = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.14, 1.15), tsLawnMat);
+      lawn.position.set(rx, 0.09, 2.05); tsGroup.add(lawn);
     }
-    const tsMain = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.15, 1.25), brickMat); tsMain.position.set(0, 0.68, -0.45); tsMain.castShadow = true;
-    const tsCenter = new THREE.Mesh(new THREE.BoxGeometry(1.38, 1.48, 1.48), brickMat); tsCenter.position.set(0, 0.84, -0.45); tsCenter.castShadow = true;
-    const tsPediment = new THREE.Mesh(new THREE.ConeGeometry(0.92, 0.45, 4), slateRoofMat); tsPediment.rotation.y = Math.PI / 4; tsPediment.position.set(0, 1.78, -0.45);
-    const tsTrim = new THREE.Mesh(new THREE.BoxGeometry(5.1, 0.12, 1.32), whiteMat); tsTrim.position.set(0, 1.22, -0.45);
-    const tsRoof = new THREE.Mesh(new THREE.BoxGeometry(5.12, 0.22, 1.32), slateRoofMat); tsRoof.position.set(0, 1.38, -0.45);
-    tsGroup.add(tsMain, tsCenter, tsPediment, tsTrim, tsRoof);
-    for (const dx of [-2.35, 2.35]) {
-      const pav = new THREE.Mesh(new THREE.CylinderGeometry(0.64, 0.68, 1.4, 8), brickMat); pav.position.set(dx, 0.8, -0.45); pav.castShadow = true;
-      const pavBand = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.68, 0.12, 8), whiteMat); pavBand.position.set(dx, 1.45, -0.45);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.64, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.56), slateRoofMat); dome.position.set(dx, 1.5, -0.45);
-      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 6), goldMat); fin.position.set(dx, 2.24, -0.45);
+    for (const tx of [-3.2, -2.3, -1.5, 1.5, 2.3, 3.2]) {
+      const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.28, 5), bridgeWoodMat); tr.position.set(tx, 0.22, 2.72);
+      const cr = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 1), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 })); cr.position.set(tx, 0.44, 2.72);
+      tsGroup.add(tr, cr);
+    }
+    // Symmetrical Marunouchi Red-Brick Station Wings (朝西紅磚丸之內口)
+    const tsMain = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.2, 1.18), brickMat); tsMain.position.set(0, 0.7, -0.15); tsMain.castShadow = true;
+    const tsCenter = new THREE.Mesh(new THREE.BoxGeometry(1.52, 1.56, 1.48), brickMat); tsCenter.position.set(0, 0.88, -0.1); tsCenter.castShadow = true;
+    const tsCenterArch = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.96, 1.54), whiteMat); tsCenterArch.position.set(0, 0.62, -0.1);
+    const tsPediment = new THREE.Mesh(new THREE.ConeGeometry(1.08, 0.56, 4), slateRoofMat); tsPediment.rotation.y = Math.PI / 4; tsPediment.scale.set(1.18, 1.0, 0.95); tsPediment.position.set(0, 1.92, -0.1);
+    const tsTrim = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.11, 1.24), whiteMat); tsTrim.position.set(0, 1.26, -0.15);
+    const tsRoof = new THREE.Mesh(new THREE.BoxGeometry(6.48, 0.22, 1.22), slateRoofMat); tsRoof.position.set(0, 1.42, -0.15);
+    // Open-Sided Elevated Shinkansen Platform Canopy directly behind Red-Brick Station (local z = -1.45 -> world x = 52.95 so Shinkansen stops cleanly inside!)
+    const tsShedRoof = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.12, 1.38), silverCladMat); tsShedRoof.position.set(0, 1.55, -1.45); tsShedRoof.castShadow = true;
+    for (const px of [-2.8, -1.4, 0, 1.4, 2.8]) {
+      for (const pz of [-0.88, -2.02]) {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 1.45, 6), silverCladMat);
+        col.position.set(px, 0.8, pz); tsGroup.add(col);
+      }
+    }
+    // Modern Yaesu East Entrance & Signature White Sail-Like GranRoof Canopy (朝東現代化八重洲口!)
+    const yaesuGlass = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.05, 0.72), cityMatMarunouchi); yaesuGlass.position.set(0, 0.62, -2.42); yaesuGlass.castShadow = true;
+    const granRoof = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 5.8, 12, 1, false, 0, Math.PI), whiteMat);
+    granRoof.rotation.z = Math.PI / 2; granRoof.scale.set(0.32, 1.0, 1.15); granRoof.position.set(0, 1.18, -2.65); granRoof.castShadow = true;
+    tsGroup.add(tsMain, tsCenter, tsCenterArch, tsPediment, tsTrim, tsRoof, tsShedRoof, yaesuGlass, granRoof);
+    for (const mx of [-1.58, 1.58]) {
+      const midTur = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.4, 1.34), brickMat); midTur.position.set(mx, 0.8, -0.12);
+      const midCap = new THREE.Mesh(new THREE.ConeGeometry(0.48, 0.44, 4), slateRoofMat); midCap.rotation.y = Math.PI / 4; midCap.position.set(mx, 1.7, -0.12);
+      tsGroup.add(midTur, midCap);
+    }
+    for (const dx of [-2.9, 2.9]) {
+      const pav = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.78, 1.48, 8), brickMat); pav.position.set(dx, 0.84, -0.12); pav.castShadow = true;
+      const pavBand = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, 0.12, 8), whiteMat); pavBand.position.set(dx, 1.52, -0.12);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.74, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.56), slateRoofMat); dome.position.set(dx, 1.58, -0.12);
+      const fin = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.46, 6), goldMat); fin.position.set(dx, 2.4, -0.12);
       tsGroup.add(pav, pavBand, dome, fin);
     }
+    // Dense Iconic Marunouchi / GranTokyo / Yaesu / Otemachi Skyscraper Wall framing Tokyo Station!
+    const maruTowers = [
+      // Yaesu East Towers behind station (GranTokyo North & South + Tokyo Midtown Yaesu)
+      [-2.15, -3.75, 1.65, 1.25, 6.8, cityMatMarunouchi, true],  // GranTokyo North Tower
+      [ 0.15, -3.95, 1.58, 1.22, 6.1, cityMatSilver,     true],  // Yaesu Central Glass Tower
+      [ 2.25, -3.75, 1.72, 1.28, 7.3, cityMatMarunouchi, true],  // GranTokyo South / Midtown Yaesu
+      // Flanking North & South Marunouchi/Otemachi Towers (Marunouchi Bldg, Shin-Marunouchi, JP Tower KITTE)
+      [-4.65, -2.55, 1.45, 1.32, 5.8, cityMatMarunouchi, false],
+      [-4.85,  0.45, 1.38, 1.28, 5.3, cityMatCream,      false],
+      [ 4.65, -2.45, 1.42, 1.28, 5.5, cityMatSilver,     false],
+      [ 4.85,  0.65, 1.35, 1.25, 4.9, cityMatCream,      false],
+      [-4.45,  2.85, 1.28, 1.18, 5.6, cityMatMarunouchi, false],
+      [ 4.45,  2.85, 1.32, 1.18, 5.4, cityMatSilver,     false]
+    ];
+    maruTowers.forEach(([mx, mz, mw, md, mh, mMat, stepped]) => {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(mw, mh, md), mMat);
+      base.position.set(mx, mh * 0.5 + 0.08, mz); base.castShadow = true; base.receiveShadow = true; tsGroup.add(base);
+      const crown = new THREE.Mesh(new THREE.BoxGeometry(mw * 1.02, 0.12, md * 1.02), silverCladMat);
+      crown.position.set(mx, mh + 0.14, mz); tsGroup.add(crown);
+      if (stepped) {
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(mw * 1.12, 1.45, md * 1.15), cityMatSilver);
+        pod.position.set(mx, 0.78, mz + 0.22); pod.castShadow = true; tsGroup.add(pod);
+      }
+    });
     tokyoGroup.add(tsGroup);
 
-    // 2.0 Tokyo Dome Air-Supported Stadium + Adjacent LaQua Centerless Big-O Ferris Wheel (49.5, y, -31.5)
+    // 2.0 Photorealistic Tokyo Dome ("Big Egg") — Superellipse Puffed Orthogonal-Grid PTFE Membrane + Flared Glass Skirt + LaQua & Coaster (49.5, y, -31.5)
     const tdGroup = new THREE.Group();
     tdGroup.position.set(49.5, getTerrainHeight(49.5, -31.5), -31.5);
-    const tdBase = new THREE.Mesh(new THREE.CylinderGeometry(2.38, 2.65, 0.92, 28), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.62, metalness: 0.15 }));
-    tdBase.position.y = 0.46; tdBase.castShadow = true;
-    const tdGlassBelt = new THREE.Mesh(new THREE.CylinderGeometry(2.44, 2.58, 0.42, 28), cityMatCool); tdGlassBelt.position.y = 0.52;
-    const tdSignRing = new THREE.Mesh(new THREE.CylinderGeometry(2.42, 2.42, 0.12, 28), new THREE.MeshStandardMaterial({ color: '#15803d', emissive: '#22c55e', emissiveIntensity: 0.45 }));
-    tdSignRing.position.y = 0.86;
-    const tdRoofMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', emissive: '#e0f2fe', emissiveIntensity: 0.18, roughness: 0.32 });
-    nightEmissives.push({ mat: tdRoofMat, day: 0.1, sunset: 0.45, night: 1.25 });
-    const tdRoof = new THREE.Mesh(new THREE.SphereGeometry(2.42, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.46), tdRoofMat);
-    tdRoof.scale.set(1.06, 0.48, 0.94); tdRoof.position.y = 0.85; tdRoof.castShadow = true;
-    const tdRibMat = new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.45 });
-    for (let r = 0; r < 10; r++) {
-      const rib = new THREE.Mesh(new THREE.TorusGeometry(2.41, 0.032, 6, 28, Math.PI), tdRibMat);
-      rib.scale.set(1.06, 0.49, 0.94); rib.position.y = 0.86; rib.rotation.y = (r / 10) * Math.PI;
-      tdGroup.add(rib);
-    }
-    // Tokyo Dome City LaQua Centerless Big-O Ferris Wheel (無軸心摩天輪!)
-    const laquaWheel = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.085, 8, 28), cosmoRimMat);
-    laquaWheel.position.set(-2.55, 1.55, -1.65); laquaWheel.rotation.y = 0.35;
-    const laquaBase = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.65, 1.05), silverCladMat); laquaBase.position.set(-2.55, 0.32, -1.65);
-    tdGroup.add(tdBase, tdGlassBelt, tdSignRing, tdRoof, laquaWheel, laquaBase); tokyoGroup.add(tdGroup);
 
-    // Asakusa Kaminarimon Gate, Giant Red Lantern & Senso-ji (淺草雷門 at 57.5, y, -27.5)
+    // 1. Procedural 14x14 Orthogonal Steel-Cable & Puffed Pillow Membrane Texture
+    function createTokyoDomeRoofTexture() {
+      const sz = 1024, c = document.createElement('canvas');
+      c.width = sz; c.height = sz;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, sz, sz);
+      const cells = 14, step = sz / cells;
+      // Soft pillow shading inside each membrane cell
+      for (let gy = 0; gy < cells; gy++) {
+        for (let gx = 0; gx < cells; gx++) {
+          const cx = (gx + 0.5) * step, cy = (gy + 0.5) * step;
+          const grad = ctx.createRadialGradient(cx, cy, step * 0.08, cx, cy, step * 0.72);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.72, '#f1f5f9');
+          grad.addColorStop(1, '#cbd5e1');
+          ctx.fillStyle = grad;
+          ctx.fillRect(gx * step, gy * step, step, step);
+        }
+      }
+      // Crisp orthogonal steel tension cables (dark slate-grey criss-cross grid!)
+      ctx.strokeStyle = 'rgba(71, 85, 105, 0.72)';
+      ctx.lineWidth = 3.2;
+      for (let i = 0; i <= cells; i++) {
+        const p = i * step;
+        ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, sz); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(sz, p); ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.anisotropy = 8;
+      return tex;
+    }
+
+    // 2. Procedural Flared Sloped Teal-Grey Glass Curtain-Wall Skirt Texture
+    function createTokyoDomeGlassTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 256;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 0, 256);
+      g.addColorStop(0, '#2a3d42');
+      g.addColorStop(0.45, '#466166');
+      g.addColorStop(1, '#31454a');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1024, 256);
+      // Horizontal transoms & subtle lit concourse windows
+      for (let y = 0; y < 256; y += 32) {
+        ctx.fillStyle = 'rgba(203, 213, 225, 0.45)';
+        ctx.fillRect(0, y, 1024, 3);
+      }
+      for (let x = 0; x < 1024; x += 12) {
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.5)';
+        ctx.fillRect(x, 0, 2, 256);
+        if ((x / 12) % 3 === 0) {
+          ctx.fillStyle = 'rgba(254, 243, 199, 0.16)';
+          ctx.fillRect(x + 2, 140, 9, 80);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    // Helper: Superellipse (rounded-square "Big Egg") lofted band geometry
+    function createSuperellipseBand(rTop, rBot, yTop, yBot, segs = 72, power = 3.2) {
+      const pos = [], uvs = [], idx = [];
+      for (let i = 0; i <= segs; i++) {
+        const th = (i / segs) * Math.PI * 2;
+        const c = Math.cos(th), s = Math.sin(th);
+        const sx = Math.sign(c) * Math.pow(Math.abs(c), 2 / power);
+        const sz = Math.sign(s) * Math.pow(Math.abs(s), 2 / power);
+        const u = i / segs;
+        pos.push(sx * rTop, yTop, sz * rTop); uvs.push(u * 4, 1);
+        pos.push(sx * rBot, yBot, sz * rBot); uvs.push(u * 4, 0);
+      }
+      for (let i = 0; i < segs; i++) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        idx.push(a, b, c, b, d, c);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // Tokyo Dome City Concourse Plaza
+    const tdPlaza = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.1, 6.8), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.88 }));
+    tdPlaza.position.set(-0.4, 0.05, -0.2); tdPlaza.receiveShadow = true; tdGroup.add(tdPlaza);
+
+    // Core Stadium Group (rotated to align broad rounded square naturally with Tokyo street grid)
+    const tdCore = new THREE.Group();
+    tdCore.rotation.y = 0.52;
+    tdGroup.add(tdCore);
+
+    // A. Flared Sloped Teal-Grey Glass Curtain-Wall Skirt (outer flared base matching aerial photos!)
+    const tdGlassTex = createTokyoDomeGlassTexture();
+    const tdGlassSkirtMat = new THREE.MeshStandardMaterial({
+      map: tdGlassTex, color: '#a8bec2', emissive: '#fde68a', emissiveMap: tdGlassTex,
+      emissiveIntensity: 0.08, roughness: 0.22, metalness: 0.55, envMapIntensity: 1.4, side: THREE.DoubleSide
+    });
+    nightEmissives.push({ mat: tdGlassSkirtMat, day: 0.06, sunset: 0.55, night: 1.45 });
+    const tdGlassSkirt = new THREE.Mesh(createSuperellipseBand(2.58, 3.04, 0.84, 0.04, 72, 3.2), tdGlassSkirtMat);
+    tdGlassSkirt.castShadow = true; tdGlassSkirt.receiveShadow = true; tdCore.add(tdGlassSkirt);
+
+    // B. Multi-Tiered Thick Silver-Concrete Compression Ring Collar & Dark Shadow Recess
+    const tdRingConcreteMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.55, metalness: 0.14 });
+    const tdRingDarkMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.65 });
+    const tdOuterWall = new THREE.Mesh(createSuperellipseBand(2.74, 2.74, 1.02, 0.84, 72, 3.2), tdRingConcreteMat);
+    const tdOuterLedge = new THREE.Mesh(createSuperellipseBand(2.42, 2.74, 1.04, 1.02, 72, 3.2), tdRingConcreteMat);
+    const tdInnerStep = new THREE.Mesh(createSuperellipseBand(2.42, 2.48, 1.1, 1.02, 72, 3.2), tdRingConcreteMat);
+    const tdRecess = new THREE.Mesh(createSuperellipseBand(2.68, 2.58, 0.86, 0.82, 72, 3.2), tdRingDarkMat);
+    tdCore.add(tdOuterWall, tdOuterLedge, tdInnerStep, tdRecess);
+
+    // C. Superellipse Puffed Orthogonal-Grid White PTFE Air-Supported Membrane Roof ("Big Egg"!)
+    const tdRoofGeo = new THREE.PlaneGeometry(2, 2, 48, 48);
+    tdRoofGeo.rotateX(-Math.PI / 2);
+    const rPos = tdRoofGeo.attributes.position, rUv = tdRoofGeo.attributes.uv;
+    const domeR = 2.45, domeH = 1.06, sePow = 3.2;
+    for (let i = 0; i < rPos.count; i++) {
+      let u = rPos.getX(i), v = rPos.getZ(i); // in [-1, 1]
+      const sSq = Math.max(Math.abs(u), Math.abs(v));
+      const sSe = Math.pow(Math.pow(Math.abs(u), sePow) + Math.pow(Math.abs(v), sePow), 1 / sePow);
+      let ux = u, vz = v;
+      if (sSe > 1e-6) {
+        const sc = sSq / sSe;
+        ux = u * sc; vz = v * sc;
+      }
+      const x = ux * domeR, z = vz * domeR;
+      const baseDomeY = domeH * Math.pow(Math.max(0, 1 - sSq * sSq), 0.56);
+      // Quilted pillow puff between orthogonal 14x14 steel cables!
+      const puff = 0.04 * Math.abs(Math.sin(ux * 7 * Math.PI)) * Math.abs(Math.sin(vz * 7 * Math.PI)) * (1 - 0.62 * sSq * sSq);
+      rPos.setXYZ(i, x, 1.04 + baseDomeY + puff, z);
+      rUv.setXY(i, (ux + 1) * 0.5, (vz + 1) * 0.5);
+    }
+    tdRoofGeo.computeVertexNormals();
+    const tdRoofTex = createTokyoDomeRoofTexture();
+    const tdRoofMat = new THREE.MeshStandardMaterial({
+      map: tdRoofTex, color: '#ffffff', emissive: '#e0f2fe', emissiveIntensity: 0.14,
+      roughness: 0.34, metalness: 0.06, envMapIntensity: 0.9
+    });
+    nightEmissives.push({ mat: tdRoofMat, day: 0.08, sunset: 0.42, night: 1.32 });
+    const tdRoof = new THREE.Mesh(tdRoofGeo, tdRoofMat);
+    tdRoof.castShadow = true; tdRoof.receiveShadow = true; tdCore.add(tdRoof);
+
+    // D. Adjacent Koishikawa Korakuen Lush Forest Grove (小石川後樂園綠林) on the West-North flank
+    const koraTreeMat = new THREE.MeshStandardMaterial({ color: '#2d5a27', roughness: 0.9 });
+    [[-3.2, 0.8], [-3.5, 0.1], [-3.3, -0.6], [-2.9, 1.5], [-2.2, 2.2], [-3.6, 1.4], [-2.6, 2.6], [-1.5, 2.8]].forEach(([kx, kz], idx) => {
+      const crown = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42 + (idx % 3) * 0.1, 1), koraTreeMat);
+      crown.position.set(kx, 0.42, kz); crown.castShadow = true; tdGroup.add(crown);
+    });
+
+    // E. Tokyo Dome City LaQua Mall, Centerless Big-O Ferris Wheel & Thunder Dolphin Coaster Loop!
+    const laquaBase = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.72, 1.15), new THREE.MeshStandardMaterial({ color: '#f3cfa4', roughness: 0.62 }));
+    laquaBase.position.set(-2.55, 0.4, -2.05); laquaBase.castShadow = true;
+    const laquaBlueTop = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.35, 0.92), new THREE.MeshStandardMaterial({ color: '#2563eb', roughness: 0.35 }));
+    laquaBlueTop.position.set(-2.55, 0.92, -2.05);
+    const laquaWheel = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.085, 8, 28), cosmoRimMat);
+    laquaWheel.position.set(-2.55, 1.85, -2.05); laquaWheel.rotation.y = 0.38;
+    // Thunder Dolphin Coaster Steel Track Arching beside LaQua & Dome
+    const tdCoasterCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-3.4, 0.5, -1.6), new THREE.Vector3(-2.6, 2.05, -2.1),
+      new THREE.Vector3(-1.3, 1.45, -2.85), new THREE.Vector3(0.4, 2.25, -2.95),
+      new THREE.Vector3(1.8, 0.85, -2.65)
+    ]);
+    const tdCoasterTrack = new THREE.Mesh(new THREE.TubeGeometry(tdCoasterCurve, 36, 0.042, 6, false), silverCladMat);
+    tdGroup.add(laquaBase, laquaBlueTop, laquaWheel, tdCoasterTrack);
+    tokyoGroup.add(tdGroup);
+
+    // Asakusa Kaminarimon Gate, Giant Red Lantern & Senso-ji (淺草雷門 — Moved North to 57.5, y, -32.0)
     const asaGroup = new THREE.Group();
-    asaGroup.position.set(57.5, getTerrainHeight(57.5, -27.5), -27.5);
+    asaGroup.position.set(57.5, getTerrainHeight(57.5, -32.0), -32.0);
     const asaPlaza = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.1, 5.2), new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.9 }));
     asaPlaza.position.set(0, 0.05, -0.6); asaGroup.add(asaPlaza);
     // Kaminarimon Gate (front z = +1.4)
@@ -3014,47 +3842,130 @@
     const fujiTvSphere = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 14), new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.78, roughness: 0.18 }));
     fujiTvSphere.position.set(0.15, 1.45, 0.25); odaibaGroup.add(fujiTvBody, fujiTvSphere); tokyoGroup.add(odaibaGroup);
 
-    // 2.0 Diverse 155-Skyscraper Greater Tokyo Skyline (Stepped Towers, Rooftop HVAC, Helipads & Aviation Beacons!)
+    // 2.0 Diverse 8-Archetype High-Density Metropolis Builder (Greater Tokyo + Yokohama + Shin-Yokohama!)
     const beaconRedMat = new THREE.MeshBasicMaterial({ color: '#ef4444' });
     const hvacMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.72 });
-    for (let i = 0; i < 155; i++) {
-      const bx = randRange(39.0, 65.5), bz = randRange(-44.5, -11.5);
-      if (Math.hypot(bx - 45.5, bz + 16.5) < 2.5) continue; // Tokyo Tower
-      if (Math.hypot(bx - 51.5, bz + 20.5) < 3.6) continue; // Tokyo Station
-      if (Math.hypot(bx - 49.5, bz + 31.5) < 3.8) continue; // Tokyo Dome + LaQua
-      if (Math.hypot(bx - 57.5, bz + 27.5) < 3.5) continue; // Asakusa Kaminarimon
-      if (Math.hypot(bx - 62.5, bz + 29.0) < 2.6) continue; // Tokyo Skytree
-      if (Math.hypot(bx - 59.0, bz + 11.5) < 4.6) continue; // Tokyo Disney Resort + Mt. Prometheus
-      const bw = randRange(0.58, 1.32), bd = randRange(0.58, 1.32);
-      const bh = randRange(1.1, 4.9) * (bz < -14 && bz > -34 && bx < 58 ? 1.18 : 0.88);
-      const bMat = i % 2 === 0 ? cityMatWarm : cityMatCool;
+    const helipadMat = new THREE.MeshStandardMaterial({ color: '#eab308', roughness: 0.5 });
+
+    function addArchitecturalTower(parent, bx, bz, bw, bd, bh, styleIdx, rotY = 0) {
       const gy = getTerrainHeight(bx, bz);
-      if (gy < WATER_Y + 0.15) continue;
-      const bldg = new THREE.Mesh(
-        i % 7 === 0 ? new THREE.CylinderGeometry(bw * 0.52, bw * 0.56, bh, 12) : new THREE.BoxGeometry(bw, bh, bd),
-        bMat
-      );
-      bldg.position.set(bx, gy + bh * 0.5, bz); bldg.castShadow = true; bldg.receiveShadow = true; tokyoGroup.add(bldg);
-      // Rooftop parapet trim / HVAC mechanical penthouse / spire / red aviation beacon
-      const parapet = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.03, 0.08, bd * 1.03), silverCladMat);
-      parapet.position.set(bx, gy + bh + 0.04, bz);
-      if (i % 7 !== 0) tokyoGroup.add(parapet);
-      if (bh > 2.3) {
-        const crownH = bh * 0.2;
-        const crown = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.66, crownH, bd * 0.66), i % 3 === 0 ? silverCladMat : bMat);
-        crown.position.set(bx, gy + bh + crownH * 0.5, bz); crown.castShadow = true; tokyoGroup.add(crown);
-        if (i % 3 === 0) {
-          const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.038, 1.05, 5), silverCladMat);
-          spire.position.set(bx, gy + bh + crownH + 0.5, bz); tokyoGroup.add(spire);
+      if (gy < WATER_Y + 0.16) return;
+      const g = new THREE.Group();
+      g.position.set(bx, gy, bz);
+      g.rotation.y = rotY;
+      const style = styleIdx % 8;
+      const mat = cityPalette[styleIdx % cityPalette.length];
+
+      if (style === 0) {
+        // Archetype 0: Marunouchi Vertical-Mullion Glass Tower with Podium & Stepped Crown
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.15, Math.min(0.65, bh * 0.22), bd * 1.15), cityMatSilver);
+        pod.position.y = Math.min(0.65, bh * 0.22) * 0.5; pod.castShadow = true;
+        const shaft = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), cityMatMarunouchi);
+        shaft.position.y = bh * 0.5; shaft.castShadow = true; shaft.receiveShadow = true;
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.03, 0.09, bd * 1.03), silverCladMat);
+        cap.position.y = bh + 0.045;
+        g.add(pod, shaft, cap);
+      } else if (style === 1) {
+        // Archetype 1: Triple-Stepped Shinjuku Setback Skyscraper + Spire
+        const h1 = bh * 0.56, h2 = bh * 0.28, h3 = bh * 0.16;
+        const s1 = new THREE.Mesh(new THREE.BoxGeometry(bw, h1, bd), mat); s1.position.y = h1 * 0.5; s1.castShadow = true;
+        const s2 = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.78, h2, bd * 0.78), mat); s2.position.y = h1 + h2 * 0.5; s2.castShadow = true;
+        const s3 = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.54, h3, bd * 0.54), silverCladMat); s3.position.y = h1 + h2 + h3 * 0.5;
+        g.add(s1, s2, s3);
+        if (bh > 2.6) {
+          const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.036, 1.05, 5), silverCladMat);
+          sp.position.y = bh + 0.52; g.add(sp);
         }
-        if (bh > 3.6 && i % 2 === 0) {
-          const bcn = new THREE.Mesh(new THREE.SphereGeometry(0.065, 6, 6), beaconRedMat);
-          bcn.position.set(bx, gy + bh + crownH + (i % 3 === 0 ? 1.02 : 0.12), bz); tokyoGroup.add(bcn);
-        }
+      } else if (style === 2) {
+        // Archetype 2: Slanted / Beveled-Crown Glass Tower
+        const body = new THREE.Mesh(new THREE.BoxGeometry(bw, bh * 0.88, bd), cityMatCool);
+        body.position.y = bh * 0.44; body.castShadow = true; body.receiveShadow = true;
+        const wedge = new THREE.Mesh(new THREE.CylinderGeometry(0.04, Math.max(bw, bd) * 0.68, bh * 0.24, 4), cityMatMarunouchi);
+        wedge.rotation.y = Math.PI / 4; wedge.scale.set(bw / Math.max(bw, bd), 1, bd / Math.max(bw, bd));
+        wedge.position.y = bh * 0.88 + bh * 0.12;
+        g.add(body, wedge);
+      } else if (style === 3) {
+        // Archetype 3: Twin-Slab Skybridge Corporate Complex
+        const pod = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.24, 0.52, bd * 0.92), silverCladMat); pod.position.y = 0.26;
+        const slabA = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, bh, bd * 0.86), mat); slabA.position.set(-bw * 0.3, bh * 0.5, 0); slabA.castShadow = true;
+        const slabB = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.46, bh * 0.84, bd * 0.86), cityMatSilver); slabB.position.set(bw * 0.3, bh * 0.42, 0); slabB.castShadow = true;
+        const bridge = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.4, 0.18, bd * 0.42), silverCladMat); bridge.position.set(0, bh * 0.62, 0);
+        g.add(pod, slabA, slabB, bridge);
+      } else if (style === 4) {
+        // Archetype 4: Cylindrical Glass Tower + Rooftop Helipad Ring
+        const r = Math.max(bw, bd) * 0.5;
+        const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.94, r, bh, 14), cityMatSilver);
+        cyl.position.y = bh * 0.5; cyl.castShadow = true; cyl.receiveShadow = true;
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(r * 0.62, 0.035, 5, 16), helipadMat);
+        ring.rotation.x = Math.PI / 2; ring.position.y = bh + 0.02;
+        g.add(cyl, ring);
+      } else if (style === 5) {
+        // Archetype 5: Chamfered Octagonal High-Rise + Dark Mechanical Crown
+        const r = Math.max(bw, bd) * 0.56;
+        const oct = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.86, r, bh, 8), cityMatMarunouchi);
+        oct.position.y = bh * 0.5; oct.castShadow = true;
+        const cr = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.84, 0.28, 8), darkRoofTrimMat);
+        cr.position.y = bh + 0.14;
+        g.add(oct, cr);
+      } else if (style === 6) {
+        // Archetype 6: Modernist Cream/Silver Ribbon-Window Office Block + Rooftop HVAC
+        const body = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.12, bh, bd * 0.95), cityMatCream);
+        body.position.y = bh * 0.5; body.castShadow = true; body.receiveShadow = true;
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(bw * 1.14, 0.08, bd * 0.98), darkRoofTrimMat); roof.position.y = bh + 0.04;
+        const hv = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.42, 0.2, bd * 0.36), hvacMat); hv.position.set(bw * 0.12, bh + 0.14, 0);
+        g.add(body, roof, hv);
       } else {
-        const hvac = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.36, 0.16, bd * 0.32), hvacMat);
-        hvac.position.set(bx, gy + bh + 0.1, bz); tokyoGroup.add(hvac);
+        // Archetype 7: High-Rise Warm Residential Tower + Crown + Aviation Beacon
+        const body = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.92, bh, bd * 0.92), cityMatWarm);
+        body.position.y = bh * 0.5; body.castShadow = true; body.receiveShadow = true;
+        const crown = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.64, 0.32, bd * 0.64), silverCladMat); crown.position.y = bh + 0.16;
+        g.add(body, crown);
       }
+
+      if (bh > 3.7 && styleIdx % 2 === 0) {
+        const bcn = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), beaconRedMat);
+        bcn.position.y = bh + (style === 1 ? 1.08 : 0.38);
+        g.add(bcn);
+      }
+      parent.add(g);
+    }
+
+    // Greater Tokyo High-Density Metropolis (~340 varied skyscrapers & mid-rise buildings!)
+    for (let i = 0; i < 340; i++) {
+      const bx = randRange(38.2, 66.2), bz = randRange(-45.0, -10.8);
+      if (Math.hypot(bx - 45.5, bz + 13.2) < 2.6) continue; // Tokyo Tower (moved south)
+      if (Math.hypot(bx - 42.0, bz + 12.8) < 3.1) continue; // Zojo-ji Temple & Shiba Park (moved south)
+      if (Math.hypot(bx - 41.8, bz + 17.2) < 2.2) continue; // Azabudai Hills Mori JP Tower
+      if (Math.hypot(bx - 52.0, bz + 20.5) < 5.4) continue; // Tokyo Station + Marunouchi/Yaesu Towers
+      if (Math.hypot(bx - 49.5, bz + 31.5) < 3.8) continue; // Tokyo Dome + LaQua
+      if (Math.hypot(bx - 57.5, bz + 32.0) < 3.5) continue; // Asakusa Kaminarimon (moved north)
+      if (Math.hypot(bx - 62.5, bz + 33.8) < 2.6) continue; // Tokyo Skytree (moved north)
+      if (Math.hypot(bx - 59.0, bz + 11.5) < 4.7) continue; // Tokyo Disney Resort + Mt. Prometheus
+      const bw = randRange(0.55, 1.35), bd = randRange(0.55, 1.35);
+      // Taller CBD clusters in Shinjuku/Marunouchi/Ginza/Shibuya/Shinagawa/Toranomon
+      const isCoreCBD = (bx > 41 && bx < 58 && bz < -13 && bz > -37);
+      const isShinjukuPeak = Math.hypot(bx - 43.0, bz + 26.5) < 6.5;
+      const bh = randRange(1.05, isShinjukuPeak ? 6.2 : (isCoreCBD ? 5.2 : 3.4));
+      addArchitecturalTower(tokyoGroup, bx, bz, bw, bd, bh, i, (i % 5 === 0) ? randRange(-0.12, 0.12) : 0);
+    }
+
+    // Curated Toranomon / Roppongi / Shiba Park High-Rise Cluster surrounding Tokyo Tower & Azabudai Hills!
+    [[44.5, -17.6, 1.15, 1.05, 5.8, 0], [46.8, -16.8, 1.12, 1.02, 5.2, 2], [48.4, -14.2, 1.08, 0.98, 4.6, 5],
+     [39.2, -15.6, 1.18, 1.08, 5.5, 1], [39.4, -12.0, 1.02, 0.96, 4.1, 6], [47.2, -18.8, 1.12, 1.04, 4.9, 3],
+     [43.6, -19.8, 1.16, 1.05, 5.4, 0]
+    ].forEach(([tx, tz, w, d, h, st]) => addArchitecturalTower(tokyoGroup, tx, tz, w, d, h, st, 0.08));
+
+    // High-Density Yokohama Minato Mirai & Yokohama Station District Expansion (+30 diverse towers!)
+    for (let i = 0; i < 36; i++) {
+      const yx = randRange(39.4, 46.6), yz = randRange(4.4, 14.2);
+      if (Math.hypot(yx - 42.5, yz - 8.2) < 2.3) continue;  // Yokohama Landmark Tower
+      if (Math.hypot(yx - 45.8, yz - 10.2) < 1.9) continue; // Sail Hotel
+      if (Math.hypot(yx - 44.6, yz - 8.8) < 1.8) continue;  // Cosmo Clock 21
+      if (Math.hypot(yx - 45.7, yz - 12.7) < 2.0) continue; // Red Brick Warehouses
+      if (Math.hypot(yx - 41.7, yz - 10.8) < 1.8) continue; // Queen's Square A/B/C
+      if (Math.hypot(yx - 37.0, yz - 6.0) < 2.5) continue;  // Shin-Yokohama Station
+      const yw = randRange(0.62, 1.12), yd = randRange(0.62, 1.12), yh = randRange(1.4, 3.8);
+      addArchitecturalTower(yokoGroup, yx, yz, yw, yd, yh, i + 2, randRange(-0.15, 0.15));
     }
 
     // Suburban Low-Rise Buildings & Residential Houses (West Tokyo Upper Red Box & Kawasaki/Yokohama Lower Red Box)
@@ -3069,39 +3980,101 @@
       }
       return false;
     }
+    function isLandmarkClearForLowRise(bx, bz) {
+      if (Math.hypot(bx - 29.8, bz + 31.5) < 4.5) return false;  // Mt. Koya peak
+      if (Math.hypot(bx - 33.2, bz + 24.5) < 2.6) return false;  // Mt. Koya cable base
+      if (Math.hypot(bx - 43.8, bz - 9.8) < 4.6) return false;   // Yokohama Minato Mirai
+      if (Math.hypot(bx - 37.0, bz - 6.0) < 3.6) return false;   // Shin-Yokohama Station
+      if (Math.hypot(bx - 41.2, bz - 23.0) < 4.4) return false;  // Kamakura Buddha
+      if (Math.hypot(bx - 48.2, bz + 7.0) < 3.6) return false;   // Rainbow Bridge shore
+      if (Math.hypot(bx - 67.5, bz + 11.5) < 3.8) return false;  // Makuhari New City
+      if (Math.hypot(bx - 77.5, bz - 4.5) < 4.8) return false;   // Mitsui Outlet Kisarazu
+      if (Math.hypot(bx - 77.5, bz + 19.5) < 4.2) return false;  // Naritasan Shinsho-ji
+      if (Math.hypot(bx - 74.8, bz - 22.5) < 2.2) return false;  // Mt. Nokogiri Torii
+      if (Math.hypot(bx + 33.5, bz - 29.3) < 2.7) return false;  // Shin-Fuji Station
+      if (Math.hypot(bx + 33.5, bz - 22.5) < 3.8) return false;  // Fujinomiya World Heritage
+      if (Math.hypot(bx - 15.0, bz - 28.5) < 5.0) return false;  // Atami Onsen
+      if (Math.hypot(bx - 14.7, bz - 19.6) < 4.8) return false;  // Lake Ashi
+      if (Math.hypot(bx - 30.5, bz - 31.5) < 4.5) return false;  // Enoshima
+      if (nearShinkansen(bx, bz)) return false;
+      return true;
+    }
+    function spawnSuburbanBuilding(bx, gy, bz, idx, allowMidRise = true) {
+      const isHouse = !allowMidRise || idx % 3 !== 0;
+      if (isHouse) {
+        const hw = randRange(0.42, 0.72), hd = randRange(0.42, 0.72), hh = randRange(0.36, 0.62);
+        const hg = new THREE.Group(); hg.position.set(bx, gy, bz); hg.rotation.y = randRange(-0.4, 0.4);
+        const body = new THREE.Mesh(new THREE.BoxGeometry(hw, hh, hd), idx % 2 === 0 ? subWallMat : subBeigeMat);
+        body.position.y = hh * 0.5; body.castShadow = true; body.receiveShadow = true; hg.add(body);
+        const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(hw, hd) * 0.78, 0.28, 4), idx % 4 === 0 ? subRoofTerra : slateRoofMat);
+        roof.rotation.y = Math.PI / 4; roof.position.y = hh + 0.14; roof.castShadow = true; hg.add(roof);
+        tokyoGroup.add(hg);
+      } else {
+        const bw = randRange(0.55, 0.98), bd = randRange(0.55, 0.98), bh = randRange(0.68, 1.52);
+        const bldg = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), idx % 3 === 0 ? cityMatCream : (idx % 2 === 0 ? cityMatWarm : cityMatCool));
+        bldg.position.set(bx, gy + bh * 0.5, bz); bldg.castShadow = true; bldg.receiveShadow = true;
+        tokyoGroup.add(bldg);
+      }
+    }
     function addLowRiseCluster(count, x0, x1, z0, z1) {
       for (let i = 0; i < count; i++) {
         const bx = randRange(x0, x1), bz = randRange(z0, z1);
         const gy = getTerrainHeight(bx, bz);
         if (gy < WATER_Y + 0.25 || gy > 2.3) continue;
-        if (Math.hypot(bx - 29.8, bz + 31.5) < 4.5) continue;  // Mt. Koya peak
-        if (Math.hypot(bx - 33.2, bz + 24.5) < 2.6) continue;  // Mt. Koya cable base
-        if (Math.hypot(bx - 43.8, bz - 9.8) < 4.6) continue;   // Yokohama Minato Mirai
-        if (Math.hypot(bx - 37.0, bz - 6.0) < 3.6) continue;   // Shin-Yokohama Station
-        if (Math.hypot(bx - 41.2, bz - 23.0) < 4.4) continue;  // Kamakura Buddha
-        if (Math.hypot(bx - 48.2, bz + 7.0) < 3.6) continue;   // Rainbow Bridge shore
-        if (nearShinkansen(bx, bz)) continue;
-        const isHouse = i % 3 !== 0;
-        if (isHouse) {
-          const hw = randRange(0.42, 0.72), hd = randRange(0.42, 0.72), hh = randRange(0.36, 0.62);
-          const hg = new THREE.Group(); hg.position.set(bx, gy, bz); hg.rotation.y = randRange(-0.4, 0.4);
-          const body = new THREE.Mesh(new THREE.BoxGeometry(hw, hh, hd), i % 2 === 0 ? subWallMat : subBeigeMat);
-          body.position.y = hh * 0.5; body.castShadow = true; body.receiveShadow = true; hg.add(body);
-          const roof = new THREE.Mesh(new THREE.ConeGeometry(Math.max(hw, hd) * 0.78, 0.28, 4), i % 4 === 0 ? subRoofTerra : slateRoofMat);
-          roof.rotation.y = Math.PI / 4; roof.position.y = hh + 0.14; roof.castShadow = true; hg.add(roof);
-          tokyoGroup.add(hg);
-        } else {
-          const bw = randRange(0.55, 0.98), bd = randRange(0.55, 0.98), bh = randRange(0.68, 1.48);
-          const bldg = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), i % 2 === 0 ? cityMatWarm : cityMatCool);
-          bldg.position.set(bx, gy + bh * 0.5, bz); bldg.castShadow = true; bldg.receiveShadow = true;
-          tokyoGroup.add(bldg);
-        }
+        if (!isLandmarkClearForLowRise(bx, bz)) continue;
+        spawnSuburbanBuilding(bx, gy, bz, i, true);
       }
     }
     // Upper Red Box (West Tokyo Suburbs: x in [28.0..38.4], z in [-44.5..-10.0])
-    addLowRiseCluster(96, 28.0, 38.4, -44.5, -10.0);
+    addLowRiseCluster(120, 28.0, 38.4, -44.5, -10.0);
     // Lower Red Box (Kawasaki / Yokohama Inland Suburbs: x in [33.0..44.2], z in [-10.0..+12.8])
-    addLowRiseCluster(82, 33.0, 44.2, -10.0, 12.8);
+    addLowRiseCluster(105, 33.0, 44.2, -10.0, 12.8);
+
+    // Boso Peninsula Tokyo Bay Coastline Towns (房總半島東京灣側：千葉／市原／袖浦／木更津／君津／富津)
+    addLowRiseCluster(90, 67.0, 79.0, -15.5, 2.0);
+    addLowRiseCluster(85, 68.5, 79.5, 2.0, 24.5);
+    // Compact Mid-Rise Coastal Apartments near Chiba City & Kisarazu Port
+    [[71.8, -8.5, 0.85, 0.78, 2.1, 6], [73.4, -7.2, 0.82, 0.82, 2.4, 7], [72.2, -4.8, 0.86, 0.76, 1.9, 0],
+     [73.2, 8.2, 0.84, 0.78, 2.0, 6],  [74.8, 9.6, 0.82, 0.78, 2.2, 7],  [72.4, 11.4, 0.8, 0.76, 1.8, 3]
+    ].forEach(([cx, cz, w, d, h, st]) => {
+      if (getTerrainHeight(cx, cz) > WATER_Y + 0.25) addArchitecturalTower(tokyoGroup, cx, cz, w, d, h, st, 0.15);
+    });
+
+    // Shin-Fuji Station & Fuji City Plain (新富士車站周邊商辦與富士市住宅街區)
+    addLowRiseCluster(95, -47.0, -18.5, 23.0, 35.5);
+    [[-36.2, 26.8, 0.82, 0.76, 2.1, 6], [-31.0, 26.5, 0.85, 0.78, 2.3, 0], [-35.8, 32.0, 0.8, 0.75, 1.9, 7],
+     [-30.8, 32.2, 0.84, 0.76, 2.0, 6], [-28.5, 27.2, 0.78, 0.74, 1.7, 3], [-38.5, 27.6, 0.8, 0.75, 1.8, 7]
+    ].forEach(([fx, fz, w, d, h, st]) => {
+      if (getTerrainHeight(fx, fz) > WATER_Y + 0.25 && !nearShinkansen(fx, fz)) addArchitecturalTower(tokyoGroup, fx, fz, w, d, h, st, 0.08);
+    });
+
+    // Tokaido Shinkansen Corridor Towns (東海道新幹線沿線城鎮：富士→三島→小田原→平塚→藤澤)
+    for (let i = 0; i < 110; i++) {
+      const u = randRange(0.03, 0.78);
+      const pt = shinkansenCurve.getPointAt(u);
+      const tan = shinkansenCurve.getTangentAt(u);
+      const side = i % 2 === 0 ? 1 : -1;
+      const dist = randRange(1.65, 4.6);
+      const bx = pt.x - tan.z * side * dist + randRange(-0.8, 0.8);
+      const bz = pt.z + tan.x * side * dist + randRange(-0.8, 0.8);
+      const gy = getTerrainHeight(bx, bz);
+      if (gy < WATER_Y + 0.28 || gy > 2.35) continue;
+      if (!isLandmarkClearForLowRise(bx, bz)) continue;
+      spawnSuburbanBuilding(bx, gy, bz, i, true);
+    }
+
+    // Shin-Yokohama High-Rise Business & Hotel Cluster (新橫濱車站周邊大樓群 + 圓柱形新橫濱王子大飯店!)
+    addArchitecturalTower(tokyoGroup, 35.1, 4.1, 1.05, 1.05, 4.2, 4, 0); // Iconic Cylindrical Shin-Yokohama Prince Hotel
+    const shinYokoOffsets = [
+      [-2.5, -1.6, 0.85, 0.78, 2.6, 0], [-1.3, -2.6, 0.92, 0.82, 3.1, 6], [ 0.6, -2.7, 0.88, 0.78, 2.4, 3],
+      [ 2.1, -2.2, 0.82, 0.82, 2.9, 5], [-3.2,  0.4, 0.86, 0.78, 2.2, 7], [-2.8,  2.1, 0.92, 0.84, 2.7, 1],
+      [-1.1,  2.7, 0.88, 0.82, 2.5, 2], [ 0.9,  2.8, 0.82, 0.78, 2.3, 6], [ 2.4,  2.1, 0.86, 0.82, 2.8, 0],
+      [-3.8, -0.9, 0.76, 0.76, 1.9, 6], [ 1.6, -3.5, 0.84, 0.78, 2.1, 7], [-0.4,  3.7, 0.82, 0.76, 2.0, 3]
+    ];
+    shinYokoOffsets.forEach(([ox, oz, w, d, h, st]) => {
+      const sx = 37.0 + ox, sz = 6.0 + oz;
+      if (!nearShinkansen(sx, sz)) addArchitecturalTower(tokyoGroup, sx, sz, w, d, h, st, 0.12);
+    });
 
     // Mt. Koya Summit Temple & Animated Cable Car / Ropeway (高野山與纜車 at 29.8, -31.5)
     const koyaGroup = new THREE.Group();
@@ -3154,39 +4127,158 @@
       koyaCars.push({ mesh: cg, offset: i * 0.5 });
     }
 
-    const cruiseShip = new THREE.Group();
-    const csHull = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.42, 2.6), whiteMat); csHull.position.y = 0.18;
-    const csDeck = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.38, 1.85), shinkansenStripeMat); csDeck.position.y = 0.52;
-    cruiseShip.add(csHull, csDeck); cruiseShip.position.set(57.5, WATER_Y, 22.5); root.add(cruiseShip);
-
-    // GIANT LUXURY CRUISE LINER (巨型豪華郵輪: Boso -> Tokyo Bay -> Miura -> Sagami Bay -> Izu -> Suruga Bay!)
-    const megaCruise = new THREE.Group();
-    const mcNavyMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.38, metalness: 0.25 });
-    const mcCabinGlow = new THREE.MeshStandardMaterial({ color: '#fef9c3', emissive: '#fde047', emissiveIntensity: 0.45, roughness: 0.25 });
-    nightEmissives.push({ mat: mcCabinGlow, day: 0.2, sunset: 1.15, night: 2.4 });
-    const mcPoolMat = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.45, roughness: 0.15 });
-    const mcHull = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.46, 3.85), mcNavyMat); mcHull.position.y = 0.2; mcHull.castShadow = true;
-    const mcBow = new THREE.Mesh(new THREE.ConeGeometry(0.56, 1.25, 4), mcNavyMat);
-    mcBow.rotation.x = Math.PI / 2; mcBow.rotation.z = Math.PI / 4; mcBow.scale.set(1.36, 1.0, 0.58); mcBow.position.set(0, 0.22, 2.45);
-    const mcDeck1 = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.34, 3.55), whiteMat); mcDeck1.position.set(0, 0.58, -0.05); mcDeck1.castShadow = true;
-    const mcWin1 = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.12, 3.35), mcCabinGlow); mcWin1.position.set(0, 0.58, -0.05);
-    const mcDeck2 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.32, 3.1), whiteMat); mcDeck2.position.set(0, 0.90, -0.15); mcDeck2.castShadow = true;
-    const mcWin2 = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.11, 2.9), mcCabinGlow); mcWin2.position.set(0, 0.90, -0.15);
-    const mcDeck3 = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.28, 2.45), whiteMat); mcDeck3.position.set(0, 1.18, -0.22); mcDeck3.castShadow = true;
-    const mcBridge = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.18, 0.42), mcCabinGlow); mcBridge.position.set(0, 1.16, 1.15);
-    const mcPool = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.72), mcPoolMat); mcPool.position.set(0, 1.34, 0.15);
-    megaCruise.add(mcHull, mcBow, mcDeck1, mcWin1, mcDeck2, mcWin2, mcDeck3, mcBridge, mcPool);
-    // 2.0 V-Shaped Foaming Ocean Wake behind Giant Luxury Cruise Liner!
-    const mcWake = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 7.2), wakeMat);
-    mcWake.rotation.x = -Math.PI / 2; mcWake.position.set(0, 0.05, -5.2);
-    megaCruise.add(mcWake);
-    for (const fz of [-0.45, -1.05]) {
-      const funnel = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 0.58, 10), vermilionMat);
-      funnel.position.set(0, 1.56, fz); funnel.rotation.x = -0.18; funnel.castShadow = true;
-      const fCap = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.145, 0.12, 10), mcNavyMat);
-      fCap.position.set(0, 1.84, fz - 0.05);
-      megaCruise.add(funnel, fCap);
+    // 2.0 Photorealistic Cunard Queen Mary 2 Style Ocean Liner Builder (瑪麗皇后二號等級豪華郵輪!)
+    function createCruiseCabinTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 512, 128);
+      // 4 crisp horizontal balcony/cabin deck bands with dark tinted glass & warm lit suites
+      for (let row = 0; row < 4; row++) {
+        const ry = row * 32 + 6;
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, ry, 512, 16);
+        for (let col = 4; col < 508; col += 12) {
+          const h = Math.sin(row * 37.1 + col * 19.7) * 43758.5453;
+          const f = h - Math.floor(h);
+          ctx.fillStyle = f < 0.45 ? '#fef08a' : (f < 0.65 ? '#e0f2fe' : '#0f172a');
+          ctx.fillRect(col, ry + 3, 7, 10);
+          // Crisp white balcony divider rails
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillRect(col + 8, ry, 2, 16);
+        }
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
     }
+    const cruiseCabinTex = createCruiseCabinTexture();
+    const mcNavyMat = new THREE.MeshStandardMaterial({ color: '#0c1626', roughness: 0.32, metalness: 0.28, envMapIntensity: 1.25 });
+    const mcRedBottomMat = new THREE.MeshStandardMaterial({ color: '#b91c1c', roughness: 0.45, metalness: 0.12 });
+    const mcWhiteMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.3, metalness: 0.12 });
+    const mcDeckGrayMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.72 });
+    const mcCabinGlow = new THREE.MeshStandardMaterial({
+      map: cruiseCabinTex, color: '#ffffff', emissive: '#fde68a', emissiveMap: cruiseCabinTex,
+      emissiveIntensity: 0.22, roughness: 0.24, metalness: 0.35
+    });
+    nightEmissives.push({ mat: mcCabinGlow, day: 0.14, sunset: 0.95, night: 2.2 });
+    const mcGlassDark = new THREE.MeshStandardMaterial({ color: '#0f172a', emissive: '#38bdf8', emissiveIntensity: 0.18, roughness: 0.12, metalness: 0.72 });
+    nightEmissives.push({ mat: mcGlassDark, day: 0.1, sunset: 0.65, night: 1.5 });
+    const mcLifeboatMat = new THREE.MeshStandardMaterial({ color: '#ea580c', roughness: 0.38 });
+    const mcPoolMat = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.45, roughness: 0.15 });
+
+    // Sculpted Ocean Liner Hull Plan (Sharp Flared Knife-Edge Bow at +Y -> +Z!)
+    const linerHullShape = new THREE.Shape();
+    linerHullShape.moveTo(0, 2.88);
+    linerHullShape.quadraticCurveTo(0.46, 2.1, 0.58, 1.1);
+    linerHullShape.lineTo(0.58, -1.72);
+    linerHullShape.quadraticCurveTo(0.54, -2.18, 0.32, -2.25);
+    linerHullShape.lineTo(-0.32, -2.25);
+    linerHullShape.quadraticCurveTo(-0.54, -2.18, -0.58, -1.72);
+    linerHullShape.lineTo(-0.58, 1.1);
+    linerHullShape.quadraticCurveTo(-0.46, 2.1, 0, 2.88);
+    const linerHullGeo = new THREE.ExtrudeGeometry(linerHullShape, { depth: 0.44, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 2 });
+    linerHullGeo.rotateX(Math.PI / 2);
+    const linerWaterlineGeo = new THREE.ExtrudeGeometry(linerHullShape, { depth: 0.12, bevelEnabled: false });
+    linerWaterlineGeo.rotateX(Math.PI / 2);
+
+    function createQueenMaryCruiseLiner(funnelColor = '#dc2626') {
+      const ship = new THREE.Group();
+      const funnelRedMat = new THREE.MeshStandardMaterial({ color: funnelColor, roughness: 0.36, metalness: 0.18 });
+
+      // 1. Crimson Antifouling Waterline + Bulbous Bow Tip
+      const waterLine = new THREE.Mesh(linerWaterlineGeo, mcRedBottomMat);
+      waterLine.scale.set(0.95, 1.0, 0.99); waterLine.position.y = 0.12; ship.add(waterLine);
+      const bulbBow = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), mcRedBottomMat);
+      bulbBow.scale.set(0.85, 0.72, 2.2); bulbBow.position.set(0, 0.04, 2.75); ship.add(bulbBow);
+
+      // 2. Deep Midnight-Navy Flared Hull + Grey Foredeck + Bow Breakwater & Foremast
+      const hull = new THREE.Mesh(linerHullGeo, mcNavyMat);
+      hull.position.y = 0.56; hull.castShadow = true; hull.receiveShadow = true; ship.add(hull);
+      const foreDeck = new THREE.Mesh(linerWaterlineGeo, mcDeckGrayMat);
+      foreDeck.scale.set(0.96, 0.35, 0.98); foreDeck.position.y = 0.60; ship.add(foreDeck);
+      const foreMast = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 0.48, 6), mcWhiteMat);
+      foreMast.position.set(0, 0.84, 2.18); ship.add(foreMast);
+
+      // 3. White Upper Promenade Band + Multi-Tiered Balcony Superstructure
+      const promBand = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.22, 3.65), mcWhiteMat);
+      promBand.position.set(0, 0.68, -0.22); promBand.castShadow = true; ship.add(promBand);
+      const tier1 = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.44, 3.45), mcCabinGlow);
+      tier1.position.set(0, 0.98, -0.25); tier1.castShadow = true; ship.add(tier1);
+      const tier2 = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.34, 2.95), mcCabinGlow);
+      tier2.position.set(0, 1.34, -0.18); tier2.castShadow = true; ship.add(tier2);
+      const sunDeck = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.16, 2.35), mcWhiteMat);
+      sunDeck.position.set(0, 1.56, -0.12); ship.add(sunDeck);
+
+      // 4. Signature Stepped Curved QM2 Bow Front + Wide Cantilevered Bridge Wings!
+      for (let s = 0; s < 3; s++) {
+        const bfW = 1.02 - s * 0.06, bfZ = 1.56 - s * 0.14, bfY = 0.78 + s * 0.24;
+        const bFront = new THREE.Mesh(new THREE.CylinderGeometry(bfW * 0.5, bfW * 0.52, 0.22, 14, 1, false, -Math.PI * 0.5, Math.PI), mcWhiteMat);
+        bFront.position.set(0, bfY, bfZ); ship.add(bFront);
+        const bWin = new THREE.Mesh(new THREE.CylinderGeometry(bfW * 0.51, bfW * 0.51, 0.08, 14, 1, false, -Math.PI * 0.46, Math.PI * 0.92), mcGlassDark);
+        bWin.position.set(0, bfY + 0.02, bfZ); ship.add(bWin);
+      }
+      // Iconic Wide Cantilevered Navigation Bridge Wing overhanging Port & Starboard
+      const bridgeWing = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.16, 0.32), mcWhiteMat);
+      bridgeWing.position.set(0, 1.48, 1.24); bridgeWing.castShadow = true;
+      const bridgeGlass = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.075, 0.34), mcGlassDark);
+      bridgeGlass.position.set(0, 1.48, 1.25);
+      ship.add(bridgeWing, bridgeGlass);
+
+      // 5. Row of 7 Bright Orange Lifeboats along Both Sides (Port & Starboard!)
+      for (const side of [-1, 1]) {
+        for (let lb = 0; lb < 7; lb++) {
+          const boat = new THREE.Mesh(new THREE.CapsuleGeometry(0.048, 0.18, 4, 8), mcLifeboatMat);
+          boat.rotation.x = Math.PI / 2;
+          boat.position.set(side * 0.57, 0.78, 0.85 - lb * 0.34);
+          ship.add(boat);
+        }
+      }
+
+      // 6. Signature Cunard Red-and-Black Aerodynamic Winged Funnel!
+      const funnelGroup = new THREE.Group();
+      funnelGroup.position.set(0, 1.62, -0.62);
+      const fBody = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 0.64, 14), funnelRedMat);
+      fBody.scale.set(0.88, 1.0, 1.55); fBody.position.y = 0.28; fBody.rotation.x = -0.14; fBody.castShadow = true;
+      const fCap = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.19, 0.16, 14), mcNavyMat);
+      fCap.scale.set(0.88, 1.0, 1.55); fCap.position.set(0, 0.64, -0.05); fCap.rotation.x = -0.14;
+      const fStripe1 = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.22, 0.045, 14), mcNavyMat);
+      fStripe1.scale.set(0.9, 1.0, 1.57); fStripe1.position.set(0, 0.44, -0.02); fStripe1.rotation.x = -0.14;
+      const fStripe2 = fStripe1.clone(); fStripe2.position.set(0, 0.32, 0.0);
+      const fWing = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.05, 0.24), funnelRedMat);
+      fWing.position.set(0, 0.46, -0.05);
+      funnelGroup.add(fBody, fCap, fStripe1, fStripe2, fWing);
+      ship.add(funnelGroup);
+
+      // 7. Radar Mast with Yardarms, 3 White Satellite Radomes & Terraced Aft Swimming Pools
+      const mainMast = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.036, 0.68, 6), mcWhiteMat);
+      mainMast.position.set(0, 1.94, 0.92); mainMast.rotation.x = -0.12;
+      const yard = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.02), mcWhiteMat); yard.position.set(0, 2.04, 0.9);
+      ship.add(mainMast, yard);
+      for (const rz of [0.58, 0.24, -0.08]) {
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(0.095, 10, 8), mcWhiteMat);
+        dome.position.set(rz === 0.24 ? 0.14 : -0.12, 1.72, rz); ship.add(dome);
+      }
+      const aftPool1 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.46), mcPoolMat); aftPool1.position.set(0, 1.52, -1.52);
+      const aftPool2 = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.04, 0.38), mcPoolMat); aftPool2.position.set(0, 1.22, -1.82);
+      ship.add(aftPool1, aftPool2);
+
+      // 8. V-Shaped Foaming Ocean Wake behind the Stern
+      const wake = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 7.2), wakeMat);
+      wake.rotation.x = -Math.PI / 2; wake.position.set(0, 0.05, -5.4);
+      ship.add(wake);
+      return ship;
+    }
+
+    // Tokyo Bay Sister Cruise Ship (東京灣皇家藍郵輪)
+    const cruiseShip = createQueenMaryCruiseLiner('#0284c7');
+    cruiseShip.scale.setScalar(0.62);
+    cruiseShip.position.set(57.5, WATER_Y, 22.5);
+    root.add(cruiseShip);
+
+    // GIANT LUXURY CRUISE LINER — Cunard Queen Mary 2 Flagship (巨型豪華郵輪: Boso -> Tokyo Bay -> Miura -> Sagami -> Izu -> Suruga Bay!)
+    const megaCruise = createQueenMaryCruiseLiner('#dc2626');
     root.add(megaCruise);
 
     // Grand Coastal Sea Route: Boso -> Tokyo Bay -> Miura -> Sagami Bay -> Southern Izu -> Suruga Bay
@@ -3261,26 +4353,76 @@
       }
     }
 
-    // B. 2.0 Tokyo Disney Resort: 7-Turret Cinderella Castle + DisneySea Mt. Prometheus Volcano (59.0, y, -11.5)
+    // B. 2.0 Photorealistic Multi-Tiered Cinderella Castle + DisneySea Mt. Prometheus Volcano (59.0, y, -11.5)
     const disGroup = new THREE.Group();
     disGroup.position.set(59.0, getTerrainHeight(59.0, -11.5), -11.5);
-    const castleStone = new THREE.MeshStandardMaterial({ color: '#f5efe6', roughness: 0.52 });
-    const castleBlue = new THREE.MeshStandardMaterial({ color: '#2563eb', emissive: '#60a5fa', emissiveIntensity: 0.3, roughness: 0.32, metalness: 0.2 });
-    nightEmissives.push({ mat: castleBlue, day: 0.15, sunset: 0.95, night: 2.3 });
-    // Cinderella Castle Fortress Base, Arched Gate & 7 Soaring Turrets
-    const cPlaza = new THREE.Mesh(new THREE.CylinderGeometry(2.65, 2.8, 0.12, 24), new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.82 }));
-    cPlaza.position.set(-0.6, 0.06, 0); disGroup.add(cPlaza);
-    const cBase = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.98, 2.25), castleStone); cBase.position.set(-0.6, 0.52, 0); cBase.castShadow = true;
-    const cUpper = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.85, 1.5), castleStone); cUpper.position.set(-0.6, 1.38, 0); cUpper.castShadow = true;
-    const cMainT = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.5, 2.55, 12), castleStone); cMainT.position.set(-0.6, 2.2, 0); cMainT.castShadow = true;
-    const cMainSpire = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.55, 12), castleBlue); cMainSpire.position.set(-0.6, 4.18, 0);
-    const cGoldTip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 6), goldMat); cGoldTip.position.set(-0.6, 5.1, 0);
-    disGroup.add(cBase, cUpper, cMainT, cMainSpire, cGoldTip);
-    for (const [tx, tz, th] of [[-1.55, -0.88, 1.65], [0.35, -0.88, 1.65], [-1.55, 0.88, 1.55], [0.35, 0.88, 1.55], [-1.15, 0.0, 2.15], [-0.05, 0.0, 2.15]]) {
-      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, th, 8), castleStone); st.position.set(tx, 0.5 + th * 0.5, tz); st.castShadow = true;
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.82, 8), castleBlue); sp.position.set(tx, 0.5 + th + 0.38, tz);
-      disGroup.add(st, sp);
+    const castleBaseStone = new THREE.MeshStandardMaterial({ color: '#9c7c5c', roughness: 0.72 });
+    const castleCream = new THREE.MeshStandardMaterial({ color: '#f8f1e5', roughness: 0.48 });
+    const castleBlue = new THREE.MeshStandardMaterial({ color: '#2b6cb0', emissive: '#60a5fa', emissiveIntensity: 0.28, roughness: 0.3, metalness: 0.22 });
+    const castleLawnMat = new THREE.MeshStandardMaterial({ color: '#4d9a34', roughness: 0.88 });
+    const castleArchDark = new THREE.MeshStandardMaterial({ color: '#1e1b24', roughness: 0.85 });
+    nightEmissives.push({ mat: castleBlue, day: 0.14, sunset: 0.92, night: 2.25 });
+
+    // Grand Circular Forecourt Plaza with Curved Terrace Wall & Crescent Green Lawns
+    const cPlaza = new THREE.Mesh(new THREE.CylinderGeometry(2.85, 3.0, 0.14, 28), new THREE.MeshStandardMaterial({ color: '#e6dfd3', roughness: 0.82 }));
+    cPlaza.position.set(-0.6, 0.07, 0.15); cPlaza.receiveShadow = true; disGroup.add(cPlaza);
+    const cFrontCourt = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.52, 0.16, 20), new THREE.MeshStandardMaterial({ color: '#efe9df', roughness: 0.8 }));
+    cFrontCourt.position.set(-0.6, 0.08, 1.85); disGroup.add(cFrontCourt);
+    for (const side of [-1, 1]) {
+      const cLawn = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.6, 0.18, 14, 1, false, 0, Math.PI), castleLawnMat);
+      cLawn.position.set(-0.6 + side * 0.72, 0.09, 1.85); cLawn.rotation.y = side > 0 ? 0 : Math.PI; disGroup.add(cLawn);
     }
+    const cRimWall = new THREE.Mesh(new THREE.TorusGeometry(1.46, 0.06, 6, 24, Math.PI * 1.15), castleCream);
+    cRimWall.rotation.x = Math.PI / 2; cRimWall.rotation.z = -0.25; cRimWall.position.set(-0.6, 0.22, 1.85); disGroup.add(cRimWall);
+
+    // Tier 1: Warm Brown-Stone Fortress Bastion & Corner Turret Bases
+    const cBase = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.95, 2.2), castleBaseStone);
+    cBase.position.set(-0.6, 0.54, -0.08); cBase.castShadow = true; cBase.receiveShadow = true; disGroup.add(cBase);
+    const cWingL = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.78, 1.65), castleBaseStone); cWingL.position.set(-1.95, 0.46, 0.05); cWingL.castShadow = true;
+    const cWingR = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.78, 1.65), castleBaseStone); cWingR.position.set(0.75, 0.46, 0.05); cWingR.castShadow = true;
+    disGroup.add(cWingL, cWingR);
+
+    // Front Gothic Entrance Archway & Clock Gable
+    const cGateFrame = new THREE.Mesh(new THREE.BoxGeometry(0.92, 1.32, 0.46), castleCream); cGateFrame.position.set(-0.6, 0.74, 1.05); cGateFrame.castShadow = true;
+    const cGateArch = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.62, 0.5), castleArchDark); cGateArch.position.set(-0.6, 0.42, 1.06);
+    const cGateGable = new THREE.Mesh(new THREE.ConeGeometry(0.52, 0.78, 4), castleBlue); cGateGable.rotation.y = Math.PI / 4; cGateGable.scale.set(1.0, 1.0, 0.6); cGateGable.position.set(-0.6, 1.75, 1.05);
+    const cClock = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.06, 12), goldMat); cClock.rotation.x = Math.PI / 2; cClock.position.set(-0.6, 1.48, 1.28);
+    disGroup.add(cGateFrame, cGateArch, cGateGable, cClock);
+
+    // Tier 2 & 3: Cream/Ivory Gothic Upper Keep + Tall Central Tower with Golden Spire!
+    const cUpper = new THREE.Mesh(new THREE.BoxGeometry(1.72, 1.05, 1.48), castleCream); cUpper.position.set(-0.6, 1.52, -0.1); cUpper.castShadow = true;
+    const cUpper2 = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.92, 1.02), castleCream); cUpper2.position.set(-0.6, 2.42, -0.15); cUpper2.castShadow = true;
+    const cMainT = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.44, 1.95, 12), castleCream); cMainT.position.set(-0.6, 3.25, -0.15); cMainT.castShadow = true;
+    const cMainCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.22, 12), castleCream); cMainCollar.position.set(-0.6, 4.18, -0.15);
+    const cMainSpire = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.48, 12), goldMat); cMainSpire.position.set(-0.6, 5.02, -0.15);
+    const cMainFinial = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.03, 0.42, 6), goldMat); cMainFinial.position.set(-0.6, 5.9, -0.15);
+    disGroup.add(cUpper, cUpper2, cMainT, cMainCollar, cMainSpire, cMainFinial);
+
+    // 10 Staggered Royal-Blue Conical-Roofed Turrets with Gold Trim & Tiny Flags
+    const castleTurrets = [
+      // [x, z, baseY, height, radius, spireH, useStoneBase, isGoldSpire]
+      [-2.18,  0.62, 0.08, 1.38, 0.22, 0.72, true,  false],
+      [-1.58,  0.88, 0.08, 1.55, 0.24, 0.78, true,  false],
+      [ 0.38,  0.88, 0.08, 1.55, 0.24, 0.78, true,  false],
+      [ 0.98,  0.62, 0.08, 1.38, 0.22, 0.72, true,  false],
+      [-1.85, -0.78, 0.08, 1.68, 0.23, 0.82, true,  false],
+      [ 0.65, -0.78, 0.08, 1.68, 0.23, 0.82, true,  false],
+      [-1.28, -0.12, 1.15, 1.55, 0.20, 0.88, false, false],
+      [ 0.08, -0.12, 1.15, 1.55, 0.20, 0.88, false, false],
+      [-1.02, -0.45, 1.85, 1.52, 0.17, 0.92, false, true],
+      [-0.18, -0.45, 1.85, 1.62, 0.17, 0.95, false, false]
+    ];
+    castleTurrets.forEach(([tx, tz, by, th, tr, sh, stoneBase, isGold]) => {
+      const tMesh = new THREE.Mesh(new THREE.CylinderGeometry(tr * 0.88, tr, th, 10), stoneBase ? castleBaseStone : castleCream);
+      tMesh.position.set(tx, by + th * 0.5, tz); tMesh.castShadow = true;
+      const tCollar = new THREE.Mesh(new THREE.CylinderGeometry(tr * 1.14, tr * 0.95, 0.12, 10), castleCream);
+      tCollar.position.set(tx, by + th, tz);
+      const tSpire = new THREE.Mesh(new THREE.ConeGeometry(tr * 1.18, sh, 10), isGold ? goldMat : castleBlue);
+      tSpire.position.set(tx, by + th + sh * 0.5 + 0.04, tz);
+      const tFlag = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, 0.02), goldMat);
+      tFlag.position.set(tx + 0.07, by + th + sh + 0.12, tz);
+      disGroup.add(tMesh, tCollar, tSpire, tFlag);
+    });
     // Tokyo DisneySea Mt. Prometheus Volcano (普羅米修斯火山!) right beside Cinderella Castle
     const promVolcano = new THREE.Mesh(
       new THREE.ConeGeometry(1.55, 2.45, 9),
@@ -3573,13 +4715,186 @@
     const hTowerBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); hTowerBeacon.position.set(3.2, hRunwayY + 2.68, -1.45);
     hanedaGroup.add(hTower, hCab, hTowerBeacon);
 
+    // 2.0 Photorealistic Sculpted Commercial Airliner Builder (Boeing 777/787/747 style!)
+    function createAirlinerFuselageTexture(stripeColor) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext('2d');
+      // Glossy pearlescent white fuselage + subtle silver-grey lower belly
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 512, 512);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(0, 0, 62, 512);
+      ctx.fillRect(450, 0, 62, 512);
+      // Airline livery cheatline stripe running along port (u~0.75) & starboard (u~0.25) sides
+      ctx.fillStyle = stripeColor;
+      ctx.fillRect(114, 72, 11, 338);
+      ctx.fillRect(387, 72, 11, 338);
+      // Crisp dark cabin window rows along both sides (u~0.28 and u~0.72, slightly above midline toward crown u=0.5)
+      ctx.fillStyle = '#0f172a';
+      for (let wy = 92; wy <= 388; wy += 9) {
+        if (wy === 164 || wy === 272 || wy === 353) {
+          // Passenger exit doors with subtle frame
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(130, wy - 3, 18, 8);
+          ctx.fillRect(364, wy - 3, 18, 8);
+          ctx.fillStyle = '#0f172a';
+          continue;
+        }
+        ctx.fillRect(136, wy, 10, 5);
+        ctx.fillRect(366, wy, 10, 5);
+      }
+      // Sleek wraparound dark-glass cockpit windshield near nose crown (u=0.5, y~48..66)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(210, 50, 92, 16);
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(253, 50, 6, 16); // Center windshield mullion
+      ctx.fillRect(228, 50, 4, 16);
+      ctx.fillRect(280, 50, 4, 16);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    const airlinerTexANA = createAirlinerFuselageTexture('#0284c7');
+    const airlinerTexJAL = createAirlinerFuselageTexture('#dc2626');
+    const airlinerMatANA = new THREE.MeshStandardMaterial({ map: airlinerTexANA, roughness: 0.22, metalness: 0.14, envMapIntensity: 1.25 });
+    const airlinerMatJAL = new THREE.MeshStandardMaterial({ map: airlinerTexJAL, roughness: 0.22, metalness: 0.14, envMapIntensity: 1.25 });
+    const jetWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.24, metalness: 0.16, envMapIntensity: 1.2 });
+    const jetBlue = new THREE.MeshStandardMaterial({ color: '#0369a1', roughness: 0.28, metalness: 0.22 });
+    const jetMetal = new THREE.MeshStandardMaterial({ color: '#94a3b8', metalness: 0.78, roughness: 0.24, envMapIntensity: 1.3 });
+    const jetDarkCore = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.4, metalness: 0.5 });
+
+    // Shared Sculpted LatheGeometry Fuselage (+Y -> rotated to +Z nose forward!)
+    const fuselageProfile = [
+      new THREE.Vector2(0.001, -1.78), // Tail tip
+      new THREE.Vector2(0.045, -1.62),
+      new THREE.Vector2(0.105, -1.36),
+      new THREE.Vector2(0.168, -1.04),
+      new THREE.Vector2(0.205, -0.72),
+      new THREE.Vector2(0.218, -0.35),
+      new THREE.Vector2(0.218,  0.58),
+      new THREE.Vector2(0.212,  0.96),
+      new THREE.Vector2(0.194,  1.22),
+      new THREE.Vector2(0.158,  1.42),
+      new THREE.Vector2(0.105,  1.56),
+      new THREE.Vector2(0.048,  1.65),
+      new THREE.Vector2(0.001,  1.69)  // Smooth rounded radome nose
+    ];
+    const sharedFuselageGeo = new THREE.LatheGeometry(fuselageProfile, 24);
+
+    // Shared Swept-Back Tapered Airfoil Wing Geometry (ExtrudeGeometry)
+    const wingShapeL = new THREE.Shape();
+    wingShapeL.moveTo(0.16,  0.34);
+    wingShapeL.lineTo(1.62, -0.46);
+    wingShapeL.lineTo(1.62, -0.62);
+    wingShapeL.lineTo(0.16, -0.22);
+    wingShapeL.closePath();
+    const sharedWingGeo = new THREE.ExtrudeGeometry(wingShapeL, { depth: 0.042, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2 });
+
+    // Shared Swept Vertical Tail Fin Geometry
+    const finShape = new THREE.Shape();
+    finShape.moveTo(0, 0);
+    finShape.lineTo(0.62, 0);
+    finShape.lineTo(0.92, 0.72);
+    finShape.lineTo(0.68, 0.74);
+    finShape.closePath();
+    const sharedFinGeo = new THREE.ExtrudeGeometry(finShape, { depth: 0.036, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 2 });
+
+    // Shared Swept Horizontal Stabilizer Geometry
+    const hStabShape = new THREE.Shape();
+    hStabShape.moveTo(0.06,  0.14);
+    hStabShape.lineTo(0.64, -0.18);
+    hStabShape.lineTo(0.64, -0.28);
+    hStabShape.lineTo(0.06, -0.12);
+    hStabShape.closePath();
+    const sharedHStabGeo = new THREE.ExtrudeGeometry(hStabShape, { depth: 0.024, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1 });
+
+    function createRealisticAirliner(isANA = true, withNavLights = false, withGear = true) {
+      const ag = new THREE.Group();
+      const tailMat = isANA ? jetBlue : vermilionMat;
+
+      // 1. Sculpted Fuselage with Cabin Window Row & Cockpit Windshield Texture
+      const fuse = new THREE.Mesh(sharedFuselageGeo, isANA ? airlinerMatANA : airlinerMatJAL);
+      fuse.rotation.x = Math.PI / 2;
+      fuse.castShadow = true;
+      ag.add(fuse);
+
+      // 2. Swept Tapered Wings + Blended Winglets + Flap Fairings + Turbofan Engines (Left & Right)
+      for (const side of [-1, 1]) {
+        const wing = new THREE.Mesh(sharedWingGeo, jetWhite);
+        wing.rotation.x = Math.PI / 2;
+        wing.scale.x = side;
+        wing.position.set(0, -0.02, 0.14);
+        wing.rotation.y = 0;
+        wing.rotation.z = side * 0.065; // Realistic upward wing dihedral
+        wing.castShadow = true;
+        ag.add(wing);
+
+        // Blended Angled Winglet
+        const wl = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.22, 0.16), tailMat);
+        wl.position.set(side * 1.62, 0.14, -0.4);
+        wl.rotation.z = side * -0.28;
+        wl.rotation.y = side * -0.2;
+        ag.add(wl);
+
+        // Detailed Under-Wing Turbofan Engine Nacelle + Pylon + Hollow Dark Intake + Spinner Cone
+        const engGroup = new THREE.Group();
+        engGroup.position.set(side * 0.66, -0.16, 0.16);
+        const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.12, 0.34), jetWhite); pylon.position.set(0, 0.09, -0.05);
+        const cowl = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.088, 0.44, 14), jetWhite); cowl.rotation.x = Math.PI / 2; cowl.castShadow = true;
+        const lip = new THREE.Mesh(new THREE.TorusGeometry(0.096, 0.014, 8, 16), jetMetal); lip.position.z = 0.22;
+        const intake = new THREE.Mesh(new THREE.CylinderGeometry(0.084, 0.084, 0.06, 12), jetDarkCore); intake.rotation.x = Math.PI / 2; intake.position.z = 0.195;
+        const spinner = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.07, 8), jetMetal); spinner.rotation.x = Math.PI / 2; spinner.position.z = 0.22;
+        const exhaust = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.16, 10), jetMetal); exhaust.rotation.x = -Math.PI / 2; exhaust.position.z = -0.28;
+        engGroup.add(pylon, cowl, lip, intake, spinner, exhaust);
+        ag.add(engGroup);
+
+        // Swept Horizontal Tailplane
+        const hStab = new THREE.Mesh(sharedHStabGeo, jetWhite);
+        hStab.rotation.x = Math.PI / 2;
+        hStab.scale.x = side;
+        hStab.position.set(0, 0.07, -1.34);
+        hStab.rotation.z = side * 0.07;
+        ag.add(hStab);
+
+        if (withNavLights) {
+          const navLight = new THREE.Mesh(new THREE.SphereGeometry(0.052, 6, 6), new THREE.MeshBasicMaterial({ color: side === -1 ? '#ef4444' : '#22c55e' }));
+          navLight.position.set(side * 1.65, 0.05, -0.4);
+          ag.add(navLight);
+        }
+      }
+
+      // 3. Swept Vertical Tail Fin (Airline Livery!)
+      const vFin = new THREE.Mesh(sharedFinGeo, tailMat);
+      vFin.rotation.y = Math.PI / 2;
+      vFin.position.set(-0.018, 0.12, -0.86);
+      vFin.castShadow = true;
+      ag.add(vFin);
+
+      // 4. Nose & Main Landing Gear Struts + Tires
+      if (withGear) {
+        const noseStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 6), jetMetal);
+        noseStrut.position.set(0, -0.22, 1.12);
+        const noseWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.05, 10), jetDarkCore);
+        noseWheel.rotation.z = Math.PI / 2; noseWheel.position.set(0, -0.3, 1.12);
+        ag.add(noseStrut, noseWheel);
+        for (const side of [-1, 1]) {
+          const mStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.18, 6), jetMetal);
+          mStrut.position.set(side * 0.28, -0.22, -0.05);
+          const mWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.065, 10), jetDarkCore);
+          mWheel.rotation.z = Math.PI / 2; mWheel.position.set(side * 0.28, -0.3, -0.05);
+          ag.add(mStrut, mWheel);
+        }
+      }
+      return ag;
+    }
+
     function addParkedAirliner(parent, px, py, pz, isANA) {
-      const pj = new THREE.Group(); pj.position.set(px, py, pz);
-      const pf = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.78, 8), whiteMat); pf.rotation.x = Math.PI / 2; pf.castShadow = true;
-      const pw = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.024, 0.18), whiteMat); pw.position.z = 0.04;
-      const pStab = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.018, 0.1), whiteMat); pStab.position.set(0, 0.02, -0.34);
-      const pt = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.22, 0.16), isANA ? shinkansenStripeMat : vermilionMat); pt.position.set(0, 0.11, -0.32);
-      pj.add(pf, pw, pStab, pt); parent.add(pj);
+      const pj = createRealisticAirliner(isANA, false, true);
+      pj.scale.setScalar(0.32);
+      pj.position.set(px, py + 0.04, pz);
+      parent.add(pj);
     }
     // 4 Parked ANA & JAL Airliners at Haneda Gates
     [[-2.2, true], [-1.3, false], [-0.4, true], [0.5, false]].forEach(([px, ana]) => addParkedAirliner(hanedaGroup, px, hRunwayY + 0.12, -0.58, ana));
@@ -3645,30 +4960,11 @@
     const nRwyLift  = naritaGroup.localToWorld(new THREE.Vector3(4.4,  nRunwayY + 0.16, 1.1));
     const nRwyDir   = new THREE.Vector3().subVectors(nRwyLift, nRwyTouch).normalize();
 
-    // 747 Jumbo Jet — Haneda ⇄ Narita Continuous Shuttle Flight!
-    const jumboJet = new THREE.Group();
-    const jetWhite = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.25, metalness: 0.15 });
-    const jetBlue = new THREE.MeshStandardMaterial({ color: '#0284c7', roughness: 0.3 });
-    const jetMetal = new THREE.MeshStandardMaterial({ color: '#94a3b8', metalness: 0.72, roughness: 0.28 });
-    const jBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.21, 2.1, 14), jetWhite); jBody.rotation.x = Math.PI / 2; jBody.castShadow = true;
-    const jNose = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 14), jetWhite); jNose.rotation.x = Math.PI / 2; jNose.position.z = 1.32;
-    const jTailCone = new THREE.Mesh(new THREE.ConeGeometry(0.21, 0.62, 12), jetWhite); jTailCone.rotation.x = -Math.PI / 2; jTailCone.position.z = -1.35;
-    const jHump = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.55, 6, 10), jetWhite); jHump.rotation.x = Math.PI / 2; jHump.position.set(0, 0.15, 0.62);
-    const jCockpit = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.16), new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.1 })); jCockpit.position.set(0, 0.2, 0.96);
-    const jStripe = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.055, 2.0), jetBlue); jStripe.position.y = 0.02;
-    for (const side of [-1, 1]) {
-      const wing = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.045, 0.42), jetWhite); wing.position.set(side * 0.72, -0.04, -0.05); wing.rotation.y = side * -0.42; wing.castShadow = true;
-      const winglet = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.18), vermilionMat); winglet.position.set(side * 1.35, 0.07, -0.35); winglet.rotation.z = side * -0.22;
-      const navLight = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 6), new THREE.MeshBasicMaterial({ color: side === -1 ? '#ef4444' : '#22c55e' })); navLight.position.set(side * 1.38, 0.02, -0.36);
-      jumboJet.add(wing, winglet, navLight);
-      for (const [ex, ez] of [[0.46, 0.12], [0.92, -0.1]]) {
-        const eng = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.34, 10), jetMetal); eng.rotation.x = Math.PI / 2; eng.position.set(side * ex, -0.13, ez); jumboJet.add(eng);
-      }
-    }
-    const jFin = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.68, 0.52), vermilionMat); jFin.position.set(0, 0.36, -1.15); jFin.rotation.x = -0.35;
-    const jStab = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.035, 0.24), jetWhite); jStab.position.set(0, 0.05, -1.28);
-    const jetStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' })); jetStrobe.position.set(0, 0.32, 0.15);
-    jumboJet.add(jBody, jNose, jTailCone, jHump, jCockpit, jStripe, jFin, jStab, jetStrobe);
+    // 2.0 Photorealistic Commercial Airliner — Haneda ⇄ Mt. Fuji 360° ⇄ Narita Continuous Shuttle Flight!
+    const jumboJet = createRealisticAirliner(true, true, true);
+    const jetStrobe = new THREE.Mesh(new THREE.SphereGeometry(0.065, 6, 6), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
+    jetStrobe.position.set(0, 0.26, 0.15);
+    jumboJet.add(jetStrobe);
     root.add(jumboJet);
 
     // Leg 1: Haneda Takeoff -> West over Tokyo -> FULL 360° Orbit around Mt. Fuji (CCW) -> East over Tokyo Bay -> Narita Touchdown
@@ -4041,11 +5337,13 @@
       { label: '🚄 新橫濱車站', pos: [37.0, 4.4, 6.0], cam: 'yokohamaMinatoMirai' },
       { label: '🚡 高野山與纜車', pos: [29.8, 7.8, -31.5], cam: 'koyasan' },
       { label: '✈️ 羽田機場', pos: [49.5, 3.8, 1.2], cam: 'hanedaAirport' },
-      { label: '🗼 東京鐵塔', pos: [45.5, 9.8, -16.5], cam: 'oceanTokyo' },
+      { label: '🗼 東京鐵塔', pos: [45.5, 9.8, -13.2], cam: 'oceanTokyo' },
+      { label: '⛩️ 增上寺', pos: [42.0, 3.8, -12.8], cam: 'oceanTokyo' },
+      { label: '🏙️ 麻布台之丘', pos: [41.8, 9.6, -17.2], cam: 'oceanTokyo' },
       { label: '🏛️ 東京車站', pos: [51.5, 4.4, -20.5], cam: 'tokyoMetro' },
       { label: '🏟️ 東京巨蛋', pos: [49.5, 4.6, -31.5], cam: 'tokyoMetro' },
-      { label: '🏮 淺草雷門', pos: [57.5, 4.6, -27.5], cam: 'tokyoMetro' },
-      { label: '🗼 東京晴空塔', pos: [62.5, 11.8, -29.0], cam: 'tokyoMetro' },
+      { label: '🏮 淺草雷門', pos: [57.5, 4.6, -32.0], cam: 'tokyoMetro' },
+      { label: '🗼 東京晴空塔', pos: [62.5, 11.8, -33.8], cam: 'tokyoMetro' },
       { label: '🌉 彩虹大橋・台場富士電視台', pos: [50.0, 4.8, -5.8], cam: 'oceanTokyo' },
       { label: '🌊 東京灣', pos: [60.5, 1.8, 17.5], cam: 'tokyoBayAqualine' },
       { label: '🌉 海螢跨海公路', pos: [62.5, 3.6, 2.8], cam: 'tokyoBayAqualine' },
@@ -4748,11 +6046,25 @@
           mantaRays.forEach((m) => { m.a += dt * m.s; m.mesh.position.set(m.cx + Math.cos(m.a) * m.r, m.y + Math.sin(t * 1.4 + m.a) * 0.18, m.cz + Math.sin(m.a) * m.r); m.mesh.rotation.y = -m.a; });
           seaTurtles.forEach((st) => { st.a += dt * st.s; st.mesh.position.set(st.cx + Math.cos(st.a) * st.r, st.y, st.cz + Math.sin(st.a) * st.r); st.mesh.rotation.y = -st.a; });
           aquaticSwimmers.forEach((f) => { f.a += dt * f.s; f.mesh.position.set(f.cx + Math.cos(f.a) * f.r, f.y, f.cz + Math.sin(f.a) * f.r); f.mesh.rotation.y = -f.a; });
+          edoMarineSwimmers.forEach((f) => {
+            f.a += dt * f.s;
+            f.mesh.position.set(f.cx + Math.cos(f.a) * f.r, f.y + Math.sin(t * 2.2 + f.a) * 0.08, f.cz + Math.sin(f.a) * f.r);
+            f.mesh.rotation.y = -f.a + Math.sin(t * 5.0 + f.a) * (f.wobble * 0.28);
+            if (f.tail) f.tail.rotation.y = Math.sin(t * 8.5 + f.a) * f.wobble;
+          });
           caveKoi.forEach((k) => { k.angle += dt * 0.9; k.mesh.position.set(15.5 + Math.cos(k.angle) * k.r * 1.8, -7.45, D / 2 - 1.0 + Math.sin(k.angle) * 0.55); k.mesh.rotation.y = -k.angle; });
 
-          // 7. Birds, Drifting 3D Sky Clouds, Animated Water Waves & Steam Plumes
-          waterNormalTex.offset.x += dt * 0.018;
+          // 7. Birds, Drifting 3D Sky Clouds, Animated Voronoi Water Caustics, Ocean Whirlpools & Steam Plumes
+          waterNormalTex.offset.x += dt * 0.016;
           waterNormalTex.offset.y += dt * 0.011;
+          waterCausticTex.offset.x -= dt * 0.012;
+          waterCausticTex.offset.y += dt * 0.014;
+          oceanWhirlpools.forEach((wp) => {
+            wp.outer.rotation.z += dt * wp.speed;
+            wp.inner.rotation.z += dt * wp.speed * 1.45;
+            const pulse = 1 + Math.sin(t * 1.3 + wp.phase) * 0.04;
+            wp.outer.scale.setScalar(pulse);
+          });
           skyClouds.forEach((cl) => {
             cl.group.position.x += dt * cl.speed;
             if (cl.group.position.x > X_MAX + 32) cl.group.position.x = X_MIN - 32;
