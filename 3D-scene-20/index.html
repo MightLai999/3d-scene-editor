@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>富士山廣域全景生態百景圖 (方圓100公里旗艦版) — 專業 3D 立體模型</title>
+  <title>東京近郊．富士山地區立體場景</title>
   <style>
     :root {
       --bg-panel: rgba(13, 17, 26, 0.84);
@@ -283,6 +283,12 @@
       gap: 4px;
     }
 
+    .btn-group-5 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
     .btn-group-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -457,6 +463,107 @@
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
       box-shadow: 0 0 14px rgba(59, 130, 246, 0.55);
     }
+
+    .author-meta {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.22);
+      font-size: 11px;
+      line-height: 1.55;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .author-meta b { color: #cbd5e1; font-weight: 600; }
+    .feedback-open-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.42);
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(56, 189, 248, 0.1));
+      color: #e0f2fe;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .feedback-open-btn:hover {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.38), rgba(56, 189, 248, 0.24));
+      border-color: #7dd3fc;
+    }
+
+    .feedback-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.62);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 16px;
+    }
+    .feedback-modal-backdrop.open { display: flex; }
+    .feedback-modal {
+      width: min(460px, 94vw);
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      color: #f1f5f9;
+    }
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .feedback-input, .feedback-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(30, 41, 59, 0.72);
+      color: #f8fafc;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+    .feedback-textarea { min-height: 70px; resize: vertical; }
+    .feedback-input:focus, .feedback-textarea:focus { border-color: #38bdf8; }
+    .feedback-actions { display: flex; gap: 8px; }
+    .feedback-list {
+      overflow-y: auto;
+      max-height: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .feedback-item {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+    .feedback-item-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: #94a3b8;
+      margin-bottom: 3px;
+    }
   </style>
 
   <script type="importmap">
@@ -472,142 +579,190 @@
   <div id="canvas-container"></div>
   <div id="labels-container"></div>
 
-  <button class="ui-restore-pill" id="btn-show-title">🗻 顯示標題</button>
-  <button class="ui-restore-pill" id="btn-show-panel">⚙️ 顯示工具面板</button>
+  <button class="ui-restore-pill" id="btn-show-title" data-i18n="showTitle">🗻 顯示標題</button>
+  <button class="ui-restore-pill" id="btn-show-panel" data-i18n="showPanel">⚙️ 顯示工具面板</button>
   <div class="cockpit-hud" id="cockpit-hud">
     <span id="cockpit-title-text">👨‍✈️ 巨無霸 747 機長視角</span>
     <span class="hud-badge" id="cockpit-phase-text">羽田 ⇄ 成田 巡航中</span>
-    <button class="hud-exit-btn" id="btn-exit-cockpit">✕ 退出第一人稱 (ESC)</button>
+    <button class="hud-exit-btn" id="btn-exit-cockpit" data-i18n="exitCockpit">✕ 退出第一人稱 (ESC)</button>
   </div>
 
   <div class="title-card" id="title-card">
-    <div class="card-top-bar">
-      <a href="../index.html" class="back-link">← 返回作品集首頁</a>
-      <button class="ui-collapse-btn" id="btn-hide-title" title="隱藏左側標題框">◀ 隱藏</button>
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px;">
+      <h1 data-i18n="appTitle" style="margin:0;">🗻 東京近郊．富士山地區立體場景</h1>
+      <button class="ui-collapse-btn" id="btn-hide-title" title="隱藏左側標題框" data-i18n="hideLeft" style="flex-shrink:0; margin-top:2px;">◀ 隱藏</button>
     </div>
-    <h1>🗻 3D-scene-20｜2.0 精緻寫實版：富士山・伊豆・東京灣・房總半島</h1>
-    <p>2.0 第一階段寫實升級：導入物理環境反射（IBL）、大氣漸層天空穹頂與立體漂移雲層、電影級夜景輝光後處理（Bloom）、動態法線波紋海洋與船隻尾浪、高解析 PBR 岩溝地形與環境光遮蔽（AO），以及 4,500+ 棵多層有機樹冠濃密森林！</p>
+    <p data-i18n="appDesc">2.0 寫實進化版：導入物理環境反射（IBL）、大氣天空與立體漂移雲層、電影級夜景輝光（Bloom）、柔和蜂巢水波與鳴門渦潮、高密度東京／橫濱／麻布台之丘與江戶灣生態，以及 4,500+ 棵有機樹冠森林！</p>
+    <div class="author-meta">
+      <div data-i18n-html="metaAuthor"><b>作者：</b>Might.LAi (Taiwan)</div>
+      <div data-i18n-html="metaDate"><b>更新日期：</b>2026.11.26</div>
+      <div data-i18n-html="metaTools"><b>開發工具：</b>Google Antigravity</div>
+    </div>
+    <button class="feedback-open-btn" id="btn-open-feedback" data-i18n="openFeedback">💬 意見留言板 / 提供建議</button>
+  </div>
+
+  <div class="feedback-modal-backdrop" id="feedback-modal">
+    <div class="feedback-modal">
+      <div class="feedback-header">
+        <span data-i18n="fbTitle">💬 觀眾意見留言板</span>
+        <button class="ui-collapse-btn" id="btn-close-feedback" data-i18n="fbClose">✕ 關閉</button>
+      </div>
+      <input class="feedback-input" id="fb-name" type="text" maxlength="32" placeholder="您的暱稱 (選填)" />
+      <textarea class="feedback-textarea" id="fb-msg" maxlength="500" placeholder="歡迎留下對 3D 場景的建議、想法或想新增的地標！"></textarea>
+      <div class="feedback-actions">
+        <button class="btn cockpit-btn" id="btn-fb-github" style="flex:1;" data-i18n="fbSubmitGH">🌐 公開留言 (GitHub)</button>
+        <button class="btn" id="btn-fb-local" style="flex:1;" data-i18n="fbSubmitLocal">💾 本機快速留言</button>
+      </div>
+      <div class="feedback-list" id="fb-list"></div>
+    </div>
   </div>
 
   <aside class="controls-panel" id="controls-panel">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:-4px;">
-      <span style="font-size:12px; font-weight:700; color:#e2e8f0;">⚙️ 場景控制面板</span>
-      <button class="ui-collapse-btn" id="btn-hide-panel" title="隱藏右側工具面板">隱藏 ▶</button>
+      <span style="font-size:12px; font-weight:700; color:#e2e8f0;" data-i18n="panelTitle">⚙️ 場景控制面板</span>
+      <button class="ui-collapse-btn" id="btn-hide-panel" title="隱藏右側工具面板" data-i18n="hideRight">隱藏 ▶</button>
     </div>
 
     <div>
-      <div class="section-label">四季風情變幻（春夏秋冬）</div>
+      <div class="section-label" data-i18n="secLang">🌐 語言切換 / Language / 言語</div>
+      <div class="btn-group-3">
+        <button class="btn active" data-lang="zh">繁體中文</button>
+        <button class="btn" data-lang="en">English</button>
+        <button class="btn" data-lang="ja">日本語</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label" data-i18n="secSeason">四季風情變幻（春夏秋冬）</div>
       <div class="btn-group-4">
-        <button class="btn snow-btn active" data-season="spring">🌸 春櫻</button>
-        <button class="btn snow-btn" data-season="summer">🌿 盛夏</button>
-        <button class="btn snow-btn" data-season="autumn">🍁 金秋</button>
-        <button class="btn snow-btn" data-season="winter">❄️ 嚴冬</button>
+        <button class="btn snow-btn active" data-season="spring" data-i18n="seasonSpring">🌸 春櫻</button>
+        <button class="btn snow-btn" data-season="summer" data-i18n="seasonSummer">🌿 盛夏</button>
+        <button class="btn snow-btn" data-season="autumn" data-i18n="seasonAutumn">🍁 金秋</button>
+        <button class="btn snow-btn" data-season="winter" data-i18n="seasonWinter">❄️ 嚴冬</button>
       </div>
     </div>
 
     <div>
-      <div class="section-label">日夜與赤富士光影</div>
-      <div class="btn-group-3" style="margin-bottom: 7px;">
-        <button class="btn active" data-time="day">☀️ 白晝</button>
-        <button class="btn" data-time="sunset">🌅 赤富士</button>
-        <button class="btn" data-time="night">🌙 璀璨夜景</button>
+      <div class="section-label" data-i18n="secTime">日夜與赤富士光影</div>
+      <div class="btn-group-5" style="margin-bottom: 7px;">
+        <button class="btn" data-time="dawn" data-i18n="timeDawn">🌄 黎明</button>
+        <button class="btn active" data-time="day" data-i18n="timeDay">☀️ 白晝</button>
+        <button class="btn" data-time="sunset" data-i18n="timeSunset">🌅 赤富士</button>
+        <button class="btn" data-time="night" data-i18n="timeNight">🌙 夜景</button>
+        <button class="btn" data-time="midnight" data-i18n="timeMidnight">🌌 深夜</button>
       </div>
-      <div class="toggle-row">
-        <label for="opt-auto-cycle">🔄 循環播放：春夏秋冬 × 日黃昏夜</label>
-        <input type="checkbox" id="opt-auto-cycle" />
+      <div class="section-label" style="margin-top:8px;" data-i18n="secCycle">🔄 自動循環播放模式</div>
+      <div class="btn-group-4">
+        <button class="btn active" data-cycle="off" data-i18n="cycOff">⏹ 關閉</button>
+        <button class="btn" data-cycle="both" data-i18n="cycBoth">🔄 大循環</button>
+        <button class="btn" data-cycle="season" data-i18n="cycSeason">🌸 四季</button>
+        <button class="btn" data-cycle="time" data-i18n="cycTime">☀️ 日夜</button>
       </div>
     </div>
 
     <div>
-      <div class="section-label">真實地理導覽視角（點擊平滑飛行）</div>
+      <div class="section-label" data-i18n="secWeather">⚡ 特殊天氣事件（雷雨／龍捲風／冰雹）</div>
+      <div class="btn-group-4">
+        <button class="btn active" data-weather="normal" data-i18n="wxNormal">☀️ 正常</button>
+        <button class="btn" data-weather="storm" data-i18n="wxStorm">⛈️ 大雷雨</button>
+        <button class="btn" data-weather="tornado" data-i18n="wxTornado">🌪️ 龍捲風</button>
+        <button class="btn" data-weather="hail" data-i18n="wxHail">🧊 冰雹</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label" data-i18n="secCam">真實地理導覽視角（點擊平滑飛行）</div>
       <div class="btn-grid-cams">
-        <button class="btn left-align active" data-cam="panorama">🗺️ 全域正方全覽</button>
-        <button class="btn left-align" data-cam="fujiSummit">🗻 富士山環形火山口</button>
-        <button class="btn left-align" data-cam="kawaguchiko">💧 河口湖與五湖</button>
-        <button class="btn left-align" data-cam="fujiQHighland">🎢 富士急與忠靈塔</button>
-        <button class="btn left-align" data-cam="oshinoYamanaka">🏡 忍野八海與山中湖</button>
-        <button class="btn left-align" data-cam="aokigahara">🌲 青木原樹海</button>
-        <button class="btn left-align" data-cam="shiraitoFujinomiya">🌊 白糸瀧與遺產中心</button>
-        <button class="btn left-align" data-cam="gotembaOutlet">🛍️ 御殿場 OUTLET</button>
-        <button class="btn left-align" data-cam="hakoneAshi">🚡 箱根蘆之湖</button>
-        <button class="btn left-align" data-cam="atamiOnsen">♨️ 熱海溫泉與伊豆半島</button>
-        <button class="btn left-align" data-cam="izuPeninsula">🏝️ 伊豆半島・駿河/相模灣</button>
-        <button class="btn left-align" data-cam="speedwayShinkansen">🏎️ 賽車場與新幹線</button>
-        <button class="btn left-align" data-cam="enoshimaKamakura">🚃 江之島與江之電</button>
-        <button class="btn left-align" data-cam="kamakuraBuddha">☸️ 鎌倉大佛古都</button>
-        <button class="btn left-align" data-cam="yokohamaMinatoMirai">🎡 橫濱港未來地標</button>
-        <button class="btn left-align" data-cam="koyasan">🚡 高野山與纜車</button>
-        <button class="btn left-align" data-cam="hanedaAirport">✈️ 羽田機場</button>
-        <button class="btn left-align" data-cam="oceanTokyo">🗼 東京鐵塔與彩虹橋</button>
-        <button class="btn left-align" data-cam="tokyoMetro">🏛️ 東京車站・巨蛋・雷門</button>
-        <button class="btn left-align" data-cam="tokyoBayAqualine">🌉 東京灣・海螢・迪士尼</button>
-        <button class="btn left-align" data-cam="miuraYokosuka">⚓ 三浦半島・橫須賀軍港</button>
-        <button class="btn left-align" data-cam="bosoPeninsula">🏝️ 千葉房總半島</button>
-        <button class="btn left-align" data-cam="naritaAirport">✈️ 成田國際機場</button>
-        <button class="btn left-align" data-cam="ushikuDaibutsu">☸️ 牛久大佛</button>
-        <button class="btn left-align" data-cam="magmaVolcano">🌋 地底岩漿與深海剖面</button>
-        <button class="btn cockpit-btn" id="btn-cockpit-cam">👨‍✈️ 巨無霸客機「機長第一人稱視角」（跟隨起降遨遊）</button>
-        <button class="btn shinkansen-btn" id="btn-shinkansen-cam">🚅 東海道新幹線「列車駕駛視角」（東京站 ⇄ 新富士站）</button>
+        <button class="btn left-align active" data-cam="panorama" data-i18n="cam_panorama">🗺️ 全域正方全覽</button>
+        <button class="btn left-align" data-cam="fujiSummit" data-i18n="cam_fujiSummit">🗻 富士山環形火山口</button>
+        <button class="btn left-align" data-cam="kawaguchiko" data-i18n="cam_kawaguchiko">💧 河口湖與五湖</button>
+        <button class="btn left-align" data-cam="fujiQHighland" data-i18n="cam_fujiQHighland">🎢 富士急與忠靈塔</button>
+        <button class="btn left-align" data-cam="oshinoYamanaka" data-i18n="cam_oshinoYamanaka">🏡 忍野八海與山中湖</button>
+        <button class="btn left-align" data-cam="aokigahara" data-i18n="cam_aokigahara">🌲 青木原樹海</button>
+        <button class="btn left-align" data-cam="shiraitoFujinomiya" data-i18n="cam_shiraitoFujinomiya">🌊 白糸瀧與遺產中心</button>
+        <button class="btn left-align" data-cam="gotembaOutlet" data-i18n="cam_gotembaOutlet">🛍️ 御殿場 OUTLET</button>
+        <button class="btn left-align" data-cam="hakoneAshi" data-i18n="cam_hakoneAshi">🚡 箱根蘆之湖</button>
+        <button class="btn left-align" data-cam="atamiOnsen" data-i18n="cam_atamiOnsen">♨️ 熱海溫泉與伊豆半島</button>
+        <button class="btn left-align" data-cam="izuPeninsula" data-i18n="cam_izuPeninsula">🏝️ 伊豆半島・駿河/相模灣</button>
+        <button class="btn left-align" data-cam="speedwayShinkansen" data-i18n="cam_speedwayShinkansen">🏎️ 賽車場與新幹線</button>
+        <button class="btn left-align" data-cam="enoshimaKamakura" data-i18n="cam_enoshimaKamakura">🚃 江之島與江之電</button>
+        <button class="btn left-align" data-cam="kamakuraBuddha" data-i18n="cam_kamakuraBuddha">☸️ 鎌倉大佛古都</button>
+        <button class="btn left-align" data-cam="yokohamaMinatoMirai" data-i18n="cam_yokohamaMinatoMirai">🎡 橫濱港未來地標</button>
+        <button class="btn left-align" data-cam="koyasan" data-i18n="cam_koyasan">🚡 高野山與纜車</button>
+        <button class="btn left-align" data-cam="hanedaAirport" data-i18n="cam_hanedaAirport">✈️ 羽田機場</button>
+        <button class="btn left-align" data-cam="oceanTokyo" data-i18n="cam_oceanTokyo">🗼 東京鐵塔與彩虹橋</button>
+        <button class="btn left-align" data-cam="tokyoMetro" data-i18n="cam_tokyoMetro">🏛️ 東京車站・巨蛋・雷門</button>
+        <button class="btn left-align" data-cam="tokyoBayAqualine" data-i18n="cam_tokyoBayAqualine">🌉 東京灣・海螢・迪士尼</button>
+        <button class="btn left-align" data-cam="miuraYokosuka" data-i18n="cam_miuraYokosuka">⚓ 三浦半島・橫須賀軍港</button>
+        <button class="btn left-align" data-cam="bosoPeninsula" data-i18n="cam_bosoPeninsula">🏝️ 千葉房總半島</button>
+        <button class="btn left-align" data-cam="naritaAirport" data-i18n="cam_naritaAirport">✈️ 成田國際機場</button>
+        <button class="btn left-align" data-cam="ushikuDaibutsu" data-i18n="cam_ushikuDaibutsu">☸️ 牛久大佛</button>
+        <button class="btn left-align" data-cam="magmaVolcano" data-i18n="cam_magmaVolcano">🌋 地底岩漿與深海剖面</button>
+        <button class="btn cockpit-btn" id="btn-cockpit-cam" data-i18n="btnCockpit">👨‍✈️ 巨無霸客機「機長第一人稱視角」（跟隨起降遨遊）</button>
+        <button class="btn cockpit-btn" id="btn-passenger-cam" data-i18n="btnPassenger">🪟 客機「右側乘客窗景視角」（俯瞰右側地面與雲海）</button>
+        <button class="btn shinkansen-btn" id="btn-shinkansen-cam" data-i18n="btnShinkansen">🚅 東海道新幹線「列車駕駛視角」（東京站 ⇄ 新富士站）</button>
+        <button class="btn shinkansen-btn" id="btn-cruise-bow-cam" data-i18n="btnCruiseBow">🚢 豪華郵輪「船首甲板視角」（破浪巡航六大海灣）</button>
+        <button class="btn shinkansen-btn" id="btn-cruise-cabin-cam" data-i18n="btnCruiseCabin">🛏️ 豪華郵輪「船艙陽台視角」（永遠面向富士山陸地）</button>
       </div>
     </div>
 
     <div>
-      <div class="section-label">動態空域與節慶特效</div>
+      <div class="section-label" data-i18n="secAerial">動態空域與節慶特效</div>
       <div class="toggle-row">
-        <label for="opt-snow">❄️ 冬季飄雪動畫 (可單獨啟閉)</label>
+        <label for="opt-snow" data-i18n="optSnow">❄️ 冬季飄雪動畫 (可單獨啟閉)</label>
         <input type="checkbox" id="opt-snow" checked />
       </div>
       <div class="toggle-row">
-        <label for="opt-balloons">🎈 空中熱氣球編隊 (升降巡航)</label>
+        <label for="opt-balloons" data-i18n="optBalloons">🎈 熱氣球＆直升機編隊 (巡航)</label>
         <input type="checkbox" id="opt-balloons" checked />
       </div>
       <div class="toggle-row">
-        <label for="opt-fireworks">🎆 湖畔與海灣煙火秀 (多點盛開)</label>
+        <label for="opt-fireworks" data-i18n="optFireworks">🎆 湖畔與海灣煙火秀 (多點盛開)</label>
         <input type="checkbox" id="opt-fireworks" checked />
       </div>
       <div class="toggle-row">
-        <label for="opt-jet">✈️ 巨無霸客機對飛 (羽田 ⇄ 成田)</label>
+        <label for="opt-jet" data-i18n="optJet">✈️ 巨無霸客機對飛 (羽田 ⇄ 成田)</label>
         <input type="checkbox" id="opt-jet" checked />
       </div>
     </div>
 
     <div>
-      <div class="section-label">全域動態與展示選項</div>
+      <div class="section-label" data-i18n="secGlobal">全域動態與展示選項</div>
       <div class="btn-group-2" style="margin-bottom: 8px;">
-        <button class="btn active" id="btn-play-all">▶️ 播放動畫</button>
-        <button class="btn" id="btn-pause-all">⏸️ 停止動畫</button>
+        <button class="btn active" id="btn-play-all" data-i18n="btnPlay">▶️ 播放動畫</button>
+        <button class="btn" id="btn-pause-all" data-i18n="btnPause">⏸️ 停止動畫</button>
       </div>
       <div class="speed-row">
         <div class="speed-header">
-          <label for="opt-speed">⚡ 動畫播放速度</label>
+          <label for="opt-speed" data-i18n="optSpeed">⚡ 動畫播放速度</label>
           <span class="speed-badge" id="speed-val">1.0×</span>
         </div>
         <input type="range" id="opt-speed" min="0.2" max="3.0" step="0.1" value="1.0" />
       </div>
       <div class="toggle-row">
-        <label for="opt-labels">顯示 3D 地標導覽標籤</label>
+        <label for="opt-labels" data-i18n="optLabels">顯示 3D 地標導覽標籤</label>
         <input type="checkbox" id="opt-labels" checked />
       </div>
       <div class="toggle-row">
-        <label for="opt-labels-2x">🔍 地標標籤字體放大 2×</label>
+        <label for="opt-labels-2x" data-i18n="optLabels2x">🔍 地標標籤字體放大 2×</label>
         <input type="checkbox" id="opt-labels-2x" />
       </div>
       <div class="toggle-row">
-        <label for="opt-anim">地表動態 (新幹線/江之電/樂園/鯨豚)</label>
+        <label for="opt-anim" data-i18n="optAnim">地表動態 (新幹線/江之電/樂園/鯨豚)</label>
         <input type="checkbox" id="opt-anim" checked />
       </div>
       <div class="toggle-row">
-        <label for="opt-orbit">鏡頭自動環繞展示</label>
+        <label for="opt-orbit" data-i18n="optOrbit">鏡頭自動環繞展示</label>
         <input type="checkbox" id="opt-orbit" />
       </div>
     </div>
   </aside>
 
   <div class="statusbar">
-    <span><b>左鍵拖曳</b> 自由旋轉</span>
-    <span><b>右鍵拖曳</b> 平移視野</span>
-    <span><b>滾輪</b> 遠近縮放</span>
-    <span><b>點擊地標標籤</b> 快速對焦</span>
+    <span data-i18n-html="statusRotate"><b>左鍵拖曳</b> 自由旋轉</span>
+    <span data-i18n-html="statusPan"><b>右鍵拖曳</b> 平移視野</span>
+    <span data-i18n-html="statusZoom"><b>滾輪</b> 遠近縮放</span>
+    <span data-i18n-html="statusClick"><b>點擊地標標籤</b> 快速對焦</span>
   </div>
 
   <script type="module">
@@ -630,7 +785,7 @@
     scene.fog = new THREE.FogExp2('#c2d6e8', 0.00072);
 
     const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.5, 1600);
-    camera.position.set(-28, 86, 138);
+    camera.position.set(26, 62, 142);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -743,7 +898,7 @@
     orbit.maxPolarAngle = Math.PI * 0.56;
     orbit.minDistance = 8;
     orbit.maxDistance = 420;
-    orbit.target.set(22, 1.5, 2.0);
+    orbit.target.set(26, 1.5, 2.0);
 
     let seed = 20268888;
     function rand() {
@@ -933,10 +1088,13 @@
     }
     const geologyTex = createGeologyTexture();
 
-    function createBrassPlaqueTexture() {
-      const c = document.createElement('canvas');
-      c.width = 1600; c.height = 240;
-      const ctx = c.getContext('2d');
+    const plaqueCanvas = document.createElement('canvas');
+    plaqueCanvas.width = 1600; plaqueCanvas.height = 240;
+    const plaqueTex = new THREE.CanvasTexture(plaqueCanvas);
+    plaqueTex.colorSpace = THREE.SRGBColorSpace;
+
+    function updateBrassPlaqueLanguage(lang = 'zh') {
+      const ctx = plaqueCanvas.getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 1600, 240);
       grad.addColorStop(0, '#d4af37'); grad.addColorStop(0.5, '#f7e596'); grad.addColorStop(1, '#b8860b');
       ctx.fillStyle = grad;
@@ -944,12 +1102,29 @@
       ctx.strokeStyle = '#5c400c'; ctx.lineWidth = 10; ctx.strokeRect(14, 14, 1572, 212);
       ctx.strokeStyle = 'rgba(92, 64, 12, 0.45)'; ctx.lineWidth = 3; ctx.strokeRect(26, 26, 1548, 188);
       ctx.fillStyle = '#241502';
-      ctx.font = '900 74px "Noto Sans TC", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('富士山五湖・伊豆・東京灣・房總半島 全景圖', 800, 114);
-      ctx.font = '700 36px "Noto Sans TC", sans-serif';
-      ctx.fillText('MT. FUJI · IZU · MIURA · YOKOSUKA · TOKYO · HANEDA · NARITA · BOSO', 800, 184);
-      return new THREE.CanvasTexture(c);
+      if (lang === 'en') {
+        ctx.font = '900 56px "Noto Sans TC", "Segoe UI", sans-serif';
+        ctx.fillText('MT. FUJI · IZU · TOKYO BAY · BOSO PANORAMA', 800, 110);
+        ctx.font = '700 32px "Noto Sans TC", "Segoe UI", sans-serif';
+        ctx.fillText('FIVE LAKES · HAKONE · KAMAKURA · YOKOHAMA · TOKYO · HANEDA · NARITA', 800, 182);
+      } else if (lang === 'ja') {
+        ctx.font = '900 70px "Noto Sans JP", "Noto Sans TC", sans-serif';
+        ctx.fillText('富士五湖・伊豆・東京湾・房総半島 パノラマ', 800, 114);
+        ctx.font = '700 36px "Noto Sans JP", "Noto Sans TC", sans-serif';
+        ctx.fillText('富士山 ・ 箱根 ・ 鎌倉 ・ 横浜 ・ 東京 ・ 羽田 ・ 成田 ・ 房総', 800, 184);
+      } else {
+        ctx.font = '900 74px "Noto Sans TC", sans-serif';
+        ctx.fillText('富士山五湖・伊豆・東京灣・房總半島 全景圖', 800, 114);
+        ctx.font = '700 36px "Noto Sans TC", sans-serif';
+        ctx.fillText('MT. FUJI · IZU · MIURA · YOKOSUKA · TOKYO · HANEDA · NARITA · BOSO', 800, 184);
+      }
+      plaqueTex.needsUpdate = true;
+    }
+    updateBrassPlaqueLanguage('zh');
+
+    function createBrassPlaqueTexture() {
+      return plaqueTex;
     }
 
     // 2.0 High-Res PBR Architectural Curtain-Wall Glass & Red-Brick Facade Textures
@@ -1451,8 +1626,8 @@
       const enoIsland = gauss(x, z, 30.5, 31.5, 3.3, 2.6);
       if (enoIsland > 0.08) h += 5.4 * smoothstep(0.08, 0.72, enoIsland);
 
-      // 13. Odaiba Waterfront Island (台場) in Tokyo Bay at (51.5, -4.5)
-      const odaibaMask = gauss(x, z, 51.5, -4.5, 3.2, 2.6);
+      // 13. Odaiba Waterfront Island (台場) in Tokyo Bay at (53.6, -4.9)
+      const odaibaMask = gauss(x, z, 53.6, -4.9, 3.0, 2.4);
       if (odaibaMask > 0.2) h = THREE.MathUtils.lerp(h, 0.65, smoothstep(0.2, 0.6, odaibaMask));
 
       // 14. Yokohama Minato Mirai (South of Haneda, North of Yokosuka), Expanded Tokyo Metropolis & Urayasu/Makuhari Platforms
@@ -3088,9 +3263,78 @@
     ];
     const shinkansenPts = shinkansenRaw.map(([sx, sz]) => new THREE.Vector3(sx, Math.max(1.05, Math.min(2.6, getTerrainHeight(sx, sz) + 0.34)), sz));
     const shinkansenCurve = new THREE.CatmullRomCurve3(shinkansenPts);
-    const viaductMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.65 });
-    const viaductTrack = new THREE.Mesh(new THREE.TubeGeometry(shinkansenCurve, 220, 0.17, 6, false), viaductMat);
-    viaductTrack.castShadow = true; root.add(viaductTrack);
+    const viaductMat = new THREE.MeshStandardMaterial({ color: '#9ca3af', roughness: 0.78 });
+
+    // 2.0 Realistic Ballasted Railway Track (碎石道碴＋水泥枕木＋雙條深古銅鋼軌, 參考實景照!)
+    function createBallastTrackTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 512;
+      const ctx = c.getContext('2d');
+      // Dark warm-grey crushed granite ballast base
+      ctx.fillStyle = '#5a554e';
+      ctx.fillRect(0, 0, 256, 512);
+      // Crushed gravel grain speckles
+      for (let i = 0; i < 4800; i++) {
+        const h1 = Math.sin(i * 12.9898) * 43758.5453;
+        const h2 = Math.sin(i * 78.233) * 43758.5453;
+        const gx = (h1 - Math.floor(h1)) * 256, gy = (h2 - Math.floor(h2)) * 512;
+        ctx.fillStyle = i % 3 === 0 ? '#78716c' : (i % 3 === 1 ? '#44403c' : '#948b80');
+        ctx.fillRect(gx, gy, 3, 3);
+      }
+      // Concrete viaduct side curbs
+      ctx.fillStyle = '#a8a29e';
+      ctx.fillRect(0, 0, 18, 512);
+      ctx.fillRect(238, 0, 18, 512);
+      // Regular concrete sleepers / railway ties (枕木)
+      for (let y = 0; y < 512; y += 24) {
+        ctx.fillStyle = '#7c7872';
+        ctx.fillRect(36, y, 184, 10);
+        ctx.fillStyle = '#3f3a35';
+        ctx.fillRect(36, y + 10, 184, 3);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 145);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Build flat-topped ballasted trackbed ribbon along shinkansenCurve
+    const trackSegs = 260, trackHalfW = 0.34;
+    const tbPos = [], tbUv = [], tbIdx = [];
+    const railPtsL = [], railPtsR = [];
+    for (let i = 0; i <= trackSegs; i++) {
+      const u = i / trackSegs;
+      const pt = shinkansenCurve.getPointAt(u);
+      const tan = shinkansenCurve.getTangentAt(u).normalize();
+      const sideX = -tan.z, sideZ = tan.x;
+      const sideLen = Math.hypot(sideX, sideZ) || 1;
+      const nx = sideX / sideLen, nz = sideZ / sideLen;
+      tbPos.push(pt.x - nx * trackHalfW, pt.y + 0.04, pt.z - nz * trackHalfW); tbUv.push(0, u);
+      tbPos.push(pt.x + nx * trackHalfW, pt.y + 0.04, pt.z + nz * trackHalfW); tbUv.push(1, u);
+      if (i % 2 === 0) {
+        railPtsL.push(new THREE.Vector3(pt.x - nx * 0.135, pt.y + 0.075, pt.z - nz * 0.135));
+        railPtsR.push(new THREE.Vector3(pt.x + nx * 0.135, pt.y + 0.075, pt.z + nz * 0.135));
+      }
+      if (i < trackSegs) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        tbIdx.push(a, c, b, b, c, d);
+      }
+    }
+    const trackBedGeo = new THREE.BufferGeometry();
+    trackBedGeo.setAttribute('position', new THREE.Float32BufferAttribute(tbPos, 3));
+    trackBedGeo.setAttribute('uv', new THREE.Float32BufferAttribute(tbUv, 2));
+    trackBedGeo.setIndex(tbIdx);
+    trackBedGeo.computeVertexNormals();
+    const viaductTrack = new THREE.Mesh(trackBedGeo, new THREE.MeshStandardMaterial({ map: createBallastTrackTexture(), roughness: 0.9, side: THREE.DoubleSide }));
+    viaductTrack.receiveShadow = true; root.add(viaductTrack);
+    // Concrete Viaduct Under-Beam beneath the ballast bed
+    const viaductBeam = new THREE.Mesh(new THREE.TubeGeometry(shinkansenCurve, 220, 0.2, 6, false), viaductMat);
+    viaductBeam.scale.set(1, 0.55, 1); viaductBeam.position.y = -0.06; viaductBeam.castShadow = true; root.add(viaductBeam);
+    // Twin Weathered Bronze-Steel Parallel Rails (雙條深古銅鋼軌!)
+    const railSteelMat = new THREE.MeshStandardMaterial({ color: '#5c4636', metalness: 0.76, roughness: 0.3 });
+    root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(railPtsL), 240, 0.024, 5, false), railSteelMat));
+    root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(railPtsR), 240, 0.024, 5, false), railSteelMat));
 
     for (let i = 1; i < 104; i++) {
       const p = shinkansenCurve.getPointAt(i / 106);
@@ -3171,16 +3415,127 @@
     ];
     const SHINK_TOTAL_DUR = SHINK_SCHEDULE.reduce((acc, s) => acc + s.dur, 0);
 
-    const bulletCars = [];
-    const shinkansenBodyMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.25 });
-    const shinkansenStripeMat = new THREE.MeshStandardMaterial({ color: '#1d4ed8', emissive: '#60a5fa', emissiveIntensity: 0.2 });
-    nightEmissives.push({ mat: shinkansenStripeMat, day: 0.15, sunset: 0.7, night: 1.8 });
-    for (let c = 0; c < 8; c++) {
-      const car = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.23, 0.88), shinkansenBodyMat); body.position.y = 0.18; body.castShadow = true;
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.88), shinkansenStripeMat); stripe.position.y = 0.16;
-      car.add(body, stripe); root.add(car); bulletCars.push(car);
+    // 2.0 Photorealistic 3-Car JR Tokai N700S Supreme Shinkansen (三節精緻編組：雙端流線鴨嘴車頭＋中節集電弓車廂!)
+    function createN700SLiveryTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 128;
+      const ctx = c.getContext('2d');
+      // Glossy pure pearlescent white upper body
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 512, 128);
+      // Cool light-grey aerodynamic lower skirt
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(0, 96, 512, 32);
+      // Iconic N700S Double Deep-Blue Stripes (thick upper + thin lower #003893!)
+      ctx.fillStyle = '#003893';
+      ctx.fillRect(0, 68, 512, 13);
+      ctx.fillRect(0, 86, 512, 5);
+      // Crisp row of rounded-rectangle dark-tinted passenger windows + passenger doors
+      for (let x = 24; x < 488; x += 26) {
+        if (x === 24 || x === 466) {
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(x, 22, 16, 70);
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(x + 3, 28, 10, 26);
+          continue;
+        }
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(x, 30, 14, 24);
+        ctx.fillStyle = 'rgba(254, 240, 138, 0.45)';
+        ctx.fillRect(x + 2, 33, 10, 18);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
     }
+
+    const bulletCars = [];
+    const n700sTex = createN700SLiveryTexture();
+    const shinkansenBodyMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.2, metalness: 0.16, envMapIntensity: 1.25 });
+    const shinkansenSkirtMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.35, metalness: 0.25 });
+    const shinkansenSideMat = new THREE.MeshStandardMaterial({
+      map: n700sTex, color: '#ffffff', emissive: '#fef08a', emissiveMap: n700sTex,
+      emissiveIntensity: 0.12, roughness: 0.22, metalness: 0.18
+    });
+    const shinkansenStripeMat = new THREE.MeshStandardMaterial({ color: '#003893', emissive: '#1d4ed8', emissiveIntensity: 0.18, roughness: 0.28 });
+    const shinkGlassMat = new THREE.MeshStandardMaterial({ color: '#090d16', roughness: 0.08, metalness: 0.78 });
+    const shinkLightMat = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#fef9c3', emissiveIntensity: 2.0 });
+    const shinkBellowsMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.75 });
+    nightEmissives.push({ mat: shinkansenSideMat, day: 0.08, sunset: 0.62, night: 1.55 });
+    nightEmissives.push({ mat: shinkansenStripeMat, day: 0.1, sunset: 0.55, night: 1.4 });
+
+    // Sculpted N700S "Dual Supreme Wing" Tapered Aero Nose Cone (+Z forward!)
+    const n700sNoseProfile = [
+      new THREE.Vector2(0.185, 0.0),
+      new THREE.Vector2(0.176, 0.22),
+      new THREE.Vector2(0.152, 0.44),
+      new THREE.Vector2(0.115, 0.64),
+      new THREE.Vector2(0.068, 0.78),
+      new THREE.Vector2(0.005, 0.85)
+    ];
+    const n700sNoseGeo = new THREE.LatheGeometry(n700sNoseProfile, 16);
+
+    function buildN700SCar(role) {
+      // role: 'lead' (+Z nose), 'mid' (center pantograph car), 'tail' (-Z nose)
+      const car = new THREE.Group();
+      const inner = new THREE.Group();
+      if (role === 'tail') inner.rotation.y = Math.PI; // Flip rear nose car cleanly toward -Z!
+      car.add(inner);
+
+      const isNose = (role === 'lead' || role === 'tail');
+      const bodyLen = isNose ? 0.92 : 1.38;
+      const bodyZ = isNose ? -0.22 : 0.0;
+      const sideMats = [shinkansenSideMat, shinkansenSideMat, shinkansenBodyMat, shinkansenSkirtMat, shinkansenBodyMat, shinkansenBodyMat];
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.28, bodyLen), sideMats);
+      body.position.set(0, 0.25, bodyZ); body.castShadow = true; inner.add(body);
+      // Rounded aerodynamic roof crown
+      const roof = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.175, bodyLen, 12, 1, false, 0, Math.PI), shinkansenBodyMat);
+      roof.rotation.z = Math.PI / 2; roof.rotation.y = Math.PI / 2;
+      roof.scale.set(0.52, 1.0, 1.0); roof.position.set(0, 0.38, bodyZ); inner.add(roof);
+
+      if (isNose) {
+        // Streamlined N700S Aero Nose Cone extending forward (+Z)
+        const nose = new THREE.Mesh(n700sNoseGeo, shinkansenBodyMat);
+        nose.rotation.x = Math.PI / 2;
+        nose.scale.set(0.96, 0.84, 1.0);
+        nose.position.set(0, 0.22, 0.23);
+        nose.castShadow = true; inner.add(nose);
+        // Cool light-grey lower nose apron skirt
+        const noseSkirt = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.17, 0.72, 12), shinkansenSkirtMat);
+        noseSkirt.rotation.x = Math.PI / 2; noseSkirt.scale.set(0.98, 0.42, 1.0);
+        noseSkirt.position.set(0, 0.135, 0.56); inner.add(noseSkirt);
+        // Sweeping N700S Blue Spearhead Stripe on nose flanks
+        for (const s of [-1, 1]) {
+          const spear = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.045, 0.36), shinkansenStripeMat);
+          spear.position.set(s * 0.162, 0.21, 0.36); spear.rotation.y = s * -0.18; inner.add(spear);
+          // Recessed Twin LED Headlights on nose cheeks
+          const hl = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.022, 0.08), shinkLightMat);
+          hl.position.set(s * 0.095, 0.21, 0.82); inner.add(hl);
+        }
+        // Teardrop Dark-Glass Cockpit Canopy on upper brow
+        const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), shinkGlassMat);
+        cockpit.scale.set(0.95, 0.45, 1.45); cockpit.position.set(0, 0.35, 0.36); inner.add(cockpit);
+      } else {
+        // Center Car: Single-Arm Pantograph (集電弓) + White Aero Insulator Shields + Inter-Car Bellows!
+        const pantoBase = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.05, 0.34), shinkansenSkirtMat);
+        pantoBase.position.set(0, 0.44, 0.05); inner.add(pantoBase);
+        const arm1 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.14, 0.025), shinkBellowsMat);
+        arm1.position.set(0, 0.52, 0.02); arm1.rotation.x = 0.55;
+        const collector = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.018, 0.04), shinkBellowsMat);
+        collector.position.set(0, 0.58, 0.06); inner.add(arm1, collector);
+        for (const bz of [-0.71, 0.71]) {
+          const bel = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.25, 0.08), shinkBellowsMat);
+          bel.position.set(0, 0.25, bz); inner.add(bel);
+        }
+      }
+      return car;
+    }
+
+    ['lead', 'mid', 'tail'].forEach((role) => {
+      const car = buildN700SCar(role);
+      root.add(car);
+      bulletCars.push(car);
+    });
 
     // =========================================================================
     // 10.5 KANAGAWA PREFECTURE: ENOSHIMA, ENODEN RAILWAY, KAMAKURA BUDDHA, YOKOHAMA MINATO MIRAI
@@ -3249,33 +3604,141 @@
       eCar.add(lower, upper, roof, headLight); kanagawaGroup.add(eCar); enodenCars.push(eCar);
     }
 
-    // K2. Great Buddha of Kamakura (Relocated beside Miura Peninsula at 41.2, 23.0)
+    // Shared 2.0 Sculpted Buddha Head Builder (Serene Face, Half-Closed Eyes, Elongated Ears & Dense Spiral Snail-Shell Curls 螺髮!)
+    function buildSculptedBuddhaHead(skinMat, curlMat, urnaMat) {
+      const hg = new THREE.Group();
+      // Main sculpted oval face
+      const face = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 16), skinMat);
+      face.scale.set(0.88, 1.12, 0.94); face.castShadow = true; hg.add(face);
+      // Serene brow ridge, half-closed eyelids, straight nose & calm lips
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.045, 0.14), skinMat);
+      brow.position.set(0, 0.11, 0.34); hg.add(brow);
+      for (const s of [-1, 1]) {
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.032, 0.06), curlMat);
+        lid.position.set(s * 0.115, 0.055, 0.365); lid.rotation.z = s * -0.12; hg.add(lid);
+        // Elongated sacred earlobes (福耳)
+        const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.24, 5, 8), skinMat);
+        ear.position.set(s * 0.39, -0.06, 0.02); ear.rotation.z = s * 0.08; hg.add(ear);
+      }
+      const nose = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.17, 5), skinMat);
+      nose.position.set(0, -0.01, 0.395); nose.rotation.x = 0.2; hg.add(nose);
+      const lips = new THREE.Mesh(new THREE.CapsuleGeometry(0.028, 0.11, 4, 6), skinMat);
+      lips.rotation.z = Math.PI / 2; lips.position.set(0, -0.16, 0.375); hg.add(lips);
+      // Forehead Urna (白毫)
+      const urna = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 8), urnaMat);
+      urna.position.set(0, 0.145, 0.395); hg.add(urna);
+      // Sculpted Hair Cap + Concentric Rings of Spiral Snail-Shell Curls (螺髮) + Ushnisha Bun (肉髻)
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.435, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.56), curlMat);
+      hairCap.scale.set(0.92, 1.04, 0.96); hairCap.position.set(0, 0.07, -0.02); hg.add(hairCap);
+      const curlGeo = new THREE.SphereGeometry(0.052, 6, 5);
+      for (let ring = 0; ring < 4; ring++) {
+        const phi = 0.28 + ring * 0.28;
+        const count = 8 + ring * 4;
+        for (let k = 0; k < count; k++) {
+          const th = (k / count) * Math.PI * 2 + ring * 0.25;
+          const cx = Math.sin(phi) * Math.cos(th) * 0.40;
+          const cy = Math.cos(phi) * 0.44 + 0.07;
+          const cz = Math.sin(phi) * Math.sin(th) * 0.41 - 0.02;
+          if (cz > 0.22 && cy < 0.24) continue; // Keep forehead clear!
+          const curl = new THREE.Mesh(curlGeo, curlMat);
+          curl.position.set(cx, cy, cz); hg.add(curl);
+        }
+      }
+      const ushnisha = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), curlMat);
+      ushnisha.scale.set(1.05, 0.85, 1.05); ushnisha.position.set(0, 0.54, -0.03); hg.add(ushnisha);
+      return hg;
+    }
+
+    // K2. 2.0 Sculpted Great Buddha of Kamakura (高德院・鎌倉大佛坐像 at 41.2, 23.0)
     const buddhaGroup = new THREE.Group();
     const budX = 41.2, budZ = 23.0;
     buddhaGroup.position.set(budX, getTerrainHeight(budX, budZ) - 0.05, budZ);
     buddhaGroup.rotation.y = -0.15;
     kanagawaGroup.add(buddhaGroup);
-    const bronzePatinaMat = new THREE.MeshStandardMaterial({ color: '#4d7c6f', roughness: 0.48, metalness: 0.55 });
-    const stonePedMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.88 });
-    const budPlaza = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.18, 6.4), stonePedMat); budPlaza.position.y = 0.09; budPlaza.receiveShadow = true;
-    buddhaGroup.add(budPlaza);
+    const bronzePatinaMat = new THREE.MeshStandardMaterial({ color: '#4e7469', roughness: 0.44, metalness: 0.54, envMapIntensity: 1.15 });
+    const bronzeDeepMat = new THREE.MeshStandardMaterial({ color: '#345249', roughness: 0.52, metalness: 0.48 });
+    const stonePedMat = new THREE.MeshStandardMaterial({ color: '#7d807f', roughness: 0.88 });
+    const budPlaza = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.18, 6.6), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.88 }));
+    budPlaza.position.y = 0.09; budPlaza.receiveShadow = true; buddhaGroup.add(budPlaza);
 
-    // Great Buddha of Kamakura Statue (1.4x Balanced Scale)
+    // Sculpted Seated Kamakura Daibutsu (1.35x Monumental Scale)
     const buddhaStatue = new THREE.Group();
-    buddhaStatue.scale.setScalar(1.4);
-    buddhaStatue.position.set(0, 0.16, -0.4);
-    const ped1 = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.42, 1.9), stonePedMat); ped1.position.y = 0.21;
-    const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.08, 0.28, 16), bronzePatinaMat); lotusBase.position.y = 0.56;
-    const bLegs = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.05, 0.52, 16), bronzePatinaMat); bLegs.scale.set(1.12, 1.0, 0.85); bLegs.position.y = 0.92; bLegs.castShadow = true;
-    const bTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.82, 1.25, 14), bronzePatinaMat); bTorso.scale.set(1.1, 1.0, 0.78); bTorso.position.y = 1.72; bTorso.castShadow = true;
-    const bShoulders = new THREE.Mesh(new THREE.SphereGeometry(0.74, 14, 10), bronzePatinaMat); bShoulders.scale.set(1.18, 0.55, 0.72); bShoulders.position.y = 2.22;
-    const bHands = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), bronzePatinaMat); bHands.scale.set(1.3, 0.65, 0.9); bHands.position.set(0, 1.22, 0.46);
-    const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 14), bronzePatinaMat); bHead.scale.set(0.92, 1.12, 0.95); bHead.position.y = 2.82; bHead.castShadow = true;
-    const bCrown = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 10), bronzePatinaMat); bCrown.position.y = 3.32;
-    const bUrna = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), goldMat); bUrna.position.set(0, 2.88, 0.44);
-    buddhaStatue.add(ped1, lotusBase, bLegs, bTorso, bShoulders, bHands, bHead, bCrown, bUrna);
+    buddhaStatue.scale.setScalar(1.35);
+    buddhaStatue.position.set(0, 0.16, -0.35);
+
+    // 1. Multi-Tiered Cut-Stone Masonry Pedestal + Bronze Incense Burner & Offering Box
+    const pedBot = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 2.25), stonePedMat); pedBot.position.y = 0.08;
+    const pedMain = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.48, 2.0), stonePedMat); pedMain.position.y = 0.40; pedMain.castShadow = true;
+    const pedCap = new THREE.Mesh(new THREE.BoxGeometry(2.42, 0.10, 2.12), new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.82 })); pedCap.position.y = 0.68;
+    const kBurner = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.1, 0.28, 10), bronzeDeepMat); kBurner.position.set(0, 0.82, 1.38);
+    buddhaStatue.add(pedBot, pedMain, pedCap, kBurner);
+
+    // 2. Broad Cross-Legged Lotus Posture (結跏趺坐: Wide Sculpted Knees + Layered Robe Folds)
+    const lapCore = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.15, 0.46, 16), bronzePatinaMat);
+    lapCore.scale.set(1.16, 1.0, 0.82); lapCore.position.set(0, 0.96, -0.05); lapCore.castShadow = true; buddhaStatue.add(lapCore);
+    for (const s of [-1, 1]) {
+      const knee = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.72, 8, 12), bronzePatinaMat);
+      knee.rotation.z = Math.PI / 2; knee.rotation.y = s * -0.24;
+      knee.position.set(s * 0.56, 0.98, 0.34); knee.castShadow = true; buddhaStatue.add(knee);
+    }
+    // Draped horizontal robe folds cascading across both knees
+    for (let f = 0; f < 3; f++) {
+      const foldCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.98, 0.82 + f * 0.11, 0.22),
+        new THREE.Vector3(-0.42, 0.86 + f * 0.11, 0.58 - f * 0.04),
+        new THREE.Vector3( 0.42, 0.86 + f * 0.11, 0.58 - f * 0.04),
+        new THREE.Vector3( 0.98, 0.82 + f * 0.11, 0.22)
+      ]);
+      buddhaStatue.add(new THREE.Mesh(new THREE.TubeGeometry(foldCurve, 18, 0.042, 6, false), bronzeDeepMat));
+    }
+
+    // 3. Sculpted Torso, Broad Sloping Shoulders & U-Shaped Open-Chest Drapery (通肩大衣)
+    const bTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.76, 1.18, 16), bronzePatinaMat);
+    bTorso.scale.set(1.08, 1.0, 0.74); bTorso.position.set(0, 1.66, -0.05); bTorso.castShadow = true; buddhaStatue.add(bTorso);
+    const bChest = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), bronzePatinaMat);
+    bChest.scale.set(1.12, 0.85, 0.56); bChest.position.set(0, 1.88, 0.22); buddhaStatue.add(bChest);
+    const bShoulders = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 0.98, 8, 12), bronzePatinaMat);
+    bShoulders.rotation.z = Math.PI / 2; bShoulders.position.set(0, 2.16, -0.04); bShoulders.castShadow = true; buddhaStatue.add(bShoulders);
+    // Cascading U-shaped draped robe folds across the chest
+    for (let u = 0; u < 3; u++) {
+      const uCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.56 + u * 0.06, 2.22, 0.12),
+        new THREE.Vector3(-0.34, 1.65 - u * 0.08, 0.40),
+        new THREE.Vector3( 0.0,  1.42 - u * 0.09, 0.44),
+        new THREE.Vector3( 0.34, 1.65 - u * 0.08, 0.40),
+        new THREE.Vector3( 0.56 - u * 0.06, 2.22, 0.12)
+      ]);
+      buddhaStatue.add(new THREE.Mesh(new THREE.TubeGeometry(uCurve, 20, 0.048, 6, false), u === 0 ? bronzePatinaMat : bronzeDeepMat));
+    }
+
+    // 4. Sculpted Arms & Amida Meditation Mudra (彌陀定印 — Hands Cupped Together on Lap!)
+    for (const s of [-1, 1]) {
+      const uArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.62, 6, 10), bronzePatinaMat);
+      uArm.position.set(s * 0.72, 1.72, 0.02); uArm.rotation.z = s * 0.14; uArm.castShadow = true; buddhaStatue.add(uArm);
+      const fArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.48, 6, 10), bronzePatinaMat);
+      fArm.rotation.z = Math.PI / 2; fArm.rotation.y = s * -0.42;
+      fArm.position.set(s * 0.44, 1.28, 0.32); buddhaStatue.add(fArm);
+    }
+    // Cupped hands with touching thumbs forming the sacred meditation ring
+    const mudraRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.068, 8, 14), bronzePatinaMat);
+    mudraRing.rotation.x = Math.PI / 2 - 0.18; mudraRing.scale.set(1.35, 0.85, 1.0);
+    mudraRing.position.set(0, 1.26, 0.52); buddhaStatue.add(mudraRing);
+
+    // 5. Neck & Gently Forward-Tilted Sculpted Head (慈悲俯視神情!)
+    const bNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.24, 12), bronzePatinaMat);
+    bNeck.position.set(0, 2.42, 0.02); buddhaStatue.add(bNeck);
+    const bHead = buildSculptedBuddhaHead(bronzePatinaMat, bronzeDeepMat, bronzePatinaMat);
+    bHead.scale.setScalar(1.06);
+    bHead.position.set(0, 2.86, 0.08);
+    bHead.rotation.x = 0.15; // Real Kamakura Buddha gazes serenely downward!
+    buddhaStatue.add(bHead);
     buddhaGroup.add(buddhaStatue);
-    const kGate = new THREE.Group(); kGate.position.set(0, 0.18, 2.85);
+
+    // Kotoku-in Temple Cloister Pavilion behind & Wooden Gate in front
+    const kBackHall = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.65, 0.85), whiteMat); kBackHall.position.set(0, 0.5, -2.55);
+    const kBackRoof = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.24, 1.15), slateRoofMat); kBackRoof.position.set(0, 0.92, -2.55);
+    buddhaGroup.add(kBackHall, kBackRoof);
+    const kGate = new THREE.Group(); kGate.position.set(0, 0.18, 2.95);
     for (const gx of [-0.65, 0.65]) { const gp = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.95, 8), bridgeWoodMat); gp.position.set(gx, 0.48, 0); kGate.add(gp); }
     addSnowableRoof(kGate, new THREE.ConeGeometry(1.15, 0.48, 4), slateRoofMat, 1.12, Math.PI / 4, [1.2, 1, 0.75]);
     buddhaGroup.add(kGate);
@@ -3311,11 +3774,14 @@
       pier.rotation.z = cx * 0.045; pier.rotation.x = -cz * 0.045;
       pier.castShadow = true; lmGroup.add(pier);
     }
+    // Shared Blinking Red Aviation Obstruction Beacon Material (高層建築／塔頂飛航警示燈!)
+    const aviationBeaconMat = new THREE.MeshStandardMaterial({ color: '#ff2222', emissive: '#ff1111', emissiveIntensity: 1.8, roughness: 0.2 });
+
     // Signature recessed rooftop notch crown + sky garden deck + twin aviation beacons
     const lmCrownL = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 1.18), silverCladMat); lmCrownL.position.set(-0.4, 7.42, 0);
     const lmCrownR = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.52, 1.18), silverCladMat); lmCrownR.position.set(0.4, 7.42, 0);
     const lmCrownGlass = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.34, 1.12), cityMatCool); lmCrownGlass.position.y = 7.22;
-    const lmBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); lmBeacon.position.set(0, 7.82, 0);
+    const lmBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), aviationBeaconMat); lmBeacon.position.set(0, 7.82, 0);
     lmGroup.add(lmPodium, lmCore, lmCrownL, lmCrownR, lmCrownGlass, lmBeacon); yokoGroup.add(lmGroup);
 
     // 2. InterContinental Yokohama Grand Sail Hotel (Ribbed Curved White Sail + Glass Facade + Waterfront Podium!)
@@ -3407,7 +3873,7 @@
     const ttMainDeck = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.44, 1.52), ttDeckGlow); ttMainDeck.position.y = 3.55;
     const ttMainRoof = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.14, 1.62), whiteMat); ttMainRoof.position.y = 3.82;
     const ttTopDeck = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.34, 0.76), ttDeckGlow); ttTopDeck.position.y = 5.95;
-    const ttBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), new THREE.MeshBasicMaterial({ color: '#ff0000' })); ttBeacon.position.y = 8.32;
+    const ttBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), aviationBeaconMat); ttBeacon.position.y = 8.32;
     ttGroup.add(ttCore, ttMainDeck, ttMainRoof, ttTopDeck, ttBeacon); tokyoGroup.add(ttGroup);
 
     // 2.0 Zojo-ji Temple (增上寺) & Shiba Park Sakura Lawn right beside Tokyo Tower (Relocated South to 42.0, y, -12.8)
@@ -3450,26 +3916,84 @@
     });
     tokyoGroup.add(zojoGroup);
 
-    // 2.0 Azabudai Hills Mori JP Tower (麻布台之丘 — 330m Japan's Tallest Supertall!) & Toranomon/Shiba High-Rises
+    // 2.0 Photorealistic Azabudai Hills 3-Tower Ensemble (麻布台之丘：Mori JP Tower 四瓣蓮花主塔 + Residence A & B + Heatherwick 綠丘廣場!)
     const azabuGroup = new THREE.Group();
     const azX = 41.8, azZ = -17.2;
     azabuGroup.position.set(azX, getTerrainHeight(azX, azZ), azZ);
-    // Lush green undulating Heatherwick-style terraced podium
-    const azPod = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.55, 2.2), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.85 }));
-    azPod.position.y = 0.28; azPod.castShadow = true;
-    const azPodGlass = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.36, 2.05), cityMatMarunouchi); azPodGlass.position.y = 0.22;
-    // Sculpted Curved Lotus-Petal Tapered Glass Tower (signature Azabudai Hills silhouette!)
-    const azCore = new THREE.Mesh(new THREE.BoxGeometry(1.42, 7.6, 1.32), cityMatMarunouchi); azCore.position.y = 4.1; azCore.castShadow = true;
-    const azCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.96, 1.15, 8), cityMatSilver); azCrown.position.y = 8.42; azCrown.castShadow = true;
-    const azCrownGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.71, 0.92, 0.28, 8), new THREE.MeshStandardMaterial({ color: '#fef9c3', emissive: '#fde68a', emissiveIntensity: 0.6 }));
-    azCrownGlow.position.y = 8.68;
-    // Signature vertical white curved petal ribs on the 4 facades
-    for (const [rx, rz] of [[-0.72, 0], [0.72, 0], [0, -0.68], [0, 0.68]]) {
-      const rib = new THREE.Mesh(new THREE.BoxGeometry(rx ? 0.08 : 0.42, 7.8, rz ? 0.08 : 0.42), silverCladMat);
-      rib.position.set(rx, 4.2, rz); azabuGroup.add(rib);
+
+    const azGlassMat = new THREE.MeshStandardMaterial({
+      map: cityTexSilver, color: '#dbeafe', emissive: '#fef3c7', emissiveMap: cityTexSilver,
+      emissiveIntensity: 0.16, roughness: 0.16, metalness: 0.65, envMapIntensity: 1.55
+    });
+    const azResMat = new THREE.MeshStandardMaterial({
+      map: cityTexWarm, color: '#e2e8f0', emissive: '#fde68a', emissiveMap: cityTexWarm,
+      emissiveIntensity: 0.18, roughness: 0.22, metalness: 0.48, envMapIntensity: 1.3
+    });
+    const azSeamGlowMat = new THREE.MeshStandardMaterial({
+      color: '#ffffff', emissive: '#e0f2fe', emissiveIntensity: 0.85, roughness: 0.15
+    });
+    const azCrownHaloMat = new THREE.MeshStandardMaterial({
+      color: '#f0f9ff', emissive: '#bae6fd', emissiveIntensity: 0.55, roughness: 0.2, transparent: true, opacity: 0.92
+    });
+    nightEmissives.push({ mat: azGlassMat, day: 0.12, sunset: 0.78, night: 1.95 });
+    nightEmissives.push({ mat: azResMat, day: 0.12, sunset: 0.88, night: 2.15 });
+    nightEmissives.push({ mat: azSeamGlowMat, day: 0.35, sunset: 1.45, night: 2.8 });
+    nightEmissives.push({ mat: azCrownHaloMat, day: 0.2, sunset: 1.05, night: 2.2 });
+
+    // A. Heatherwick-Style Lush Green Undulating Garden Plaza & Warm Glass Podium linking all 3 towers
+    const azPlazaBase = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.14, 2.8), new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.85 }));
+    azPlazaBase.position.set(-0.15, 0.07, 0); azPlazaBase.receiveShadow = true; azabuGroup.add(azPlazaBase);
+    const azGreenHill = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.28, 2.2), new THREE.MeshStandardMaterial({ color: '#4d7c0f', roughness: 0.88 }));
+    azGreenHill.position.set(-0.15, 0.24, 0.05); azabuGroup.add(azGreenHill);
+    const azLobby = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.72, 1.55), azResMat);
+    azLobby.position.set(1.35, 0.42, 0); azLobby.castShadow = true; azabuGroup.add(azLobby);
+
+    // B. Mori JP Tower (330m Main Supertall — Right side at x = +1.35: Iconic 4-Lobe Lotus-Petal Rounded Crown + Glowing Vertical Light Seams!)
+    const jpTower = new THREE.Group();
+    jpTower.position.set(1.35, 0.12, 0);
+    // Central tallest arched glass core
+    const jpCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.56, 8.25, 16), azGlassMat);
+    jpCenter.position.y = 4.12; jpCenter.castShadow = true; jpTower.add(jpCenter);
+    const jpCenterArch = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), azCrownHaloMat);
+    jpCenterArch.scale.set(1.0, 0.82, 1.0); jpCenterArch.position.y = 8.24; jpTower.add(jpCenterArch);
+    // 4 Sculpted Tapered Lotus-Petal Lobes with Softly Rounded Arched Crowns!
+    for (const [lx, lz] of [[0.4, 0], [-0.4, 0], [0, 0.36], [0, -0.36]]) {
+      const lobe = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 7.85, 14), azGlassMat);
+      lobe.position.set(lx, 3.92, lz); lobe.castShadow = true; jpTower.add(lobe);
+      const lobeArch = new THREE.Mesh(new THREE.SphereGeometry(0.32, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), azCrownHaloMat);
+      lobeArch.scale.set(1.0, 0.75, 1.0); lobeArch.position.set(lx, 7.84, lz); jpTower.add(lobeArch);
     }
-    const azBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), new THREE.MeshBasicMaterial({ color: '#ef4444' })); azBeacon.position.y = 9.08;
-    azabuGroup.add(azPod, azPodGlass, azCore, azCrown, azCrownGlow, azBeacon);
+    // 4 Signature Full-Height Luminous White Vertical Light Seams nestled between the 4 petals!
+    for (const [sx, sz] of [[0.38, 0.34], [-0.38, 0.34], [0.38, -0.34], [-0.38, -0.34]]) {
+      const seam = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.042, 7.95, 6), azSeamGlowMat);
+      seam.position.set(sx, 4.02, sz); jpTower.add(seam);
+    }
+    const azBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.085, 6, 6), aviationBeaconMat);
+    azBeacon.position.y = 8.68; jpTower.add(azBeacon);
+    azabuGroup.add(jpTower);
+
+    // C. Azabudai Hills Residence B (262m Left Tower at x = -1.75: Rounded-Corner Residential Tower + Stepped Glowing White Crown!)
+    const resB = new THREE.Group();
+    resB.position.set(-1.75, 0.12, 0.15);
+    const resBBody = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 6.65, 12), azResMat);
+    resBBody.scale.set(1.08, 1.0, 0.86); resBBody.position.y = 3.32; resBBody.castShadow = true;
+    const resBUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.61, 0.63, 1.55, 12), azGlassMat);
+    resBUpper.scale.set(1.08, 1.0, 0.86); resBUpper.position.y = 5.95;
+    const resBCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.61, 0.34, 12), azCrownHaloMat);
+    resBCrown.scale.set(1.05, 1.0, 0.84); resBCrown.position.y = 6.84;
+    resB.add(resBBody, resBUpper, resBCrown); azabuGroup.add(resB);
+
+    // D. Azabudai Hills Residence A (237m Center Tower at x = -0.35: Warm-Lit Rounded Residential Tower + Luminous Crown!)
+    const resA = new THREE.Group();
+    resA.position.set(-0.35, 0.12, -0.08);
+    const resABody = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.56, 5.55, 12), azResMat);
+    resABody.scale.set(1.05, 1.0, 0.88); resABody.position.y = 2.78; resABody.castShadow = true;
+    const resAUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.51, 0.53, 1.35, 12), azGlassMat);
+    resAUpper.scale.set(1.05, 1.0, 0.88); resAUpper.position.y = 4.95;
+    const resACrown = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.51, 0.3, 12), azCrownHaloMat);
+    resACrown.scale.set(1.02, 1.0, 0.85); resACrown.position.y = 5.72;
+    resA.add(resABody, resAUpper, resACrown); azabuGroup.add(resA);
+
     tokyoGroup.add(azabuGroup);
 
     // 2.0 Open-Lattice Tokyo Skytree with Iki Blue & Miyabi Purple LED Illumination (Moved North to 62.5, y, -33.8)
@@ -3501,7 +4025,7 @@
     const skyPod2 = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.42, 0.36, 20), silverCladMat); skyPod2.position.y = 6.75;
     const skyPod2Glass = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.44, 0.16, 20), skyMiyabiGlow); skyPod2Glass.position.y = 6.77;
     const skySpire = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.16, 2.75, 8), skySteel); skySpire.position.y = 9.25;
-    const skyTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshBasicMaterial({ color: '#38bdf8' })); skyTip.position.y = 10.68;
+    const skyTip = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), aviationBeaconMat); skyTip.position.y = 10.68;
     skyGroup.add(skyOuterTruss, skyCoreLower, skyCoreUpper, skyPod1, skyPod1Glass, skyPod2, skyPod2Glass, skySpire, skyTip); tokyoGroup.add(skyGroup);
 
     // 2.0 Grand Imperial Tokyo Station (Rotated 90°: Marunouchi Red-Brick Facing West -X, Shinkansen Platform Directly Behind, Modern Yaesu GranRoof Facing East +X!)
@@ -3780,9 +4304,10 @@
     asaGroup.add(kBeam, kRoof, lantern, lCapTop, lCapBot, sensoHall, sensoRoof);
     tokyoGroup.add(asaGroup);
 
-    // Rainbow Bridge spanning Tokyo Bay to Odaiba (48.2, WATER_Y + 1.15, -7.0)
+    // Rainbow Bridge spanning Tokyo Bay to Odaiba (Anchored on green shore & Odaiba at 50.1, -6.4, scaled 80%, clear of Shinkansen!)
     const rainbowBridge = new THREE.Group();
-    rainbowBridge.position.set(48.2, WATER_Y + 1.15, -7.0); rainbowBridge.rotation.y = -0.35;
+    rainbowBridge.position.set(50.1, WATER_Y + 0.96, -6.4); rainbowBridge.rotation.y = -0.30;
+    rainbowBridge.scale.setScalar(0.8);
     tokyoGroup.add(rainbowBridge);
     const rbLen = 8.8;
     const rbDeck = new THREE.Mesh(new THREE.BoxGeometry(rbLen, 0.22, 0.75), whiteMat); rbDeck.castShadow = true; rainbowBridge.add(rbDeck);
@@ -3813,14 +4338,14 @@
       }
     }
 
-    // Odaiba Fuji TV Building (51.5, y, -4.5)
-    const odaibaGroup = new THREE.Group(); odaibaGroup.position.set(51.5, getTerrainHeight(51.5, -4.5), -4.5);
+    // Odaiba Fuji TV Building (Anchored on Odaiba Island at 53.6, y, -4.9)
+    const odaibaGroup = new THREE.Group(); odaibaGroup.position.set(53.6, getTerrainHeight(53.6, -4.9), -4.9);
     const fujiTvBody = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 1.0), cityMatCool); fujiTvBody.position.y = 0.8;
     const fujiTvSphere = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 14), new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.78, roughness: 0.18 }));
     fujiTvSphere.position.set(0.15, 1.45, 0.25); odaibaGroup.add(fujiTvBody, fujiTvSphere); tokyoGroup.add(odaibaGroup);
 
     // 2.0 Diverse 8-Archetype High-Density Metropolis Builder (Greater Tokyo + Yokohama + Shin-Yokohama!)
-    const beaconRedMat = new THREE.MeshBasicMaterial({ color: '#ef4444' });
+    const beaconRedMat = aviationBeaconMat;
     const hvacMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.72 });
     const helipadMat = new THREE.MeshStandardMaterial({ color: '#eab308', roughness: 0.5 });
 
@@ -3907,12 +4432,25 @@
       parent.add(g);
     }
 
+    // 2.0 High-Density Shinkansen Right-of-Way Clearance Helper (240 samples -> zero buildings or trees blocking the railway!)
+    const shinkSamples = [];
+    for (let s = 0; s <= 240; s++) shinkSamples.push(shinkansenCurve.getPointAt(s / 240));
+    function nearShinkansen(x, z, pad = 2.05) {
+      const padSq = pad * pad;
+      for (let s = 0; s < shinkSamples.length; s++) {
+        const dx = x - shinkSamples[s].x, dz = z - shinkSamples[s].z;
+        if (dx * dx + dz * dz < padSq) return true;
+      }
+      return false;
+    }
+
     // Greater Tokyo High-Density Metropolis (~340 varied skyscrapers & mid-rise buildings!)
     for (let i = 0; i < 340; i++) {
       const bx = randRange(38.2, 66.2), bz = randRange(-45.0, -10.8);
+      if (nearShinkansen(bx, bz, 2.25)) continue;           // Keep Tokaido Shinkansen viaduct completely clear!
       if (Math.hypot(bx - 45.5, bz + 13.2) < 2.6) continue; // Tokyo Tower (moved south)
       if (Math.hypot(bx - 42.0, bz + 12.8) < 3.1) continue; // Zojo-ji Temple & Shiba Park (moved south)
-      if (Math.hypot(bx - 41.8, bz + 17.2) < 2.2) continue; // Azabudai Hills Mori JP Tower
+      if (Math.hypot(bx - 41.8, bz + 17.2) < 3.6) continue; // Azabudai Hills 3-Tower Ensemble
       if (Math.hypot(bx - 52.0, bz + 20.5) < 5.4) continue; // Tokyo Station + Marunouchi/Yaesu Towers
       if (Math.hypot(bx - 49.5, bz + 31.5) < 3.8) continue; // Tokyo Dome + LaQua
       if (Math.hypot(bx - 57.5, bz + 32.0) < 3.5) continue; // Asakusa Kaminarimon (moved north)
@@ -3930,11 +4468,12 @@
     [[44.5, -17.6, 1.15, 1.05, 5.8, 0], [46.8, -16.8, 1.12, 1.02, 5.2, 2], [48.4, -14.2, 1.08, 0.98, 4.6, 5],
      [39.2, -15.6, 1.18, 1.08, 5.5, 1], [39.4, -12.0, 1.02, 0.96, 4.1, 6], [47.2, -18.8, 1.12, 1.04, 4.9, 3],
      [43.6, -19.8, 1.16, 1.05, 5.4, 0]
-    ].forEach(([tx, tz, w, d, h, st]) => addArchitecturalTower(tokyoGroup, tx, tz, w, d, h, st, 0.08));
+    ].forEach(([tx, tz, w, d, h, st]) => { if (!nearShinkansen(tx, tz, 2.2)) addArchitecturalTower(tokyoGroup, tx, tz, w, d, h, st, 0.08); });
 
     // High-Density Yokohama Minato Mirai & Yokohama Station District Expansion (+30 diverse towers!)
     for (let i = 0; i < 36; i++) {
       const yx = randRange(39.4, 46.6), yz = randRange(4.4, 14.2);
+      if (nearShinkansen(yx, yz, 2.2)) continue;            // Keep Shinkansen viaduct clear!
       if (Math.hypot(yx - 42.5, yz - 8.2) < 2.3) continue;  // Yokohama Landmark Tower
       if (Math.hypot(yx - 45.8, yz - 10.2) < 1.9) continue; // Sail Hotel
       if (Math.hypot(yx - 44.6, yz - 8.8) < 1.8) continue;  // Cosmo Clock 21
@@ -3949,14 +4488,6 @@
     const subWallMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.75 });
     const subBeigeMat = new THREE.MeshStandardMaterial({ color: '#e7e5e4', roughness: 0.78 });
     const subRoofTerra = new THREE.MeshStandardMaterial({ color: '#9a3412', roughness: 0.76 });
-    const shinkSamples = [];
-    for (let s = 0; s <= 40; s++) shinkSamples.push(shinkansenCurve.getPointAt(s / 40));
-    function nearShinkansen(x, z) {
-      for (let s = 0; s < shinkSamples.length; s++) {
-        if (Math.hypot(x - shinkSamples[s].x, z - shinkSamples[s].z) < 1.35) return true;
-      }
-      return false;
-    }
     function isLandmarkClearForLowRise(bx, bz) {
       if (Math.hypot(bx - 29.8, bz + 31.5) < 4.5) return false;  // Mt. Koya peak
       if (Math.hypot(bx - 33.2, bz + 24.5) < 2.6) return false;  // Mt. Koya cable base
@@ -4257,6 +4788,111 @@
     // GIANT LUXURY CRUISE LINER — Cunard Queen Mary 2 Flagship (巨型豪華郵輪: Boso -> Tokyo Bay -> Miura -> Sagami -> Izu -> Suruga Bay!)
     const megaCruise = createQueenMaryCruiseLiner('#dc2626');
     root.add(megaCruise);
+
+    // =========================================================================
+    // 10.62 COASTAL JAPANESE FISHING BOATS (6 小型漁船：3 艘拖網捕魚上船動畫 + 3 艘船尾定點垂釣型 + 夜間漁火燈!)
+    // =========================================================================
+    const fishingBoats = [];
+    const fbHullMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.45 });
+    const fbBlueTrim = new THREE.MeshStandardMaterial({ color: '#0369a1', roughness: 0.45 });
+    const fbWoodDeck = new THREE.MeshStandardMaterial({ color: '#92400e', roughness: 0.8 });
+    const fbNetMat = new THREE.MeshStandardMaterial({ color: '#d6d3d1', wireframe: true, transparent: true, opacity: 0.85 });
+    const fbCatchMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.85, roughness: 0.18 });
+    const fbRodMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.5 });
+    const fbLineMat = new THREE.LineBasicMaterial({ color: '#e0f2fe', transparent: true, opacity: 0.65 });
+    const fbLampMat = new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#f59e0b', emissiveIntensity: 0.35, roughness: 0.2 });
+    nightEmissives.push({ mat: fbLampMat, day: 0.12, sunset: 1.45, night: 3.1, midnight: 2.2 });
+
+    function createFishingBoat(type) {
+      // type: 'net' (trawler with periodic net hauling!) or 'rod' (stern-angling boat that stops while fishing!)
+      const bg = new THREE.Group();
+      // Compact Japanese coastal fishing boat hull (~0.95 units long, +Z bow)
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.78), fbHullMat); hull.position.y = 0.06; hull.castShadow = true;
+      const bow = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 4), fbHullMat);
+      bow.rotation.x = Math.PI / 2; bow.rotation.z = Math.PI / 4; bow.scale.set(1.25, 1.0, 0.65); bow.position.set(0, 0.07, 0.52);
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.335, 0.035, 0.76), fbBlueTrim); stripe.position.y = 0.09;
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.02, 0.72), fbWoodDeck); deck.position.y = 0.135;
+      // Compact forward wheelhouse cabin + warm glowing night fishing lamp (漁火燈!)
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.26), fbHullMat); cabin.position.set(0, 0.24, 0.12); cabin.castShadow = true;
+      const cabWin = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.08, 0.20), fbLampMat); cabWin.position.set(0, 0.27, 0.14);
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.015, 0.36, 5), fbRodMat); mast.position.set(0, 0.48, 0.08);
+      const lampBar = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.018, 0.018), fbRodMat); lampBar.position.set(0, 0.54, 0.08);
+      bg.add(hull, bow, stripe, deck, cabin, cabWin, mast, lampBar);
+      for (const lx of [-0.1, 0, 0.1]) {
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.034, 6, 6), fbLampMat);
+        bulb.position.set(lx, 0.51, 0.08); bg.add(bulb);
+      }
+
+      let cranePivot = null, catchMesh = null, rods = [];
+      if (type === 'net') {
+        // Aft Net-Hauling Crane Boom + Mesh Fishing Net + Gleaming Catch Fish!
+        cranePivot = new THREE.Group();
+        cranePivot.position.set(0, 0.22, -0.26);
+        const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.52, 5), fbBlueTrim);
+        boom.rotation.x = Math.PI / 2; boom.position.set(0, 0.12, -0.24);
+        const netBag = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), fbNetMat);
+        netBag.scale.set(1.15, 1.35, 1.15); netBag.position.set(0, -0.18, -0.46);
+        // Gleaming silver fish inside the net (visible when hauled out of water!)
+        catchMesh = new THREE.Group();
+        catchMesh.position.set(0, -0.18, -0.46);
+        for (let f = 0; f < 4; f++) {
+          const cf = new THREE.Mesh(new THREE.SphereGeometry(0.048, 6, 5), fbCatchMat);
+          cf.scale.set(0.55, 0.65, 1.85);
+          cf.position.set((f - 1.5) * 0.045, (f % 2 - 0.5) * 0.04, (f % 3 - 1) * 0.03);
+          catchMesh.add(cf);
+        }
+        cranePivot.add(boom, netBag, catchMesh);
+        bg.add(cranePivot);
+      } else {
+        // Stern-Angling Type (船尾方向垂釣型: 2 slender curved rods + fishing lines dipping into sea!)
+        for (const rx of [-0.09, 0.09]) {
+          const rodPivot = new THREE.Group();
+          rodPivot.position.set(rx, 0.18, -0.36);
+          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.012, 0.62, 5), fbRodMat);
+          rod.rotation.x = -Math.PI * 0.34; rod.position.set(0, 0.16, -0.26);
+          const line = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.31, -0.52), new THREE.Vector3(0, -0.28, -0.52)]),
+            fbLineMat
+          );
+          rodPivot.add(rod, line);
+          bg.add(rodPivot);
+          rods.push(rodPivot);
+        }
+      }
+      return { mesh: bg, cranePivot, catchMesh, rods };
+    }
+
+    // Spawn 6 Coastal Fishing Boats across Suruga Bay, Sagami Bay, Tokyo Bay & Boso Coast
+    const fbZones = [
+      { type: 'net', x0: -26, x1: -6,  z0: 38, z1: 44 }, // Suruga Bay Net Trawler
+      { type: 'net', x0: 24,  x1: 42,  z0: 34, z1: 42 }, // Sagami Bay Net Trawler
+      { type: 'net', x0: 56,  x1: 68,  z0: 12, z1: 26 }, // Tokyo Bay Net Trawler
+      { type: 'rod', x0: -38, x1: -18, z0: 38, z1: 44 }, // West Suruga Stern Angler
+      { type: 'rod', x0: 32,  x1: 52,  z0: 36, z1: 43 }, // Enoshima/Miura Stern Angler
+      { type: 'rod', x0: 60,  x1: 72,  z0: 26, z1: 38 }  // Uraga/Boso Stern Angler
+    ];
+    function pickDeepSeaPoint(zCfg) {
+      for (let tries = 0; tries < 40; tries++) {
+        const px = randRange(zCfg.x0, zCfg.x1), pz = randRange(zCfg.z0, zCfg.z1);
+        if (getTerrainHeight(px, pz) < WATER_Y - 0.85) return new THREE.Vector3(px, WATER_Y, pz);
+      }
+      return new THREE.Vector3((zCfg.x0 + zCfg.x1) * 0.5, WATER_Y, (zCfg.z0 + zCfg.z1) * 0.5);
+    }
+    fbZones.forEach((zone, idx) => {
+      const built = createFishingBoat(zone.type);
+      const startPt = pickDeepSeaPoint(zone);
+      const targetPt = pickDeepSeaPoint(zone);
+      built.mesh.position.copy(startPt);
+      root.add(built.mesh);
+      fishingBoats.push({
+        ...built, type: zone.type, zone,
+        pos: startPt, target: targetPt,
+        state: zone.type === 'rod' && idx % 2 === 1 ? 'fishing' : 'moving',
+        timer: 4.0 + idx * 2.1,
+        haulPhase: 0,
+        heading: Math.atan2(targetPt.x - startPt.x, targetPt.z - startPt.z)
+      });
+    });
 
     // Grand Coastal Sea Route: Boso -> Tokyo Bay -> Miura -> Sagami Bay -> Southern Izu -> Suruga Bay
     const megaCruiseCurve = new THREE.CatmullRomCurve3([
@@ -4564,81 +5200,118 @@
     nsGate.add(nsGateRoof, nsLantern);
     naritasanGroup.add(nsGate);
 
-    // G. STANDING USHIKU DAIBUTSU (牛久大佛 — Towering 120m Standing Bronze Buddha North of Narita at 81.5, y, -39.5)
+    // G. 2.0 SCULPTED STANDING USHIKU DAIBUTSU (牛久大佛 — 120m 青銅阿彌陀如來立像 North of Narita at 81.5, y, -39.5)
     const ushikuGroup = new THREE.Group();
     const ushX = 81.5, ushZ = -39.5;
     ushikuGroup.position.set(ushX, getTerrainHeight(ushX, ushZ), ushZ);
     bayEastGroup.add(ushikuGroup);
 
-    const ushBronze = new THREE.MeshStandardMaterial({ color: '#5b6470', roughness: 0.44, metalness: 0.58 });
-    const ushDarkBronze = new THREE.MeshStandardMaterial({ color: '#47505c', roughness: 0.5, metalness: 0.52 });
-    const ushStone = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.82 });
+    const ushBronze = new THREE.MeshStandardMaterial({ color: '#6b676c', roughness: 0.42, metalness: 0.58, envMapIntensity: 1.2 });
+    const ushDarkBronze = new THREE.MeshStandardMaterial({ color: '#4d4a50', roughness: 0.5, metalness: 0.52 });
+    const ushStone = new THREE.MeshStandardMaterial({ color: '#d6d3d1', roughness: 0.84 });
 
-    // Park Plaza & Approach Path (參道)
-    const ushPlaza = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.14, 5.4), ushStone);
-    ushPlaza.position.set(0, 0.07, 0.5); ushPlaza.receiveShadow = true; ushikuGroup.add(ushPlaza);
-
-    // Square Architectural Base Pedestal Hall (基座大廳)
-    const ushBaseHall = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.95, 2.5), ushStone);
-    ushBaseHall.position.y = 0.58; ushBaseHall.castShadow = true; ushBaseHall.receiveShadow = true;
-    const ushBaseTrim = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.14, 2.7), stonePedMat);
-    ushBaseTrim.position.y = 1.08;
-    ushikuGroup.add(ushBaseHall, ushBaseTrim);
-
-    // Sculpted Lotus Pedestal (蓮花座 with 12 upturned petals)
-    const ushLotusCore = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.28, 0.78, 16), ushDarkBronze);
-    ushLotusCore.position.y = 1.52; ushLotusCore.castShadow = true; ushikuGroup.add(ushLotusCore);
-    for (let p = 0; p < 12; p++) {
-      const a = (p / 12) * Math.PI * 2;
-      const petal = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.78, 5), ushBronze);
-      petal.position.set(Math.cos(a) * 1.12, 1.56, Math.sin(a) * 1.12);
-      petal.rotation.z = -Math.cos(a) * 0.25;
-      petal.rotation.x = Math.sin(a) * 0.25;
-      ushikuGroup.add(petal);
+    // Park Approach Path (參道) & Colorful Seasonal Flowerbeds flanking the pathway!
+    const ushPlaza = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.14, 6.2), new THREE.MeshStandardMaterial({ color: '#65a30d', roughness: 0.9 }));
+    ushPlaza.position.set(0, 0.06, 0.6); ushPlaza.receiveShadow = true; ushikuGroup.add(ushPlaza);
+    const ushPath = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.16, 4.6), ushStone);
+    ushPath.position.set(0, 0.08, 1.4); ushikuGroup.add(ushPath);
+    for (const [fx, col] of [[-1.7, '#ec4899'], [1.7, '#facc15']]) {
+      const flower = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 2.2), new THREE.MeshStandardMaterial({ color: col, roughness: 0.85 }));
+      flower.position.set(fx, 0.08, 2.2); ushikuGroup.add(flower);
     }
 
-    // Tall Standing Robed Body (立姿青銅佛身)
-    const ushLowerRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.92, 2.75, 16), ushBronze);
-    ushLowerRobe.scale.set(1.12, 1.0, 0.76); ushLowerRobe.position.y = 3.25; ushLowerRobe.castShadow = true;
-    const ushUpperTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 0.68, 1.55, 16), ushBronze);
-    ushUpperTorso.scale.set(1.18, 1.0, 0.74); ushUpperTorso.position.y = 5.32; ushUpperTorso.castShadow = true;
-    const ushShoulders = new THREE.Mesh(new THREE.SphereGeometry(0.84, 14, 10), ushBronze);
-    ushShoulders.scale.set(1.18, 0.44, 0.68); ushShoulders.position.y = 6.02;
-    // Draped vertical robe folds & hanging sleeves on both sides
+    // 1. Octagonal Architectural Pedestal Hall (八角基座大廳)
+    const ushBaseHall = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.72, 0.92, 8), ushStone);
+    ushBaseHall.rotation.y = Math.PI / 8; ushBaseHall.position.y = 0.56; ushBaseHall.castShadow = true; ushBaseHall.receiveShadow = true;
+    const ushBaseTrim = new THREE.Mesh(new THREE.CylinderGeometry(1.74, 1.74, 0.12, 8), stonePedMat);
+    ushBaseTrim.rotation.y = Math.PI / 8; ushBaseTrim.position.y = 1.06;
+    ushikuGroup.add(ushBaseHall, ushBaseTrim);
+
+    // 2. Double-Tiered Sculpted 16-Petal Bronze Lotus Pedestal (雙層立體蓮花座) + Bare Sacred Feet!
+    const ushLotusCore = new THREE.Mesh(new THREE.CylinderGeometry(1.06, 1.32, 0.86, 18), ushDarkBronze);
+    ushLotusCore.position.y = 1.54; ushLotusCore.castShadow = true; ushikuGroup.add(ushLotusCore);
+    for (let tier = 0; tier < 2; tier++) {
+      const count = 12;
+      for (let p = 0; p < count; p++) {
+        const a = (p / count) * Math.PI * 2 + tier * (Math.PI / count);
+        const rad = tier === 0 ? 1.18 : 1.04;
+        const petal = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), tier === 0 ? ushBronze : ushDarkBronze);
+        petal.scale.set(0.82, 1.55, 0.42);
+        petal.position.set(Math.cos(a) * rad, 1.48 + tier * 0.18, Math.sin(a) * rad);
+        petal.rotation.y = -a + Math.PI / 2;
+        petal.rotation.x = -0.22;
+        ushikuGroup.add(petal);
+      }
+    }
     for (const s of [-1, 1]) {
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 2.95, 10), ushDarkBronze);
-      sleeve.position.set(s * 0.84, 4.15, 0.05); sleeve.castShadow = true; ushikuGroup.add(sleeve);
+      const foot = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), ushBronze);
+      foot.scale.set(0.82, 0.48, 1.45); foot.position.set(s * 0.28, 2.04, 0.24); ushikuGroup.add(foot);
+    }
+
+    // 3. Tall Sculpted Standing Robed Body with Sweeping U-Folds & Twin Hanging Sleeves!
+    const ushLowerRobe = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.82, 2.85, 18), ushBronze);
+    ushLowerRobe.scale.set(1.12, 1.0, 0.72); ushLowerRobe.position.y = 3.45; ushLowerRobe.castShadow = true;
+    const ushUpperTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 0.66, 1.48, 18), ushBronze);
+    ushUpperTorso.scale.set(1.16, 1.0, 0.70); ushUpperTorso.position.y = 5.45; ushUpperTorso.castShadow = true;
+    const ushShoulders = new THREE.Mesh(new THREE.CapsuleGeometry(0.32, 1.02, 8, 12), ushBronze);
+    ushShoulders.rotation.z = Math.PI / 2; ushShoulders.position.y = 6.08;
+    // Layered U-shaped cascading chest & waist drapery folds
+    for (let u = 0; u < 5; u++) {
+      const fy = 5.38 - u * 0.34;
+      const uFold = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.62, fy + 0.26, 0.16),
+        new THREE.Vector3(-0.28, fy - 0.08, 0.48),
+        new THREE.Vector3( 0.28, fy - 0.08, 0.48),
+        new THREE.Vector3( 0.62, fy + 0.26, 0.16)
+      ]);
+      ushikuGroup.add(new THREE.Mesh(new THREE.TubeGeometry(uFold, 16, 0.044, 6, false), u % 2 === 0 ? ushDarkBronze : ushBronze));
+    }
+    // Signature Twin Vertical Hanging Sleeves (長袖垂衣 on both flanks!)
+    for (const s of [-1, 1]) {
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.26, 3.35, 10), ushDarkBronze);
+      sleeve.scale.set(0.88, 1.0, 1.12);
+      sleeve.position.set(s * 0.84, 4.18, 0.04); sleeve.castShadow = true; ushikuGroup.add(sleeve);
     }
     // Iconic 3 Chest Observation Slits (胸部展望台窗)
     const slitMat = new THREE.MeshStandardMaterial({ color: '#1e293b', emissive: '#fef08a', emissiveIntensity: 0.3 });
     nightEmissives.push({ mat: slitMat, day: 0.1, sunset: 0.8, night: 1.9 });
     for (const sx of [-0.14, 0, 0.14]) {
-      const slit = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.18, 0.06), slitMat);
-      slit.position.set(sx, 5.52, 0.56); ushikuGroup.add(slit);
+      const slit = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.18, 0.06), slitMat);
+      slit.position.set(sx, 5.65, 0.54); ushikuGroup.add(slit);
     }
 
-    // Right Arm Raised Upright (施無畏印 — viewer's left, local -X)
-    const rForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.88, 10), ushBronze);
-    rForearm.position.set(-0.92, 5.88, 0.34); rForearm.rotation.x = 0.22; rForearm.castShadow = true;
-    const rPalm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.44, 0.1), ushBronze);
-    rPalm.position.set(-0.94, 6.45, 0.44);
-    // Left Arm Lowered Forward (與願印 — viewer's right, local +X)
-    const lForearm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.85, 10), ushBronze);
-    lForearm.position.set(0.84, 4.78, 0.42); lForearm.rotation.x = 0.65; lForearm.castShadow = true;
-    const lPalm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.42, 0.1), ushBronze);
-    lPalm.position.set(0.84, 4.35, 0.68); lPalm.rotation.x = -0.25;
+    // 4. Sculpted Mudra Hands with 5 Fingers! (Right Raised 施無畏印, Left Lowered 與願印)
+    function buildOpenHand(isRaised) {
+      const hand = new THREE.Group();
+      const palm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.26, 0.09), ushBronze);
+      hand.add(palm);
+      for (let f = 0; f < 4; f++) {
+        const finger = new THREE.Mesh(new THREE.CapsuleGeometry(0.024, 0.14, 4, 6), ushBronze);
+        finger.position.set(-0.085 + f * 0.056, isRaised ? 0.20 : -0.20, 0);
+        hand.add(finger);
+      }
+      const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 0.11, 4, 6), ushBronze);
+      thumb.position.set(isRaised ? 0.14 : -0.14, isRaised ? 0.06 : -0.06, 0.03);
+      thumb.rotation.z = isRaised ? -0.45 : 0.45;
+      hand.add(thumb);
+      return hand;
+    }
+    const rForearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.62, 6, 10), ushBronze);
+    rForearm.position.set(-0.88, 5.95, 0.32); rForearm.rotation.x = 0.22; rForearm.castShadow = true;
+    const rHand = buildOpenHand(true); rHand.position.set(-0.90, 6.42, 0.44);
+    const lForearm = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.62, 6, 10), ushBronze);
+    lForearm.position.set(0.84, 4.78, 0.38); lForearm.rotation.x = 0.58; lForearm.castShadow = true;
+    const lHand = buildOpenHand(false); lHand.position.set(0.84, 4.38, 0.62); lHand.rotation.x = -0.22;
 
-    // Neck, Sculpted Head, Ushnisha Hair Crown & Golden Urna
-    const ushNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.36, 12), ushBronze); ushNeck.position.y = 6.32;
-    const ushHead = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 14), ushBronze);
-    ushHead.scale.set(0.88, 1.12, 0.94); ushHead.position.y = 6.82; ushHead.castShadow = true;
-    const ushCrown = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10), ushDarkBronze); ushCrown.position.y = 7.36;
-    const ushUrna = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), goldMat); ushUrna.position.set(0, 6.88, 0.43);
+    // 5. Neck & Sculpted Standing Buddha Head with Dense Snail-Shell Curls (螺髮), Elongated Ears & Golden Urna
+    const ushNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.34, 12), ushBronze); ushNeck.position.y = 6.36;
+    const ushHead = buildSculptedBuddhaHead(ushBronze, ushDarkBronze, goldMat);
+    ushHead.scale.setScalar(1.08); ushHead.position.set(0, 6.90, 0.04);
     // Incense burner at front of approach plaza
     const ushBurner = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.38, 10), ushDarkBronze);
     ushBurner.position.set(0, 0.33, 2.35);
 
-    ushikuGroup.add(ushLowerRobe, ushUpperTorso, ushShoulders, rForearm, rPalm, lForearm, lPalm, ushNeck, ushHead, ushCrown, ushUrna, ushBurner);
+    ushikuGroup.add(ushLowerRobe, ushUpperTorso, ushShoulders, rForearm, rHand, lForearm, lHand, ushNeck, ushHead, ushBurner);
 
     // =========================================================================
     // 10.7 HANEDA AIRPORT (羽田機場 Relocated North-Northeast to 49.5, 1.2 — Just South of Odaiba!)
@@ -4689,7 +5362,7 @@
     const hTower = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.24, 2.25, 10), whiteMat); hTower.position.set(3.2, hRunwayY + 1.12, -1.45); hTower.castShadow = true;
     const hCab = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.26, 0.34, 12), new THREE.MeshStandardMaterial({ color: '#0ea5e9', emissive: '#38bdf8', emissiveIntensity: 0.45, roughness: 0.15 }));
     hCab.position.set(3.2, hRunwayY + 2.35, -1.45);
-    const hTowerBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); hTowerBeacon.position.set(3.2, hRunwayY + 2.68, -1.45);
+    const hTowerBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), aviationBeaconMat); hTowerBeacon.position.set(3.2, hRunwayY + 2.68, -1.45);
     hanedaGroup.add(hTower, hCab, hTowerBeacon);
 
     // 2.0 Photorealistic Sculpted Commercial Airliner Builder (Boeing 777/787/747 style!)
@@ -4925,7 +5598,7 @@
     const nTower = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.26, 2.75, 10), whiteMat); nTower.position.set(3.8, nRunwayY + 1.38, -1.65); nTower.castShadow = true;
     const nCab = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.28, 0.38, 12), new THREE.MeshStandardMaterial({ color: '#0ea5e9', emissive: '#38bdf8', emissiveIntensity: 0.45, roughness: 0.15 }));
     nCab.position.set(3.8, nRunwayY + 2.86, -1.65);
-    const nBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: '#ef4444' })); nBeacon.position.set(3.8, nRunwayY + 3.22, -1.65);
+    const nBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), aviationBeaconMat); nBeacon.position.set(3.8, nRunwayY + 3.22, -1.65);
     naritaGroup.add(nTower, nCab, nBeacon);
 
     // 4 Parked International Airliners at Narita Gates
@@ -5029,7 +5702,8 @@
     const sakZones = [
       [4.5, -24.0, 4.8, 72], [-6.5, -20.5, 5.0, 56], [-13.5, -22.5, 4.2, 42],
       [5.8, -11.5, 4.0, 36], [-31.5, 25.0, 4.2, 36], [41.2, 23.5, 3.8, 32],
-      [57.5, -24.5, 3.2, 24], [82.0, 12.0, 5.5, 40], [77.5, -19.5, 4.6, 36]
+      [57.5, -31.5, 3.2, 26], [82.0, 12.0, 5.5, 40], [77.5, -19.5, 4.6, 36],
+      [11.5, 36.8, 4.4, 52], [6.2, 34.8, 4.2, 44], [14.2, 32.0, 3.4, 30] // Izu Peninsula Kawazu-zakura (伊豆半島河津櫻、修善寺與熱海海岸櫻林!)
     ];
     sakZones.forEach(([zx, zz, zr, zn]) => {
       for (let i = 0; i < zn; i++) {
@@ -5092,6 +5766,7 @@
       if (Math.hypot(tx - 81.5, tz + 39.5) < 3.8) continue;   // Ushiku Daibutsu Park
       if (Math.hypot(tx - 87.5, tz + 26.5) < 7.2) continue;   // Narita Airport
       if (Math.hypot(tx - 37.0, tz - 6.0) < 3.6) continue;    // Shin-Yokohama Station
+      if (nearShinkansen(tx, tz, 1.85)) continue;             // Keep Tokaido Shinkansen railway clear of trees!
       pinePts.push([tx, ty, tz, randRange(0.72, 1.48)]);
     }
 
@@ -5116,12 +5791,14 @@
     const instCol = new THREE.Color();
     const foliageMaterials = [];
     function createInstancedTrees(pts, springHex, summerHex, autumnHex, winterHex, isPine) {
-      const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.085, 0.56, 5), new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.92 }), pts.length);
+      const clearPts = pts.filter(([tx, , tz]) => !nearShinkansen(tx, tz, 1.75));
+      if (!clearPts.length) return;
+      const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.085, 0.56, 5), new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.92 }), clearPts.length);
       const crownMat = new THREE.MeshStandardMaterial({ color: springHex, roughness: 0.86, envMapIntensity: 0.35 });
       foliageMaterials.push({ mat: crownMat, spring: new THREE.Color(springHex), summer: new THREE.Color(summerHex), autumn: new THREE.Color(autumnHex), winter: new THREE.Color(winterHex) });
-      const crownInst = new THREE.InstancedMesh(isPine ? pineCrownGeo : clumpCrownGeo, crownMat, pts.length);
+      const crownInst = new THREE.InstancedMesh(isPine ? pineCrownGeo : clumpCrownGeo, crownMat, clearPts.length);
       trunkInst.castShadow = crownInst.castShadow = crownInst.receiveShadow = true;
-      pts.forEach(([tx, ty, tz, sc], i) => {
+      clearPts.forEach(([tx, ty, tz, sc], i) => {
         const rotY = rand() * 6.28;
         dummy.position.set(tx, ty + 0.24 * sc, tz); dummy.scale.setScalar(sc); dummy.rotation.set(0, rotY, 0); dummy.updateMatrix(); trunkInst.setMatrixAt(i, dummy.matrix);
         dummy.position.set(tx, ty + (isPine ? 0.56 : 0.68) * sc, tz);
@@ -5157,6 +5834,166 @@
       cg.position.set(cx, cy, cz);
       root.add(cg);
       skyClouds.push({ group: cg, speed: randRange(0.35, 0.85) });
+    }
+
+    // =========================================================================
+    // 12.6 2.0 EXTREME WEATHER EVENTS: THUNDERSTORM (DARK CLOUDS + RAIN + LIGHTNING), TORNADO & HAILSTORM!
+    // =========================================================================
+    let currentWeather = 'normal';
+    let stormMood = 0, lightningFlash = 0, lightningTimer = 1.2;
+
+    // A. Heavy Slanted Storm Rain Streaks (1,400 rain streaks) + 3D Forked Lightning Bolts
+    const RAIN_COUNT = 1400;
+    const rainPosArr = new Float32Array(RAIN_COUNT * 6);
+    const rainDropMeta = [];
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      const rx = randRange(X_MIN - 4, X_MAX + 4), ry = randRange(1.0, 32.0), rz = randRange(-48, 48);
+      const len = randRange(1.1, 2.2), spd = randRange(28, 42);
+      rainDropMeta.push({ x: rx, y: ry, z: rz, len, spd });
+      const b = i * 6;
+      rainPosArr[b] = rx; rainPosArr[b + 1] = ry; rainPosArr[b + 2] = rz;
+      rainPosArr[b + 3] = rx - 0.35; rainPosArr[b + 4] = ry - len; rainPosArr[b + 5] = rz + 0.12;
+    }
+    const rainGeo = new THREE.BufferGeometry();
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPosArr, 3));
+    const stormRain = new THREE.LineSegments(
+      rainGeo,
+      new THREE.LineBasicMaterial({ color: '#bae6fd', transparent: true, opacity: 0.48, depthWrite: false })
+    );
+    stormRain.visible = false;
+    root.add(stormRain);
+
+    const lightningGroup = new THREE.Group();
+    root.add(lightningGroup);
+    const lightningFlashLight = new THREE.PointLight(0x93c5fd, 0, 160);
+    lightningFlashLight.position.set(26, 20, 0);
+    root.add(lightningFlashLight);
+    const boltMatCore = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 1.0 });
+    const boltMatHalo = new THREE.MeshBasicMaterial({ color: '#a5b4fc', transparent: true, opacity: 0.72, depthWrite: false });
+    const boltMatFork = new THREE.LineBasicMaterial({ color: '#e0f2fe', transparent: true, opacity: 0.95 });
+
+    // Low-Altitude Dense Ink-Black Storm Cloud Canopy (低空大片厚重烏雲覆蓋全區上空 + 局部雨瀑!)
+    const stormOvercastGroup = new THREE.Group();
+    stormOvercastGroup.visible = false;
+    root.add(stormOvercastGroup);
+    const stormCloudDarkMat = new THREE.MeshStandardMaterial({ color: '#1b222e', emissive: '#0f172a', emissiveIntensity: 0.12, roughness: 0.96, transparent: true, opacity: 0.93, depthWrite: false });
+    const stormCloudMidMat = new THREE.MeshStandardMaterial({ color: '#2b3445', emissive: '#1e293b', emissiveIntensity: 0.1, roughness: 0.95, transparent: true, opacity: 0.88, depthWrite: false });
+    for (let i = 0; i < 42; i++) {
+      const col = i % 7, row = Math.floor(i / 7);
+      const sx = X_MIN + 4 + (col / 6) * (W - 8) + randRange(-7, 7);
+      const sz = -44 + (row / 5) * 88 + randRange(-6, 6);
+      const sy = randRange(19.5, 24.5); // Low oppressive thunderhead altitude right above Fuji & Skytree!
+      const puff = new THREE.Mesh(cloudGeo, i % 3 === 0 ? stormCloudMidMat : stormCloudDarkMat);
+      puff.position.set(sx, sy, sz);
+      puff.scale.set(randRange(12.5, 20.0), randRange(2.4, 4.4), randRange(10.5, 16.5));
+      stormOvercastGroup.add(puff);
+    }
+    // Dramatic Translucent Downpour Rain-Shaft Curtain ("雨瀑" descending from low black clouds!)
+    const rainShaftMat = new THREE.MeshBasicMaterial({ color: '#64748b', transparent: true, opacity: 0.24, depthWrite: false, side: THREE.DoubleSide });
+    for (const [rx, rz, rr] of [[48, -14, 14], [12, 16, 12], [68, 8, 11]]) {
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.72, rr * 1.15, 20.5, 16, 1, true), rainShaftMat);
+      shaft.position.set(rx, 10.5, rz);
+      stormOvercastGroup.add(shaft);
+    }
+
+    function triggerLightningBolt() {
+      while (lightningGroup.children.length) {
+        const ch = lightningGroup.children[0];
+        ch.geometry.dispose();
+        lightningGroup.remove(ch);
+      }
+      const boltCount = Math.random() < 0.55 ? 2 : 1; // Often fire twin simultaneous bolts like reference photo!
+      let flashX = 26, flashZ = 0;
+      for (let b = 0; b < boltCount; b++) {
+        const bx = randRange(-26, 84), bz = randRange(-36, 36);
+        if (b === 0) { flashX = bx; flashZ = bz; }
+        const topY = 20.5, endY = Math.max(WATER_Y, getTerrainHeight(bx, bz));
+        const segs = 11, mainPts = [];
+        let cx = bx, cz = bz;
+        for (let i = 0; i <= segs; i++) {
+          const f = i / segs;
+          const y = topY + (endY - topY) * f;
+          if (i > 0 && i < segs) { cx += randRange(-1.8, 1.8); cz += randRange(-1.8, 1.8); }
+          mainPts.push(new THREE.Vector3(cx, y, cz));
+          if (i >= 2 && i <= 8 && i % 2 === 0) {
+            const fPts = [new THREE.Vector3(cx, y, cz)];
+            let fx = cx, fy = y, fz = cz;
+            for (let k = 0; k < 5; k++) {
+              fx += randRange(-2.6, 2.6); fy -= randRange(1.6, 3.0); fz += randRange(-2.6, 2.6);
+              fPts.push(new THREE.Vector3(fx, Math.max(endY, fy), fz));
+            }
+            lightningGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(fPts), boltMatFork));
+          }
+        }
+        const boltCurve = new THREE.CatmullRomCurve3(mainPts);
+        lightningGroup.add(new THREE.Mesh(new THREE.TubeGeometry(boltCurve, 22, 0.22, 5, false), boltMatCore));
+        lightningGroup.add(new THREE.Mesh(new THREE.TubeGeometry(boltCurve, 22, 0.46, 5, false), boltMatHalo));
+      }
+      lightningFlashLight.position.set(flashX, 17.5, flashZ);
+      lightningFlash = 1.0;
+    }
+
+    // B. Towering Swirling Tornado Vortex (18 stacked counter-rotating tapered rings + supercell wall cloud + 140 orbiting debris!)
+    const tornadoGroup = new THREE.Group();
+    tornadoGroup.visible = false;
+    root.add(tornadoGroup);
+    const tornadoRings = [];
+    const tornadoWallMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.92, transparent: true, opacity: 0.52, depthWrite: false, side: THREE.DoubleSide });
+    const tornadoDarkCloudMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.95, transparent: true, opacity: 0.85, depthWrite: false });
+    // Supercell Wall Cloud Collar at top of funnel
+    for (let c = 0; c < 8; c++) {
+      const ca = (c / 8) * Math.PI * 2;
+      const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(randRange(2.4, 3.6), 1), tornadoDarkCloudMat);
+      puff.scale.set(1.5, 0.52, 1.4);
+      puff.position.set(Math.cos(ca) * 3.8, 22.8 + randRange(-0.6, 0.6), Math.sin(ca) * 3.8);
+      tornadoGroup.add(puff);
+    }
+    // 18 stacked tapered vortex rings forming a curved living tornado funnel
+    for (let i = 0; i < 18; i++) {
+      const f = i / 17;
+      const rBot = 0.42 + Math.pow(f, 1.85) * 4.8;
+      const rTop = 0.48 + Math.pow(Math.min(1, f + 0.06), 1.85) * 5.2;
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, 1.48, 16, 1, true), tornadoWallMat);
+      ring.position.y = 0.7 + i * 1.25;
+      tornadoGroup.add(ring);
+      tornadoRings.push({ mesh: ring, f, baseY: ring.position.y });
+    }
+    // Swirling Ground Dust / Sea-Spray Collar at base
+    const tornadoCollar = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.58, 8, 20), new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.9, transparent: true, opacity: 0.55, depthWrite: false }));
+    tornadoCollar.rotation.x = Math.PI / 2; tornadoCollar.position.y = 0.45;
+    tornadoGroup.add(tornadoCollar);
+    // 140 Orbiting Debris / Spray Particles spiraling up the funnel
+    const DEBRIS_COUNT = 140;
+    const debrisPos = new Float32Array(DEBRIS_COUNT * 3);
+    const debrisData = [];
+    for (let i = 0; i < DEBRIS_COUNT; i++) {
+      debrisData.push({ h: rand() * 21, a: rand() * 6.28, spd: randRange(3.2, 6.2), rOff: randRange(0.25, 1.35) });
+    }
+    const debrisGeo = new THREE.BufferGeometry();
+    debrisGeo.setAttribute('position', new THREE.BufferAttribute(debrisPos, 3));
+    const tornadoDebris = new THREE.Points(debrisGeo, new THREE.PointsMaterial({ color: '#cbd5e1', size: 0.42, transparent: true, opacity: 0.82 }));
+    tornadoGroup.add(tornadoDebris);
+    let tornadoAngle = 0.4;
+
+    // C. Pelting Translucent Ice Hailstorm (450 faceted 3D ice hailstones with ground bounce!)
+    const HAIL_COUNT = 450;
+    const hailGeo = new THREE.IcosahedronGeometry(0.18, 0);
+    const hailMat = new THREE.MeshStandardMaterial({ color: '#e0f2fe', emissive: '#bae6fd', emissiveIntensity: 0.25, roughness: 0.12, metalness: 0.18 });
+    const hailInst = new THREE.InstancedMesh(hailGeo, hailMat, HAIL_COUNT);
+    hailInst.visible = false;
+    root.add(hailInst);
+    const hailData = [];
+    const hailDummy = new THREE.Object3D();
+    for (let i = 0; i < HAIL_COUNT; i++) {
+      hailData.push({
+        x: randRange(X_MIN - 2, X_MAX + 2),
+        y: randRange(2.0, 32.0),
+        z: randRange(-46, 46),
+        vy: -randRange(24, 34),
+        vx: -randRange(3.5, 6.5),
+        sc: randRange(0.75, 1.45),
+        bounced: false
+      });
     }
 
     // =========================================================================
@@ -5196,42 +6033,174 @@
     root.add(weatherPoints);
 
     // =========================================================================
-    // 12.5 AERIAL HOT AIR BALLOONS & MULTI-BAY FESTIVAL FIREWORKS
+    // 12.5 2.0 AERIAL HOT AIR BALLOONS (FESTIVAL LIVERIES) + ROBINSON R44 SIGHTSEEING HELICOPTERS & FIREWORKS
     // =========================================================================
     const hotAirBalloons = [];
-    const balloonPatterns = [
-      { top: '#ef4444', mid: '#f59e0b', bot: '#3b82f6', basket: '#78350f', r: 1.05 },
-      { top: '#3b82f6', mid: '#ffffff', bot: '#ef4444', basket: '#5c3a21', r: 0.9 },
-      { top: '#10b981', mid: '#fde047', bot: '#ec4899', basket: '#78350f', r: 0.96 },
-      { top: '#8b5cf6', mid: '#ec4899', bot: '#f97316', basket: '#451a03', r: 0.88 },
-      { top: '#06b6d4', mid: '#facc15', bot: '#ef4444', basket: '#78350f', r: 0.92 },
-      { top: '#f43f5e', mid: '#fdf2f8', bot: '#0ea5e9', basket: '#5c3a21', r: 0.86 }
-    ];
-    const balloonWaypoints = [
-      { cx: -6.5,  cy: 12.5, cz: -24.0, radius: 6.2, speed: 0.14, bobSpeed: 0.9, bobAmp: 0.7 },
-      { cx: -12.0, cy: 15.8, cz: 4.0,   radius: 7.2, speed: -0.11, bobSpeed: 0.7, bobAmp: 0.85 },
-      { cx: 12.0,  cy: 13.0, cz: -5.0,  radius: 5.5, speed: 0.14, bobSpeed: 1.05, bobAmp: 0.6 },
-      { cx: -28.0, cy: 12.5, cz: 15.0,  radius: 6.0, speed: -0.13, bobSpeed: 0.8, bobAmp: 0.75 },
-      { cx: 22.0,  cy: 11.5, cz: 29.0,  radius: 5.8, speed: 0.13, bobSpeed: 0.95, bobAmp: 0.65 },
-      { cx: 42.0,  cy: 13.0, cz: -8.0,  radius: 5.2, speed: -0.14, bobSpeed: 0.85, bobAmp: 0.7 }
-    ];
-    balloonPatterns.forEach((pat, idx) => {
-      const bGroup = new THREE.Group();
-      const topSphere = new THREE.Mesh(new THREE.SphereGeometry(pat.r, 20, 16), new THREE.MeshStandardMaterial({ color: pat.top, roughness: 0.62 })); topSphere.position.y = 0.42; topSphere.scale.set(1.0, 1.25, 1.0);
-      const midBelt = new THREE.Mesh(new THREE.CylinderGeometry(pat.r * 0.96, pat.r * 0.92, 0.48, 20), new THREE.MeshStandardMaterial({ color: pat.mid, roughness: 0.55 })); midBelt.position.y = 0.28;
-      const lowerCone = new THREE.Mesh(new THREE.CylinderGeometry(pat.r * 0.86, pat.r * 0.32, 0.8, 18), new THREE.MeshStandardMaterial({ color: pat.bot, roughness: 0.62 })); lowerCone.position.y = -0.48;
-      const basket = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.3, 0.35), new THREE.MeshStandardMaterial({ color: pat.basket, roughness: 0.88 })); basket.position.y = -1.25;
-      bGroup.add(topSphere, midBelt, lowerCone, basket);
-      for (let r = 0; r < 4; r++) {
-        const ang = (r * Math.PI) / 2 + Math.PI / 4;
-        bGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(Math.cos(ang) * pat.r * 0.32, -0.88, Math.sin(ang) * pat.r * 0.32),
-          new THREE.Vector3(Math.cos(ang) * 0.17, -1.12, Math.sin(ang) * 0.17)
-        ]), new THREE.LineBasicMaterial({ color: '#27272a' })));
+
+    // Procedural Hot Air Balloon Festival Livery Textures (參考熱氣球節附圖塗裝!)
+    function createBalloonLiveryTexture(style) {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      if (style === 'redWhiteStripes') {
+        // 1. Classic Red & White Vertical Candy Stripes
+        for (let i = 0; i < 16; i++) {
+          ctx.fillStyle = i % 2 === 0 ? '#dc2626' : '#f8fafc';
+          ctx.fillRect(i * 32, 0, 32, 256);
+        }
+      } else if (style === 'rainbowStripes') {
+        // 2. Vibrant Rainbow Vertical Gores
+        const cols = ['#dc2626', '#f97316', '#facc15', '#16a34a', '#2563eb', '#f8fafc'];
+        for (let i = 0; i < 18; i++) {
+          ctx.fillStyle = cols[i % cols.length];
+          ctx.fillRect((i / 18) * 512, 0, 512 / 18 + 1, 256);
+        }
+      } else if (style === 'blueYellowCheck') {
+        // 3. Blue & Yellow Checkerboard (like Saga International Balloon Fiesta!)
+        const cw = 32, ch = 26;
+        for (let r = 0; r < 10; r++) {
+          for (let col = 0; col < 16; col++) {
+            const isAlt = (r + col) % 2 === 0;
+            ctx.fillStyle = isAlt ? '#1d4ed8' : (r % 3 === 0 ? '#60a5fa' : '#facc15');
+            ctx.fillRect(col * cw, r * ch, cw, ch);
+          }
+        }
+      } else {
+        // 4. Red, Gold & Deep Navy Nordic Geometric Cross / Horizontal Bands
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(0, 0, 512, 256);
+        ctx.fillStyle = '#1e3a8a';
+        ctx.fillRect(0, 74, 512, 42);
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(0, 84, 512, 22);
+        for (let i = 0; i < 8; i++) {
+          ctx.fillStyle = '#1e3a8a';
+          ctx.fillRect(i * 64 + 22, 0, 20, 256);
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(i * 64 + 27, 0, 10, 256);
+        }
       }
-      const burnerLight = new THREE.PointLight(0xf97316, 0.9, 4.0); burnerLight.position.y = -0.96; bGroup.add(burnerLight);
-      bGroup.castShadow = true; root.add(bGroup);
-      hotAirBalloons.push({ group: bGroup, cfg: balloonWaypoints[idx], angle: (idx * Math.PI) / 3, light: burnerLight });
+      // Subtle vertical gore seam lines for realistic fabric panel shading
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.14)';
+      ctx.lineWidth = 2;
+      for (let x = 0; x <= 512; x += 32) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 256); ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    // Sculpted Teardrop Hot Air Balloon Envelope Geometry (LatheGeometry)
+    const balloonProfile = [
+      new THREE.Vector2(0.28, -0.92), // Open burner throat
+      new THREE.Vector2(0.42, -0.62),
+      new THREE.Vector2(0.68, -0.22),
+      new THREE.Vector2(0.94,  0.22),
+      new THREE.Vector2(1.02,  0.65),
+      new THREE.Vector2(0.92,  1.05),
+      new THREE.Vector2(0.64,  1.34),
+      new THREE.Vector2(0.28,  1.48),
+      new THREE.Vector2(0.01,  1.52)  // Crown apex
+    ];
+    const sharedBalloonGeo = new THREE.LatheGeometry(balloonProfile, 24);
+    const balloonWickerMat = new THREE.MeshStandardMaterial({ color: '#78350f', roughness: 0.9 });
+    const balloonFlameMat = new THREE.MeshBasicMaterial({ color: '#fb923c' });
+
+    // Robinson R44 Sightseeing Helicopter Builder (黃＋深海軍藍塗裝 JA7983 觀光直升機, Facing +Z!)
+    const heliYellowMat = new THREE.MeshStandardMaterial({ color: '#facc15', roughness: 0.24, metalness: 0.18, envMapIntensity: 1.2 });
+    const heliNavyMat = new THREE.MeshStandardMaterial({ color: '#0f2447', roughness: 0.28, metalness: 0.25, envMapIntensity: 1.2 });
+    const heliGlassMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.08, metalness: 0.85, envMapIntensity: 1.5 });
+    const heliDarkMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.45, metalness: 0.65 });
+
+    function createR44Helicopter() {
+      const hg = new THREE.Group();
+      hg.scale.setScalar(1.28);
+      // 1. Rounded Teardrop Yellow & Navy Fuselage Cabin
+      const cabin = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 12), heliYellowMat);
+      cabin.scale.set(0.82, 0.86, 1.58); cabin.castShadow = true; hg.add(cabin);
+      // Deep navy upper-rear cowling & sweeping side stripe
+      const navyStripe = new THREE.Mesh(new THREE.SphereGeometry(0.47, 14, 10, 0, Math.PI * 2, 0.25, 1.1), heliNavyMat);
+      navyStripe.scale.set(0.84, 0.72, 1.48); navyStripe.position.set(0, 0.06, -0.14); hg.add(navyStripe);
+      // Panoramic wraparound bubble glass canopy (+Z nose)
+      const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.44, 14, 12, -Math.PI * 0.5, Math.PI, 0.1, Math.PI * 0.65), heliGlassMat);
+      canopy.scale.set(0.8, 0.82, 1.22); canopy.position.set(0, 0.06, 0.22); hg.add(canopy);
+      // Tall Yellow Rotor Mast Fairing
+      const mastCone = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.2, 0.56, 10), heliYellowMat);
+      mastCone.scale.set(0.85, 1.0, 1.35); mastCone.position.set(0, 0.52, -0.05); hg.add(mastCone);
+      const mastShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.22, 8), heliDarkMat);
+      mastShaft.position.set(0, 0.86, -0.05); hg.add(mastShaft);
+      // Spinning 2-Blade Main Rotor
+      const mainRotor = new THREE.Group();
+      mainRotor.position.set(0, 0.94, -0.05);
+      const blade1 = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.022, 0.11), heliDarkMat);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 8), heliDarkMat);
+      mainRotor.add(blade1, hub); hg.add(mainRotor);
+      // Slender Tapered Navy-and-Yellow Tail Boom (-Z)
+      const boom = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.14, 1.55, 10), heliNavyMat);
+      boom.rotation.x = Math.PI / 2; boom.position.set(0, 0.14, -1.25); boom.castShadow = true; hg.add(boom);
+      const boomTip = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.055, 0.42, 8), heliYellowMat);
+      boomTip.rotation.x = Math.PI / 2; boomTip.position.set(0, 0.14, -1.92); hg.add(boomTip);
+      // Tall Yellow Vertical Tail Fin & Horizontal Stabilizer
+      const vFin = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.62, 0.22), heliYellowMat);
+      vFin.position.set(0, 0.26, -2.06); vFin.rotation.x = -0.22;
+      const hStab = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.14), heliYellowMat);
+      hStab.position.set(0, 0.14, -1.96); hg.add(vFin, hStab);
+      // Spinning Side Tail Rotor
+      const tailRotor = new THREE.Group();
+      tailRotor.position.set(-0.08, 0.14, -2.04);
+      const tBlade = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.46, 0.045), heliDarkMat);
+      tailRotor.add(tBlade); hg.add(tailRotor);
+      // Twin Landing Skids (Yellow Struts + Dark Skid Tubes)
+      for (const side of [-1, 1]) {
+        const skid = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.25, 6), heliDarkMat);
+        skid.rotation.x = Math.PI / 2; skid.position.set(side * 0.34, -0.52, 0.06); hg.add(skid);
+        for (const sz of [0.28, -0.24]) {
+          const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.34, 6), heliYellowMat);
+          strut.position.set(side * 0.26, -0.38, sz); strut.rotation.z = side * 0.42; hg.add(strut);
+        }
+      }
+      // Subtle Aviation Strobe Beacon under tail
+      const hLight = new THREE.PointLight(0xfef08a, 0.6, 3.0); hLight.position.set(0, -0.3, 0.4); hg.add(hLight);
+      return { group: hg, mainRotor, tailRotor, light: hLight };
+    }
+
+    const aerialFleetCfg = [
+      // 4 Festival Hot Air Balloons around Mt. Fuji & Five Lakes
+      { type: 'balloon', style: 'redWhiteStripes', scale: 0.96, cx: -6.5,  cy: 12.5, cz: -24.0, radius: 6.2, speed: 0.14,  bobSpeed: 0.9,  bobAmp: 0.7 },
+      { type: 'balloon', style: 'rainbowStripes',  scale: 0.92, cx: -12.0, cy: 15.8, cz: 4.0,   radius: 7.2, speed: -0.11, bobSpeed: 0.7,  bobAmp: 0.85 },
+      { type: 'balloon', style: 'blueYellowCheck', scale: 0.94, cx: 12.0,  cy: 13.0, cz: -5.0,  radius: 5.5, speed: 0.14,  bobSpeed: 1.05, bobAmp: 0.6 },
+      { type: 'balloon', style: 'nordicCross',     scale: 0.90, cx: -28.0, cy: 12.5, cz: 15.0,  radius: 6.0, speed: -0.13, bobSpeed: 0.8,  bobAmp: 0.75 },
+      // 2 Robinson R44 Sightseeing Helicopters cruising Sagami Bay / Hakone & Tokyo Bay / Yokohama!
+      { type: 'heli', cx: 22.0, cy: 11.2, cz: 26.5, radius: 7.2, speed: 0.24,  bobSpeed: 1.4, bobAmp: 0.35 },
+      { type: 'heli', cx: 48.0, cy: 12.6, cz: -6.5, radius: 7.8, speed: -0.22, bobSpeed: 1.3, bobAmp: 0.35 }
+    ];
+
+    aerialFleetCfg.forEach((cfg, idx) => {
+      if (cfg.type === 'heli') {
+        const heli = createR44Helicopter();
+        root.add(heli.group);
+        hotAirBalloons.push({ group: heli.group, cfg, angle: (idx * Math.PI) / 3, light: heli.light, isHeli: true, mainRotor: heli.mainRotor, tailRotor: heli.tailRotor });
+      } else {
+        const bGroup = new THREE.Group();
+        const envMat = new THREE.MeshStandardMaterial({ map: createBalloonLiveryTexture(cfg.style), roughness: 0.55, metalness: 0.04 });
+        const env = new THREE.Mesh(sharedBalloonGeo, envMat);
+        env.scale.setScalar(cfg.scale); env.castShadow = true; bGroup.add(env);
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.24, 6), balloonFlameMat);
+        flame.position.y = -0.96 * cfg.scale; bGroup.add(flame);
+        const basket = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.3, 0.36), balloonWickerMat);
+        basket.position.y = -1.32 * cfg.scale; bGroup.add(basket);
+        for (let r = 0; r < 4; r++) {
+          const ang = (r * Math.PI) / 2 + Math.PI / 4;
+          bGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(Math.cos(ang) * 0.28 * cfg.scale, -0.90 * cfg.scale, Math.sin(ang) * 0.28 * cfg.scale),
+            new THREE.Vector3(Math.cos(ang) * 0.17, -1.18 * cfg.scale, Math.sin(ang) * 0.17)
+          ]), new THREE.LineBasicMaterial({ color: '#27272a' })));
+        }
+        const burnerLight = new THREE.PointLight(0xf97316, 0.9, 4.0); burnerLight.position.y = -0.96 * cfg.scale; bGroup.add(burnerLight);
+        root.add(bGroup);
+        hotAirBalloons.push({ group: bGroup, cfg, angle: (idx * Math.PI) / 3, light: burnerLight, isHeli: false });
+      }
     });
 
     // Multi-Bay Festival Fireworks (Kawaguchiko, Yamanakako, Atami Bay, Enoshima, Yokohama, Tokyo Bay!)
@@ -5321,7 +6290,7 @@
       { label: '🏟️ 東京巨蛋', pos: [49.5, 4.6, -31.5], cam: 'tokyoMetro' },
       { label: '🏮 淺草雷門', pos: [57.5, 4.6, -32.0], cam: 'tokyoMetro' },
       { label: '🗼 東京晴空塔', pos: [62.5, 11.8, -33.8], cam: 'tokyoMetro' },
-      { label: '🌉 彩虹大橋・台場富士電視台', pos: [50.0, 4.8, -5.8], cam: 'oceanTokyo' },
+      { label: '🌉 彩虹大橋・台場富士電視台', pos: [53.0, 4.4, -5.4], cam: 'oceanTokyo' },
       { label: '🌊 東京灣', pos: [60.5, 1.8, 17.5], cam: 'tokyoBayAqualine' },
       { label: '🌉 海螢跨海公路', pos: [62.5, 3.6, 2.8], cam: 'tokyoBayAqualine' },
       { label: '🏰 東京迪士尼渡假區', pos: [59.0, 6.2, -11.5], cam: 'tokyoBayAqualine' },
@@ -5335,28 +6304,399 @@
       { label: '☸️ 牛久大佛', pos: [81.5, 9.6, -39.5], cam: 'ushikuDaibutsu' }
     ];
 
-    const pinItems = LANDMARKS.map((lm) => {
+    const pinItems = LANDMARKS.map((lm, idx) => {
       const el = document.createElement('div');
       el.className = 'pin-label';
       el.textContent = lm.label;
       el.addEventListener('click', () => flyTo(lm.cam));
       labelsContainer.appendChild(el);
-      return { el, worldPos: new THREE.Vector3(...lm.pos) };
+      return { el, idx, zh: lm.label, worldPos: new THREE.Vector3(...lm.pos) };
     });
+
+    // =========================================================================
+    // 13.5 FULL MULTI-LANGUAGE I18N SYSTEM (繁體中文 / English / 日本語)
+    // =========================================================================
+    let currentLang = 'zh';
+    const I18N_UI = {
+      zh: {
+        pageTitle: '東京近郊．富士山地區立體場景',
+        showTitle: '🗻 顯示標題', showPanel: '⚙️ 顯示工具面板',
+        exitCockpit: '✕ 退出第一人稱 (ESC)', backHome: '← 返回作品集首頁',
+        hideLeft: '◀ 隱藏', hideRight: '隱藏 ▶',
+        appTitle: '🗻 東京近郊．富士山地區立體場景',
+        appDesc: '2.0 寫實進化版：導入物理環境反射（IBL）、大氣天空與立體漂移雲層、電影級夜景輝光（Bloom）、柔和蜂巢水波與鳴門渦潮、高密度東京／橫濱／麻布台之丘與江戶灣生態，以及 4,500+ 棵有機樹冠森林！',
+        panelTitle: '⚙️ 場景控制面板', secLang: '🌐 語言切換 / Language / 言語',
+        secSeason: '四季風情變幻（春夏秋冬）',
+        seasonSpring: '🌸 春櫻', seasonSummer: '🌿 盛夏', seasonAutumn: '🍁 金秋', seasonWinter: '❄️ 嚴冬',
+        secTime: '日夜與赤富士光影',
+        timeDawn: '🌄 黎明', timeDay: '☀️ 白晝', timeSunset: '🌅 赤富士', timeNight: '🌙 夜景', timeMidnight: '🌌 深夜',
+        secCycle: '🔄 自動循環播放模式', cycOff: '⏹ 關閉', cycBoth: '🔄 大循環', cycSeason: '🌸 四季', cycTime: '☀️ 日夜',
+        secWeather: '⚡ 特殊天氣事件（雷雨／龍捲風／冰雹）',
+        wxNormal: '☀️ 正常', wxStorm: '⛈️ 大雷雨', wxTornado: '🌪️ 龍捲風', wxHail: '🧊 冰雹',
+        secCam: '真實地理導覽視角（點擊平滑飛行）',
+        cam_panorama: '🗺️ 全域正方全覽', cam_fujiSummit: '🗻 富士山環形火山口',
+        cam_kawaguchiko: '💧 河口湖與五湖', cam_fujiQHighland: '🎢 富士急與忠靈塔',
+        cam_oshinoYamanaka: '🏡 忍野八海與山中湖', cam_aokigahara: '🌲 青木原樹海',
+        cam_shiraitoFujinomiya: '🌊 白糸瀧與遺產中心', cam_gotembaOutlet: '🛍️ 御殿場 OUTLET',
+        cam_hakoneAshi: '🚡 箱根蘆之湖', cam_atamiOnsen: '♨️ 熱海溫泉與伊豆半島',
+        cam_izuPeninsula: '🏝️ 伊豆半島・駿河/相模灣', cam_speedwayShinkansen: '🏎️ 賽車場與新幹線',
+        cam_enoshimaKamakura: '🚃 江之島與江之電', cam_kamakuraBuddha: '☸️ 鎌倉大佛古都',
+        cam_yokohamaMinatoMirai: '🎡 橫濱港未來地標', cam_koyasan: '🚡 高野山與纜車',
+        cam_hanedaAirport: '✈️ 羽田機場', cam_oceanTokyo: '🗼 東京鐵塔與彩虹橋',
+        cam_tokyoMetro: '🏛️ 東京車站・巨蛋・雷門', cam_tokyoBayAqualine: '🌉 東京灣・海螢・迪士尼',
+        cam_miuraYokosuka: '⚓ 三浦半島・橫須賀軍港', cam_bosoPeninsula: '🏝️ 千葉房總半島',
+        cam_naritaAirport: '✈️ 成田國際機場', cam_ushikuDaibutsu: '☸️ 牛久大佛',
+        cam_magmaVolcano: '🌋 地底岩漿與深海剖面',
+        btnCockpit: '👨‍✈️ 巨無霸客機「機長第一人稱視角」（跟隨起降遨遊）',
+        btnPassenger: '🪟 客機「右側乘客窗景視角」（俯瞰右側地面與雲海）',
+        btnShinkansen: '🚅 東海道新幹線「列車駕駛視角」（東京站 ⇄ 新富士站）',
+        btnCruiseBow: '🚢 豪華郵輪「船首甲板視角」（破浪巡航六大海灣）',
+        btnCruiseCabin: '🛏️ 豪華郵輪「船艙陽台視角」（永遠面向富士山陸地）',
+        secAerial: '動態空域與節慶特效',
+        optSnow: '❄️ 冬季飄雪動畫 (可單獨啟閉)', optBalloons: '🎈 熱氣球＆直升機編隊 (巡航)',
+        optFireworks: '🎆 湖畔與海灣煙火秀 (多點盛開)', optJet: '✈️ 巨無霸客機對飛 (羽田 ⇄ 成田)',
+        secGlobal: '全域動態與展示選項', btnPlay: '▶️ 播放動畫', btnPause: '⏸️ 停止動畫',
+        optSpeed: '⚡ 動畫播放速度', optLabels: '顯示 3D 地標導覽標籤',
+        optLabels2x: '🔍 地標標籤字體放大 2×', optAnim: '地表動態 (新幹線/江之電/樂園/鯨豚)',
+        optOrbit: '鏡頭自動環繞展示',
+        statusRotate: '<b>左鍵拖曳</b> 自由旋轉', statusPan: '<b>右鍵拖曳</b> 平移視野',
+        statusZoom: '<b>滾輪</b> 遠近縮放', statusClick: '<b>點擊地標標籤</b> 快速對焦',
+        hudJetTitle: '👨‍✈️ 巨無霸客機 機長視角', hudPassTitle: '🪟 客機 右側乘客窗景',
+        hudShinkTitle: '🚅 東海道新幹線 駕駛視角', hudBowTitle: '🚢 瑪麗皇后二號 船首甲板視角',
+        hudCabinTitle: '🛏️ 豪華郵輪 船艙陽台視角（面向富士山）',
+        hudCruiseBowPhase: '六大海灣悠閒破浪巡航中', hudCruiseCabinPhase: '海上遠眺富士山與日本海岸線',
+        metaAuthor: '<b>作者：</b>Might.LAi (Taiwan)', metaDate: '<b>更新日期：</b>2026.11.26', metaTools: '<b>開發工具：</b>Google Antigravity',
+        openFeedback: '💬 意見留言板 / 提供建議', fbTitle: '💬 觀眾意見留言板', fbClose: '✕ 關閉',
+        fbNamePh: '您的暱稱 (選填)', fbMsgPh: '歡迎留下對 3D 場景的建議、想法或想新增的地標！',
+        fbSubmitGH: '🌐 公開留言 (GitHub)', fbSubmitLocal: '💾 本機快速留言',
+        fbEmpty: '目前尚無留言，歡迎成為第一位留言的朋友！', fbAnon: '訪客'
+      },
+      en: {
+        pageTitle: 'Greater Tokyo & Mt. Fuji 3D Diorama',
+        showTitle: '🗻 Show Title', showPanel: '⚙️ Show Controls',
+        exitCockpit: '✕ Exit First-Person (ESC)', backHome: '← Back to Portfolio',
+        hideLeft: '◀ Hide', hideRight: 'Hide ▶',
+        appTitle: '🗻 Greater Tokyo & Mt. Fuji 3D Diorama',
+        appDesc: 'Edition 2.0 Realism: PBR IBL reflections, atmospheric sky & drifting 3D clouds, cinematic night Bloom, Voronoi ocean caustics & Naruto whirlpools, dense Tokyo/Yokohama/Azabudai Hills, Tokyo Bay marine life, and 4,500+ organic canopy trees!',
+        panelTitle: '⚙️ Scene Controls', secLang: '🌐 Language / 語言 / 言語',
+        secSeason: 'Four Seasons (Spring–Winter)',
+        seasonSpring: '🌸 Spring', seasonSummer: '🌿 Summer', seasonAutumn: '🍁 Autumn', seasonWinter: '❄️ Winter',
+        secTime: 'Lighting & Red Fuji',
+        timeDawn: '🌄 Dawn', timeDay: '☀️ Day', timeSunset: '🌅 Red Fuji', timeNight: '🌙 Night', timeMidnight: '🌌 Midnight',
+        secCycle: '🔄 Auto-Cycle Mode', cycOff: '⏹ Off', cycBoth: '🔄 Full', cycSeason: '🌸 Seasons', cycTime: '☀️ 24h Day',
+        secWeather: '⚡ Extreme Weather Events',
+        wxNormal: '☀️ Clear', wxStorm: '⛈️ Storm', wxTornado: '🌪️ Tornado', wxHail: '🧊 Hail',
+        secCam: 'True-Geography Camera Tour (Click to Fly)',
+        cam_panorama: '🗺️ Full Panorama', cam_fujiSummit: '🗻 Mt. Fuji Crater',
+        cam_kawaguchiko: '💧 Fuji Five Lakes', cam_fujiQHighland: '🎢 Fuji-Q & Chureito',
+        cam_oshinoYamanaka: '🏡 Oshino & Yamanakako', cam_aokigahara: '🌲 Aokigahara Forest',
+        cam_shiraitoFujinomiya: '🌊 Shiraito & Heritage', cam_gotembaOutlet: '🛍️ Gotemba Outlets',
+        cam_hakoneAshi: '🚡 Hakone & Lake Ashi', cam_atamiOnsen: '♨️ Atami Onsen & Izu',
+        cam_izuPeninsula: '🏝️ Izu, Suruga & Sagami', cam_speedwayShinkansen: '🏎️ Speedway & Shinkansen',
+        cam_enoshimaKamakura: '🚃 Enoshima & Enoden', cam_kamakuraBuddha: '☸️ Kamakura Great Buddha',
+        cam_yokohamaMinatoMirai: '🎡 Yokohama Minato Mirai', cam_koyasan: '🚡 Mt. Koya & Ropeway',
+        cam_hanedaAirport: '✈️ Haneda Airport', cam_oceanTokyo: '🗼 Tokyo Tower & Bridge',
+        cam_tokyoMetro: '🏛️ Tokyo Sta, Dome, Asakusa', cam_tokyoBayAqualine: '🌉 Tokyo Bay, Aqua-Line, Disney',
+        cam_miuraYokosuka: '⚓ Miura & Yokosuka Naval', cam_bosoPeninsula: '🏝️ Chiba Boso Peninsula',
+        cam_naritaAirport: '✈️ Narita Int\'l Airport', cam_ushikuDaibutsu: '☸️ Ushiku Daibutsu',
+        cam_magmaVolcano: '🌋 Subsea Magma & Cutaway',
+        btnCockpit: '👨‍✈️ Commercial Airliner "Captain\'s View" (Haneda ⇄ Fuji ⇄ Narita)',
+        btnPassenger: '🪟 Airliner "Right-Side Passenger Window" (Ground & Wing View)',
+        btnShinkansen: '🚅 N700S Shinkansen "Driver\'s View" (Tokyo ⇄ Shin-Fuji)',
+        btnCruiseBow: '🚢 Luxury Cruise Liner "Bow Deck View" (6-Bay Voyage)',
+        btnCruiseCabin: '🛏️ Luxury Cruise Liner "Ocean Cabin View" (Facing Mt. Fuji)',
+        secAerial: 'Aerial & Festival Effects',
+        optSnow: '❄️ Winter Snowfall (Toggle)', optBalloons: '🎈 Hot Air Balloons & Helicopters',
+        optFireworks: '🎆 Lakeside & Bay Fireworks', optJet: '✈️ Airliner Shuttle (Haneda ⇄ Narita)',
+        secGlobal: 'Animation & Display', btnPlay: '▶️ Play', btnPause: '⏸️ Pause',
+        optSpeed: '⚡ Animation Speed', optLabels: 'Show 3D Landmark Pins',
+        optLabels2x: '🔍 2× Larger Landmark Labels', optAnim: 'World Motion (Trains/Ships/Marine)',
+        optOrbit: 'Auto-Orbit Showcase',
+        statusRotate: '<b>Left Drag</b> Rotate', statusPan: '<b>Right Drag</b> Pan',
+        statusZoom: '<b>Scroll</b> Zoom', statusClick: '<b>Click Pin</b> Fly To',
+        hudJetTitle: '👨‍✈️ Airliner Captain\'s View', hudPassTitle: '🪟 Right-Side Passenger Window',
+        hudShinkTitle: '🚅 N700S Shinkansen Driver\'s View', hudBowTitle: '🚢 Queen Mary 2 Bow Deck View',
+        hudCabinTitle: '🛏️ Cruise Cabin Balcony (Facing Mt. Fuji)',
+        hudCruiseBowPhase: 'Cruising calmly across the 6 bays', hudCruiseCabinPhase: 'Panoramic Mt. Fuji & coastal view',
+        metaAuthor: '<b>Author:</b> Might.LAi (Taiwan)', metaDate: '<b>Rev. Date:</b> 2026.11.26', metaTools: '<b>Build-up Tools:</b> Google Antigravity',
+        openFeedback: '💬 Guestbook / Feedback', fbTitle: '💬 Visitor Guestbook & Feedback', fbClose: '✕ Close',
+        fbNamePh: 'Your Name (optional)', fbMsgPh: 'Share your thoughts, suggestions, or landmarks you\'d love to see!',
+        fbSubmitGH: '🌐 Post Publicly (GitHub)', fbSubmitLocal: '💾 Quick Local Note',
+        fbEmpty: 'No comments yet — be the first to leave feedback!', fbAnon: 'Visitor'
+      },
+      ja: {
+        pageTitle: '東京近郊・富士山エリア 3D ジオラマ',
+        showTitle: '🗻 タイトル表示', showPanel: '⚙️ パネル表示',
+        exitCockpit: '✕ 一人称視点を終了 (ESC)', backHome: '← 作品一覧へ戻る',
+        hideLeft: '◀ 隠す', hideRight: '隠す ▶',
+        appTitle: '🗻 東京近郊・富士山エリア 3D ジオラマ',
+        appDesc: '2.0 リアル進化版：物理環境反射（IBL）、大気グラデーション空と立体雲、映画級夜景ブルーム、柔らかな海面波紋と渦潮、高密度な東京・横浜・麻布台ヒルズ、江戸湾の海洋生物、4,500本以上の森林を再現！',
+        panelTitle: '⚙️ シーン設定パネル', secLang: '🌐 言語切替 / Language / 語言',
+        secSeason: '四季の移ろい（春夏秋冬）',
+        seasonSpring: '🌸 春桜', seasonSummer: '🌿 盛夏', seasonAutumn: '🍁 紅葉', seasonWinter: '❄️ 厳冬',
+        secTime: '昼夜と赤富士ライティング',
+        timeDawn: '🌄 夜明け', timeDay: '☀️ 昼間', timeSunset: '🌅 赤富士', timeNight: '🌙 夜景', timeMidnight: '🌌 深夜',
+        secCycle: '🔄 自動循環モード', cycOff: '⏹ 停止', cycBoth: '🔄 全循環', cycSeason: '🌸 四季のみ', cycTime: '☀️ 24hのみ',
+        secWeather: '⚡ 特殊気象イベント（雷雨・竜巻・雹）',
+        wxNormal: '☀️ 通常', wxStorm: '⛈️ 大雷雨', wxTornado: '🌪️ 竜巻', wxHail: '🧊 雹(ひょう)',
+        secCam: '地理ガイド視点（クリックで飛行）',
+        cam_panorama: '🗺️ 全域パノラマ', cam_fujiSummit: '🗻 富士山火口',
+        cam_kawaguchiko: '💧 河口湖・富士五湖', cam_fujiQHighland: '🎢 富士急・忠霊塔',
+        cam_oshinoYamanaka: '🏡 忍野八海・山中湖', cam_aokigahara: '🌲 青木ヶ原樹海',
+        cam_shiraitoFujinomiya: '🌊 白糸の滝・遺産センター', cam_gotembaOutlet: '🛍️ 御殿場アウトレット',
+        cam_hakoneAshi: '🚡 箱根・芦ノ湖', cam_atamiOnsen: '♨️ 熱海温泉・伊豆半島',
+        cam_izuPeninsula: '🏝️ 伊豆・駿河湾・相模湾', cam_speedwayShinkansen: '🏎️ 富士スピードウェイ',
+        cam_enoshimaKamakura: '🚃 江の島・江ノ電', cam_kamakuraBuddha: '☸️ 鎌倉大仏（高徳院）',
+        cam_yokohamaMinatoMirai: '🎡 横浜みなとみらい', cam_koyasan: '🚡 高野山・ロープウェイ',
+        cam_hanedaAirport: '✈️ 羽田空港', cam_oceanTokyo: '🗼 東京タワー・レインボー橋',
+        cam_tokyoMetro: '🏛️ 東京駅・ドーム・浅草', cam_tokyoBayAqualine: '🌉 東京湾・海ほたる・TDR',
+        cam_miuraYokosuka: '⚓ 三浦半島・横須賀軍港', cam_bosoPeninsula: '🏝️ 千葉・房総半島',
+        cam_naritaAirport: '✈️ 成田国際空港', cam_ushikuDaibutsu: '☸️ 牛久大仏',
+        cam_magmaVolcano: '🌋 地底マグマ・深海断面',
+        btnCockpit: '👨‍✈️ 旅客機「機長コックピット視点」（羽田 ⇄ 富士山 ⇄ 成田）',
+        btnPassenger: '🪟 旅客機「右側乗客ウィンドウ視点」（右側の地上を眺望）',
+        btnShinkansen: '🚅 東海道新幹線 N700S「運転台視点」（東京駅 ⇄ 新富士駅）',
+        btnCruiseBow: '🚢 豪華客船「船首デッキ視点」（六大海湾クルーズ）',
+        btnCruiseCabin: '🛏️ 豪華客船「客室バルコニー視点」（常に富士山方向を眺望）',
+        secAerial: '空域・季節エフェクト',
+        optSnow: '❄️ 冬の降雪アニメーション', optBalloons: '🎈 熱気球＆観光ヘリ編隊',
+        optFireworks: '🎆 湖畔・東京湾花火大会', optJet: '✈️ 旅客機シャトル運航（羽田 ⇄ 成田）',
+        secGlobal: '全体モーション・表示設定', btnPlay: '▶️ 再生', btnPause: '⏸️ 一時停止',
+        optSpeed: '⚡ アニメーション速度', optLabels: '3D ランドマーク表示',
+        optLabels2x: '🔍 ラベル文字サイズ 2×', optAnim: '地上・海洋モーション（列車/船/魚）',
+        optOrbit: 'カメラ自動周回デモ',
+        statusRotate: '<b>左ドラッグ</b> 回転', statusPan: '<b>右ドラッグ</b> 平行移動',
+        statusZoom: '<b>ホイール</b> ズーム', statusClick: '<b>ラベルをクリック</b> 移動',
+        hudJetTitle: '👨‍✈️ 旅客機 機長視点', hudPassTitle: '🪟 旅客機 右側乗客ウィンドウ視点',
+        hudShinkTitle: '🚅 東海道新幹線 運転台視点', hudBowTitle: '🚢 豪華客船 船首デッキ視点',
+        hudCabinTitle: '🛏️ 豪華客船 客室視点（富士山方向）',
+        hudCruiseBowPhase: '太平洋・東京湾をゆったり航海中', hudCruiseCabinPhase: '海上から富士山と日本沿岸を一望',
+        metaAuthor: '<b>制作者：</b>Might.LAi (Taiwan)', metaDate: '<b>更新日：</b>2026.11.26', metaTools: '<b>制作ツール：</b>Google Antigravity',
+        openFeedback: '💬 ご意見・コメント掲示板', fbTitle: '💬 ご意見・コメント掲示板', fbClose: '✕ 閉じる',
+        fbNamePh: 'お名前（任意）', fbMsgPh: '3Dシーンへのご感想や、追加してほしい名所などをお気軽にどうぞ！',
+        fbSubmitGH: '🌐 公開コメント (GitHub)', fbSubmitLocal: '💾 ローカルメモ保存',
+        fbEmpty: 'まだコメントはありません。最初の感想をぜひお寄せください！', fbAnon: 'ゲスト'
+      }
+    };
+
+    const I18N_LANDMARKS = {
+      en: [
+        '🗻 Mt. Fuji (3,776m)', '💧 Lake Kawaguchiko', '💧 Lake Saiko', '💧 Lake Shojiko', '💧 Lake Motosuko',
+        '🌲 Aokigahara Forest', '🎢 Fuji-Q Highland', '⛩️ Chureito Pagoda', '🏡 Oshino Hakkai', '💧 Lake Yamanakako',
+        '🌊 Shiraito Falls', '🏛️ Mt. Fuji World Heritage Ctr', '🚄 Shin-Fuji Station', '🛍️ Gotemba Premium Outlets',
+        '♨️ Atami Onsen', '🏝️ Izu Peninsula', '🌊 Suruga Bay', '🌊 Sagami Bay', '🚡 Hakone Owakudani Ropeway',
+        '🚢 Lake Ashi Pirate Ship', '🏎️ Fuji Speedway', '🚄 Tokaido Shinkansen', '🏝️ Enoshima Island',
+        '🚃 Enoden (Kamakura-Koko-Mae)', '☸️ Great Buddha of Kamakura', '🎡 Yokohama Minato Mirai',
+        '🚄 Shin-Yokohama Station', '🚡 Mt. Koya & Ropeway', '✈️ Haneda Airport', '🗼 Tokyo Tower',
+        '⛩️ Zojo-ji Temple', '🏙️ Azabudai Hills', '🏛️ Tokyo Station', '🏟️ Tokyo Dome',
+        '🏮 Asakusa Kaminarimon', '🗼 Tokyo Skytree', '🌉 Rainbow Bridge & Odaiba', '🌊 Tokyo Bay',
+        '🌉 Umihotaru PA (Aqua-Line)', '🏰 Tokyo Disney Resort', '🏙️ Makuhari New City', '🛍️ Mitsui Outlet Kisarazu',
+        '⚓ Yokosuka Naval Base', '🏝️ Miura Peninsula', '🏝️ Chiba Boso Peninsula', '⛩️ Naritasan Shinsho-ji',
+        '✈️ Narita Int\'l Airport', '☸️ Ushiku Daibutsu'
+      ],
+      ja: [
+        '🗻 富士山 (3,776m)', '💧 河口湖', '💧 西湖', '💧 精進湖', '💧 本栖湖',
+        '🌲 青木ヶ原樹海', '🎢 富士急ハイランド', '⛩️ 新倉山浅間公園 忠霊塔', '🏡 忍野八海', '💧 山中湖',
+        '🌊 白糸の滝', '🏛️ 静岡県富士山世界遺産センター', '🚄 新富士駅', '🛍️ 御殿場プレミアム・アウトレット',
+        '♨️ 熱海温泉', '🏝️ 伊豆半島', '🌊 駿河湾', '🌊 相模湾', '🚡 箱根ロープウェイ（大涌谷）',
+        '🚢 箱根芦ノ湖・海賊船', '🏎️ 富士スピードウェイ', '🚄 東海道新幹線', '🏝️ 江の島',
+        '🚃 江ノ島電鉄（鎌倉高校前）', '☸️ 鎌倉大仏（高徳院）', '🎡 横浜みなとみらい',
+        '🚄 新横浜駅', '🚡 高野山・ロープウェイ', '✈️ 羽田空港', '🗼 東京タワー',
+        '⛩️ 増上寺', '🏙️ 麻布台ヒルズ', '🏛️ 東京駅', '🏟️ 東京ドーム',
+        '🏮 浅草 雷門', '🗼 東京スカイツリー', '🌉 レインボーブリッジ・お台場', '🌊 東京湾',
+        '🌉 東京湾アクアライン・海ほたる', '🏰 東京ディズニーリゾート', '🏙️ 幕張新都心', '🛍️ 三井アウトレットパーク木更津',
+        '⚓ 横須賀軍港', '🏝️ 三浦半島', '🏝️ 千葉・房総半島', '⛩️ 成田山新勝寺',
+        '✈️ 成田国際空港', '☸️ 牛久大仏'
+      ]
+    };
+
+    const I18N_STATUS_MAP = {
+      '羽田 ⇄ 成田 巡航中': { en: 'Haneda ⇄ Narita Cruise', ja: '羽田 ⇄ 成田 巡航中' },
+      '羽田機場跑道準備起飛': { en: 'Haneda Runway — Ready for Takeoff', ja: '羽田空港 滑走路 離陸準備' },
+      '羽田機場加速起飛！': { en: 'Haneda Runway — Takeoff Roll!', ja: '羽田空港 加速・離陸！' },
+      '羽田起飛爬升：飛越東京前往富士山': { en: 'Climbing out of Haneda over Tokyo → Mt. Fuji', ja: '羽田離陸上昇：東京上空から富士山へ' },
+      '高空盤旋：繞行富士山 360° 壯闊環景！': { en: 'High Altitude: 360° Scenic Orbit around Mt. Fuji!', ja: '高空旋回：富士山 360° パノラマ周回！' },
+      '飛越東京灣與晴空塔 → 前往成田': { en: 'Over Tokyo Bay & Skytree → Narita', ja: '東京湾・スカイツリー上空 → 成田へ' },
+      '下降進場：對準成田國際機場跑道': { en: 'Final Approach: Narita Int\'l Runway', ja: '最終進入：成田国際空港 滑走路へ' },
+      '成田國際機場平穩降落滑行': { en: 'Narita Touchdown & Rollout', ja: '成田国際空港 着陸・減速滑走' },
+      '成田國際機場停靠整備': { en: 'Narita Turnaround & Prep', ja: '成田国際空港 駐機・整備中' },
+      '成田國際機場加速起飛！': { en: 'Narita Runway — Takeoff Roll!', ja: '成田国際空港 加速・離陸！' },
+      '成田起飛爬升：飛越房總與相模灣 → 富士山': { en: 'Climbing from Narita over Boso & Sagami → Mt. Fuji', ja: '成田離陸：房総・相模湾上空から富士山へ' },
+      '下降進場：飛越湘南橫濱 → 對準羽田跑道': { en: 'Final Approach: Over Shonan & Yokohama → Haneda', ja: '最終進入：湘南・横浜上空 → 羽田滑走路へ' },
+      '羽田機場平穩降落滑行': { en: 'Haneda Touchdown & Rollout', ja: '羽田空港 着陸・減速滑走' },
+      '停靠：新富士車站（往東京方向）': { en: 'Stopped: Shin-Fuji Station (Bound for Tokyo)', ja: '停車中：新富士駅（東京方面）' },
+      '高速東行：新富士站 → 下一站：熱海站': { en: 'Eastbound Express: Shin-Fuji → Next: Atami', ja: '上り高速走行：新富士駅 → 次は熱海駅' },
+      '停靠：熱海車站（往東京方向）': { en: 'Stopped: Atami Station (Bound for Tokyo)', ja: '停車中：熱海駅（東京方面）' },
+      '高速東行：熱海站 → 下一站：新橫濱站': { en: 'Eastbound Express: Atami → Next: Shin-Yokohama', ja: '上り高速走行：熱海駅 → 次は新横浜駅' },
+      '停靠：新橫濱車站（往東京方向）': { en: 'Stopped: Shin-Yokohama Station (Bound for Tokyo)', ja: '停車中：新横浜駅（東京方面）' },
+      '高速東行：新橫濱站 → 終點：東京站': { en: 'Eastbound Express: Shin-Yokohama → Terminus: Tokyo', ja: '上り高速走行：新横浜駅 → 終点 東京駅' },
+      '停靠：東京車站（往新富士方向）': { en: 'Stopped: Tokyo Station (Bound for Shin-Fuji)', ja: '停車中：東京駅（新富士方面）' },
+      '高速西行：東京站 → 下一站：新橫濱站': { en: 'Westbound Express: Tokyo → Next: Shin-Yokohama', ja: '下り高速走行：東京駅 → 次は新横浜駅' },
+      '停靠：新橫濱車站（往新富士方向）': { en: 'Stopped: Shin-Yokohama Station (Bound for Shin-Fuji)', ja: '停車中：新横浜駅（新富士方面）' },
+      '高速西行：新橫濱站 → 下一站：熱海站': { en: 'Westbound Express: Shin-Yokohama → Next: Atami', ja: '下り高速走行：新横浜駅 → 次は熱海駅' },
+      '停靠：熱海車站（往新富士方向）': { en: 'Stopped: Atami Station (Bound for Shin-Fuji)', ja: '停車中：熱海駅（新富士方面）' },
+      '高速西行：熱海站 → 終點：新富士站': { en: 'Westbound Express: Atami → Terminus: Shin-Fuji', ja: '下り高速走行：熱海駅 → 終点 新富士駅' }
+    };
+
+    function translateStatus(zhStr) {
+      if (currentLang === 'zh') return zhStr;
+      const entry = I18N_STATUS_MAP[zhStr];
+      return entry ? entry[currentLang] : zhStr;
+    }
+
+    function applyLanguage(lang) {
+      if (!I18N_UI[lang]) lang = 'zh';
+      currentLang = lang;
+      const dict = I18N_UI[lang];
+      document.documentElement.lang = lang === 'en' ? 'en' : (lang === 'ja' ? 'ja' : 'zh-Hant');
+      document.title = dict.pageTitle;
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const k = el.dataset.i18n;
+        if (dict[k]) el.textContent = dict[k];
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+        const k = el.dataset.i18nHtml;
+        if (dict[k]) el.innerHTML = dict[k];
+      });
+      document.querySelectorAll('[data-lang]').forEach((b) => b.classList.toggle('active', b.dataset.lang === lang));
+      // Update all 48 floating 3D landmark pins & front 3D museum brass plaque
+      pinItems.forEach((p) => {
+        p.el.textContent = lang === 'zh' ? p.zh : (I18N_LANDMARKS[lang][p.idx] || p.zh);
+      });
+      updateBrassPlaqueLanguage(lang);
+      // Update active cockpit HUD title if open
+      const ctEl = document.getElementById('cockpit-title-text');
+      if (ctEl && typeof followCamMode !== 'undefined') {
+        if (followCamMode === 'shinkansen') ctEl.textContent = dict.hudShinkTitle;
+        else if (followCamMode === 'passenger') ctEl.textContent = dict.hudPassTitle;
+        else if (followCamMode === 'cruiseBow') ctEl.textContent = dict.hudBowTitle;
+        else if (followCamMode === 'cruiseCabin') ctEl.textContent = dict.hudCabinTitle;
+        else ctEl.textContent = dict.hudJetTitle;
+      }
+      const fbNameEl = document.getElementById('fb-name'), fbMsgEl = document.getElementById('fb-msg');
+      if (fbNameEl) fbNameEl.placeholder = dict.fbNamePh;
+      if (fbMsgEl) fbMsgEl.placeholder = dict.fbMsgPh;
+      if (typeof renderFeedbackList === 'function') renderFeedbackList();
+      try { localStorage.setItem('fuji3d_lang', lang); } catch (e) {}
+    }
+
+    // Guestbook / Feedback Board Logic (Reads Public GitHub Issues + Local Notes!)
+    const fbModal = document.getElementById('feedback-modal');
+    const fbListEl = document.getElementById('fb-list');
+    const fbNameIn = document.getElementById('fb-name');
+    const fbMsgIn = document.getElementById('fb-msg');
+    const GH_REPO = 'MightLai999/3d-scene-editor';
+    let ghIssuesCache = [];
+
+    function getLocalComments() {
+      try { return JSON.parse(localStorage.getItem('fuji3d_comments') || '[]'); } catch (e) { return []; }
+    }
+    function renderFeedbackList() {
+      const dict = I18N_UI[currentLang] || I18N_UI.zh;
+      const items = [...ghIssuesCache, ...getLocalComments()];
+      fbListEl.innerHTML = '';
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center; color:#94a3b8; font-size:11.5px; padding:14px 0;';
+        empty.textContent = dict.fbEmpty;
+        fbListEl.appendChild(empty);
+        return;
+      }
+      items.forEach((it) => {
+        const card = document.createElement('div'); card.className = 'feedback-item';
+        const meta = document.createElement('div'); meta.className = 'feedback-item-meta';
+        const who = document.createElement('span'); who.textContent = (it.source === 'github' ? '🌐 ' : '💾 ') + (it.author || dict.fbAnon);
+        const when = document.createElement('span'); when.textContent = it.date || '';
+        meta.append(who, when);
+        const txt = document.createElement('div'); txt.textContent = it.text;
+        card.append(meta, txt);
+        fbListEl.appendChild(card);
+      });
+    }
+    async function loadGitHubComments() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GH_REPO}/issues?state=open&per_page=15`);
+        if (!res.ok) return;
+        const data = await res.json();
+        ghIssuesCache = data.filter((d) => !d.pull_request).map((d) => ({
+          source: 'github',
+          author: d.user ? d.user.login : 'GitHub',
+          date: (d.created_at || '').slice(0, 10),
+          text: (d.title ? d.title + (d.body ? ' — ' + d.body : '') : d.body || '').slice(0, 260)
+        }));
+        renderFeedbackList();
+      } catch (e) {}
+    }
+    document.getElementById('btn-open-feedback').addEventListener('click', () => {
+      fbModal.classList.add('open');
+      renderFeedbackList();
+      if (!ghIssuesCache.length) loadGitHubComments();
+    });
+    document.getElementById('btn-close-feedback').addEventListener('click', () => fbModal.classList.remove('open'));
+    fbModal.addEventListener('click', (e) => { if (e.target === fbModal) fbModal.classList.remove('open'); });
+    document.getElementById('btn-fb-local').addEventListener('click', () => {
+      const text = fbMsgIn.value.trim();
+      if (!text) return;
+      const dict = I18N_UI[currentLang] || I18N_UI.zh;
+      const author = fbNameIn.value.trim() || dict.fbAnon;
+      const now = new Date().toISOString().slice(0, 10);
+      const list = getLocalComments();
+      list.unshift({ source: 'local', author, date: now, text });
+      try { localStorage.setItem('fuji3d_comments', JSON.stringify(list.slice(0, 30))); } catch (e) {}
+      fbMsgIn.value = '';
+      renderFeedbackList();
+    });
+    document.getElementById('btn-fb-github').addEventListener('click', () => {
+      const dict = I18N_UI[currentLang] || I18N_UI.zh;
+      const author = fbNameIn.value.trim() || dict.fbAnon;
+      const text = fbMsgIn.value.trim();
+      const title = encodeURIComponent(`[3D-scene-20 Feedback] from ${author}`);
+      const body = encodeURIComponent(text || 'Leave your feedback for 3D-scene-20 here:');
+      window.open(`https://github.com/${GH_REPO}/issues/new?title=${title}&body=${body}`, '_blank', 'noopener');
+    });
+
+    document.querySelectorAll('[data-lang]').forEach((b) => {
+      b.addEventListener('click', () => applyLanguage(b.dataset.lang));
+    });
+    document.querySelectorAll('[data-weather]').forEach((b) => {
+      b.addEventListener('click', () => {
+        currentWeather = b.dataset.weather;
+        document.querySelectorAll('[data-weather]').forEach((x) => x.classList.toggle('active', x.dataset.weather === currentWeather));
+        stormRain.visible = (currentWeather === 'storm');
+        stormOvercastGroup.visible = (currentWeather === 'storm' || currentWeather === 'hail');
+        tornadoGroup.visible = (currentWeather === 'tornado');
+        hailInst.visible = (currentWeather === 'hail');
+        if (currentWeather !== 'storm') {
+          lightningGroup.visible = false;
+          lightningFlash = 0;
+          lightningFlashLight.intensity = 0;
+        } else {
+          lightningGroup.visible = true;
+          lightningTimer = 0.35; // Trigger dramatic first bolt quickly!
+        }
+      });
+    });
+    const urlLang = new URLSearchParams(window.location.search).get('lang');
+    let initLang = 'zh';
+    try { initLang = urlLang || localStorage.getItem('fuji3d_lang') || 'zh'; } catch (e) { initLang = urlLang || 'zh'; }
 
     // =========================================================================
     // 14. 4 SEASONS, TIME OF DAY (SMOOTH INTERPOLATION), COLLAPSIBLE UI & 16 CAMERA PRESETS
     // =========================================================================
     let currentSeason = 'spring', currentTime = 'day', isPlaying = true;
     const SEASON_KEYS = ['spring', 'summer', 'autumn', 'winter'];
-    const TIME_KEYS = ['day', 'sunset', 'night'];
+    const TIME_KEYS = ['dawn', 'day', 'sunset', 'night', 'midnight'];
     const seasonWeights = { spring: 1, summer: 0, autumn: 0, winter: 0 };
     const targetSeasonWeights = { spring: 1, summer: 0, autumn: 0, winter: 0 };
-    const timeWeights = { day: 1, sunset: 0, night: 0 };
-    const targetTimeWeights = { day: 1, sunset: 0, night: 0 };
+    const timeWeights = { dawn: 0, day: 1, sunset: 0, night: 0, midnight: 0 };
+    const targetTimeWeights = { dawn: 0, day: 1, sunset: 0, night: 0, midnight: 0 };
     let snowToggleAlpha = 1;
 
     const TIME_CONFIG = {
+      dawn: {
+        bg: { spring: new THREE.Color('#4a3c58'), summer: new THREE.Color('#3c4460'), autumn: new THREE.Color('#523e4e'), winter: new THREE.Color('#3b425c') },
+        hemi: 0.56, sunCol: new THREE.Color(0xffb085), sunInt: 1.55, sunPos: new THREE.Vector3(96, 30, 12), fillInt: 0.36, tokyoInt: 0.55, exp: 1.05
+      },
       day: {
         bg: { spring: new THREE.Color('#c8bfb3'), summer: new THREE.Color('#bad0e8'), autumn: new THREE.Color('#d8c7b5'), winter: new THREE.Color('#cbd5e1') },
         hemi: 0.94, sunCol: new THREE.Color(0xfff5e4), sunInt: 2.3, sunPos: new THREE.Vector3(-80, 96, 68), fillInt: 0.68, tokyoInt: 0.3, exp: 1.06
@@ -5368,6 +6708,10 @@
       night: {
         bg: { spring: new THREE.Color('#0b0f19'), summer: new THREE.Color('#091326'), autumn: new THREE.Color('#120f1e'), winter: new THREE.Color('#0f172a') },
         hemi: 0.38, sunCol: new THREE.Color(0x60a5fa), sunInt: 0.6, sunPos: new THREE.Vector3(56, 74, -56), fillInt: 0.34, tokyoInt: 3.4, exp: 1.24
+      },
+      midnight: {
+        bg: { spring: new THREE.Color('#03050c'), summer: new THREE.Color('#030610'), autumn: new THREE.Color('#05040d'), winter: new THREE.Color('#040712') },
+        hemi: 0.16, sunCol: new THREE.Color(0x3b82f6), sunInt: 0.24, sunPos: new THREE.Vector3(62, 68, -62), fillInt: 0.14, tokyoInt: 0.28, exp: 1.08
       }
     };
 
@@ -5396,9 +6740,9 @@
 
     function applyAtmosphereSmooth() {
       const wsp = seasonWeights.spring, wsu = seasonWeights.summer, wau = seasonWeights.autumn, wwi = seasonWeights.winter;
-      const wDay = timeWeights.day, wSun = timeWeights.sunset, wNit = timeWeights.night;
+      const wDwn = timeWeights.dawn, wDay = timeWeights.day, wSun = timeWeights.sunset, wNit = timeWeights.night, wMid = timeWeights.midnight;
 
-      // 1. Blended sky dome, fog & cloud colors across both 4 seasons and 3 times of day
+      // 1. Blended sky dome, fog & cloud colors across 4 seasons and 5 times of day (Dawn / Day / Sunset / Night / Midnight)
       let bgR = 0, bgG = 0, bgB = 0;
       for (let ti = 0; ti < TIME_KEYS.length; ti++) {
         const tk = TIME_KEYS[ti], wt = timeWeights[tk];
@@ -5413,49 +6757,52 @@
       scene.fog.color.copy(tmpBgCol);
 
       // 2.0 Sky Dome Zenith / Horizon / Stars + IBL Intensity + Cinematic Bloom + Cloud Tinting
+      const sm = stormMood;
       skyUniforms.uZenith.value.setRGB(
-        0.22 * wDay + 0.19 * wSun + 0.02 * wNit,
-        0.48 * wDay + 0.14 * wSun + 0.04 * wNit,
-        0.86 * wDay + 0.28 * wSun + 0.12 * wNit
+        (0.14 * wDwn + 0.22 * wDay + 0.19 * wSun + 0.02 * wNit + 0.006 * wMid) * (1 - sm * 0.72) + 0.05 * sm + lightningFlash * 0.25,
+        (0.22 * wDwn + 0.48 * wDay + 0.14 * wSun + 0.04 * wNit + 0.012 * wMid) * (1 - sm * 0.72) + 0.07 * sm + lightningFlash * 0.28,
+        (0.46 * wDwn + 0.86 * wDay + 0.28 * wSun + 0.12 * wNit + 0.045 * wMid) * (1 - sm * 0.65) + 0.12 * sm + lightningFlash * 0.36
       );
       skyUniforms.uHorizon.value.setRGB(
-        bgR * 0.65 + (0.85 * wDay + 0.96 * wSun + 0.08 * wNit) * 0.35,
-        bgG * 0.65 + (0.91 * wDay + 0.44 * wSun + 0.12 * wNit) * 0.35,
-        bgB * 0.65 + (0.97 * wDay + 0.26 * wSun + 0.22 * wNit) * 0.35
+        (bgR * 0.65 + (0.94 * wDwn + 0.85 * wDay + 0.96 * wSun + 0.08 * wNit + 0.018 * wMid) * 0.35) * (1 - sm * 0.62) + 0.14 * sm + lightningFlash * 0.22,
+        (bgG * 0.65 + (0.58 * wDwn + 0.91 * wDay + 0.44 * wSun + 0.12 * wNit + 0.028 * wMid) * 0.35) * (1 - sm * 0.60) + 0.16 * sm + lightningFlash * 0.25,
+        (bgB * 0.65 + (0.52 * wDwn + 0.97 * wDay + 0.26 * wSun + 0.22 * wNit + 0.065 * wMid) * 0.35) * (1 - sm * 0.55) + 0.22 * sm + lightningFlash * 0.32
       );
       skyUniforms.uGround.value.setRGB(
-        0.42 * wDay + 0.22 * wSun + 0.04 * wNit,
-        0.38 * wDay + 0.16 * wSun + 0.05 * wNit,
-        0.34 * wDay + 0.18 * wSun + 0.08 * wNit
+        0.24 * wDwn + 0.42 * wDay + 0.22 * wSun + 0.04 * wNit + 0.01 * wMid,
+        0.22 * wDwn + 0.38 * wDay + 0.16 * wSun + 0.05 * wNit + 0.015 * wMid,
+        0.26 * wDwn + 0.34 * wDay + 0.18 * wSun + 0.08 * wNit + 0.03 * wMid
       );
-      skyUniforms.uStarInt.value = wNit;
-      scene.environmentIntensity = 0.78 * wDay + 0.56 * wSun + 0.26 * wNit;
-      bloomPass.strength = 0.15 * wDay + 0.36 * wSun + 0.56 * wNit;
+      // Dawn shows faint fading morning stars; Midnight shows brightest starry sky!
+      skyUniforms.uStarInt.value = (wDwn * 0.22 + wNit + wMid * 1.75) * (1 - sm * 0.9);
+      scene.environmentIntensity = (0.48 * wDwn + 0.78 * wDay + 0.56 * wSun + 0.26 * wNit + 0.11 * wMid) * (1 - sm * 0.45);
+      bloomPass.strength = 0.28 * wDwn + 0.15 * wDay + 0.36 * wSun + 0.56 * wNit + 0.68 * wMid + lightningFlash * 0.95;
+      stormCloudDarkMat.emissiveIntensity = 0.08 + lightningFlash * 0.85;
+      stormCloudMidMat.emissiveIntensity = 0.08 + lightningFlash * 0.65;
       cloudMat.color.setRGB(
-        1.0 * wDay + 1.0 * wSun + 0.18 * wNit,
-        1.0 * wDay + 0.68 * wSun + 0.24 * wNit,
-        1.0 * wDay + 0.54 * wSun + 0.42 * wNit
+        (0.96 * wDwn + 1.0 * wDay + 1.0 * wSun + 0.18 * wNit + 0.07 * wMid) * (1 - sm * 0.78) + 0.10 * sm + lightningFlash * 0.45,
+        (0.76 * wDwn + 1.0 * wDay + 0.68 * wSun + 0.24 * wNit + 0.09 * wMid) * (1 - sm * 0.76) + 0.12 * sm + lightningFlash * 0.50,
+        (0.74 * wDwn + 1.0 * wDay + 0.54 * wSun + 0.42 * wNit + 0.16 * wMid) * (1 - sm * 0.68) + 0.18 * sm + lightningFlash * 0.62
       );
-      cloudMat.opacity = 0.72 * wDay + 0.66 * wSun + 0.38 * wNit;
+      cloudMat.opacity = Math.min(0.95, (0.64 * wDwn + 0.72 * wDay + 0.66 * wSun + 0.38 * wNit + 0.24 * wMid) + sm * 0.32);
 
       // 2. Smooth lighting & solar/lunar arc interpolation
-      const tcD = TIME_CONFIG.day, tcS = TIME_CONFIG.sunset, tcN = TIME_CONFIG.night;
-      hemiLight.intensity = (tcD.hemi * wDay + tcS.hemi * wSun + tcN.hemi * wNit) + wwi * 0.12 + wsu * 0.08;
+      const tcDw = TIME_CONFIG.dawn, tcD = TIME_CONFIG.day, tcS = TIME_CONFIG.sunset, tcN = TIME_CONFIG.night, tcM = TIME_CONFIG.midnight;
+      hemiLight.intensity = ((tcDw.hemi * wDwn + tcD.hemi * wDay + tcS.hemi * wSun + tcN.hemi * wNit + tcM.hemi * wMid) + wwi * 0.12 + wsu * 0.08) * (1 - sm * 0.52) + lightningFlash * 1.65;
 
       tmpSunCol.setRGB(
-        tcD.sunCol.r * wDay + tcS.sunCol.r * wSun + tcN.sunCol.r * wNit,
-        tcD.sunCol.g * wDay + tcS.sunCol.g * wSun + tcN.sunCol.g * wNit,
-        tcD.sunCol.b * wDay + tcS.sunCol.b * wSun + tcN.sunCol.b * wNit
+        tcDw.sunCol.r * wDwn + tcD.sunCol.r * wDay + tcS.sunCol.r * wSun + tcN.sunCol.r * wNit + tcM.sunCol.r * wMid,
+        tcDw.sunCol.g * wDwn + tcD.sunCol.g * wDay + tcS.sunCol.g * wSun + tcN.sunCol.g * wNit + tcM.sunCol.g * wMid,
+        tcDw.sunCol.b * wDwn + tcD.sunCol.b * wDay + tcS.sunCol.b * wSun + tcN.sunCol.b * wNit + tcM.sunCol.b * wMid
       );
       sunLight.color.copy(tmpSunCol);
-      sunLight.intensity = (tcD.sunInt * wDay + tcS.sunInt * wSun + tcN.sunInt * wNit) * (1.0 + 0.12 * wsu);
+      sunLight.intensity = (tcDw.sunInt * wDwn + tcD.sunInt * wDay + tcS.sunInt * wSun + tcN.sunInt * wNit + tcM.sunInt * wMid) * (1.0 + 0.12 * wsu) * (1 - sm * 0.62);
 
       tmpSunPos.set(
-        tcD.sunPos.x * wDay + tcS.sunPos.x * wSun + tcN.sunPos.x * wNit,
-        tcD.sunPos.y * wDay + tcS.sunPos.y * wSun + tcN.sunPos.y * wNit,
-        tcD.sunPos.z * wDay + tcS.sunPos.z * wSun + tcN.sunPos.z * wNit
+        tcDw.sunPos.x * wDwn + tcD.sunPos.x * wDay + tcS.sunPos.x * wSun + tcN.sunPos.x * wNit + tcM.sunPos.x * wMid,
+        tcDw.sunPos.y * wDwn + tcD.sunPos.y * wDay + tcS.sunPos.y * wSun + tcN.sunPos.y * wNit + tcM.sunPos.y * wMid,
+        tcDw.sunPos.z * wDwn + tcD.sunPos.z * wDay + tcS.sunPos.z * wSun + tcN.sunPos.z * wNit + tcM.sunPos.z * wMid
       );
-      // Keep light on a smooth sky dome arc instead of dipping near origin during sunset<->night
       if (tmpSunPos.lengthSq() > 1) {
         tmpSunPos.normalize().multiplyScalar(132);
         if (tmpSunPos.y < 28) tmpSunPos.y = 28;
@@ -5464,16 +6811,18 @@
       skyUniforms.uSunDir.value.copy(tmpSunPos).normalize();
       skyUniforms.uSunCol.value.copy(tmpSunCol);
 
-      fillLight.intensity = tcD.fillInt * wDay + tcS.fillInt * wSun + tcN.fillInt * wNit;
-      const tokyoInt = tcD.tokyoInt * wDay + tcS.tokyoInt * wSun + tcN.tokyoInt * wNit;
+      fillLight.intensity = tcDw.fillInt * wDwn + tcD.fillInt * wDay + tcS.fillInt * wSun + tcN.fillInt * wNit + tcM.fillInt * wMid;
+      const tokyoInt = tcDw.tokyoInt * wDwn + tcD.tokyoInt * wDay + tcS.tokyoInt * wSun + tcN.tokyoInt * wNit + tcM.tokyoInt * wMid;
       tokyoGlowLight.intensity = tokyoInt;
       yokohamaGlowLight.intensity = tokyoInt * 0.75;
-      renderer.toneMappingExposure = tcD.exp * wDay + tcS.exp * wSun + tcN.exp * wNit;
+      renderer.toneMappingExposure = tcDw.exp * wDwn + tcD.exp * wDay + tcS.exp * wSun + tcN.exp * wNit + tcM.exp * wMid;
 
-      // 3. Smooth city & landmark night glow fade-in/out
+      // 3. Smooth city & landmark night glow fade-in/out (Dawn gently fades out remaining night lights!)
       for (let i = 0; i < nightEmissives.length; i++) {
         const item = nightEmissives[i];
-        item.mat.emissiveIntensity = item.day * wDay + item.sunset * wSun + item.night * wNit;
+        const midVal = item.midnight !== undefined ? item.midnight : item.night * 0.08;
+        const dawnVal = item.day * 0.65 + item.sunset * 0.22;
+        item.mat.emissiveIntensity = dawnVal * wDwn + item.day * wDay + item.sunset * wSun + item.night * wNit + midVal * wMid;
       }
 
       // 4. Smooth weather particle color, size & opacity crossfade
@@ -5498,14 +6847,16 @@
     }
     function setTimeOfDay(mode) {
       currentTime = mode;
+      targetTimeWeights.dawn = mode === 'dawn' ? 1 : 0;
       targetTimeWeights.day = mode === 'day' ? 1 : 0;
       targetTimeWeights.sunset = mode === 'sunset' ? 1 : 0;
       targetTimeWeights.night = mode === 'night' ? 1 : 0;
+      targetTimeWeights.midnight = mode === 'midnight' ? 1 : 0;
       document.querySelectorAll('[data-time]').forEach((b) => b.classList.toggle('active', b.dataset.time === mode));
     }
 
     const CAM_PRESETS = {
-      panorama:            { pos: [-28, 86, 138],  target: [22, 1.5, 2.0] },
+      panorama:            { pos: [26, 62, 142],   target: [26, 1.5, 2.0] },
       fujiSummit:          { pos: [-16, 26, 24],   target: [FUJI_X, 13.8, FUJI_Z] },
       kawaguchiko:         { pos: [-14, 22, -46],  target: [-8.0, 2.5, -18.0] },
       fujiQHighland:       { pos: [14, 15, -34],   target: [-1.0, 2.5, -18.0] },
@@ -5533,7 +6884,7 @@
     };
 
     let camAnim = null;
-    let followCamMode = null; // null | 'cockpit' | 'shinkansen'
+    let followCamMode = null; // null | 'cockpit' | 'passenger' | 'shinkansen' | 'cruiseBow' | 'cruiseCabin'
     let jetPhaseLabel = '羽田 ⇄ 成田 巡航中';
     let shinkansenPhaseLabel = '高速行駛：新富士站 → 東京站';
     let trainLeadU = 0.08;
@@ -5542,11 +6893,19 @@
     const cockpitTitleEl = document.getElementById('cockpit-title-text');
     const cockpitPhaseEl = document.getElementById('cockpit-phase-text');
     const btnCockpitCam = document.getElementById('btn-cockpit-cam');
+    const btnPassengerCam = document.getElementById('btn-passenger-cam');
     const btnShinkansenCam = document.getElementById('btn-shinkansen-cam');
+    const btnCruiseBowCam = document.getElementById('btn-cruise-bow-cam');
+    const btnCruiseCabinCam = document.getElementById('btn-cruise-cabin-cam');
     const btnExitCockpit = document.getElementById('btn-exit-cockpit');
     const cockpitEyeLocal = new THREE.Vector3(0, 0.48, 1.65);
     const cockpitLookLocal = new THREE.Vector3(0, -0.35, 18.0);
     const cockpitUpLocal = new THREE.Vector3(0, 1.48, 1.65);
+    const passEyeLocal = new THREE.Vector3(-0.28, 0.08, -0.05);       // Right-side passenger window (-X = Starboard/Right)
+    const passLookLocal = new THREE.Vector3(-14.0, -5.8, 1.5);        // Looking out right window down toward ground & wing
+    const bowEyeLocal = new THREE.Vector3(0, 1.88, 1.48);             // Queen Mary 2 Bow Deck
+    const bowLookLocal = new THREE.Vector3(0, 0.95, 16.0);            // Looking forward over sharp bow
+    const tmpFujiLocal = new THREE.Vector3();
     const cockpitEyeWorld = new THREE.Vector3();
     const cockpitLookWorld = new THREE.Vector3();
     const cockpitUpWorld = new THREE.Vector3();
@@ -5557,13 +6916,17 @@
     function enterFollowView(mode) {
       followCamMode = mode;
       camAnim = null;
-      if (mode === 'cockpit') {
+      const d = I18N_UI[currentLang] || I18N_UI.zh;
+      if (mode === 'cockpit' || mode === 'passenger') {
         optJet.checked = true;
         jumboJet.visible = true;
-        cockpitTitleEl.textContent = '👨‍✈️ 巨無霸 747 機長視角';
+        cockpitTitleEl.textContent = mode === 'cockpit' ? d.hudJetTitle : d.hudPassTitle;
       } else if (mode === 'shinkansen') {
         optAnim.checked = true;
-        cockpitTitleEl.textContent = '🚅 東海道新幹線駕駛視角';
+        cockpitTitleEl.textContent = d.hudShinkTitle;
+      } else if (mode === 'cruiseBow' || mode === 'cruiseCabin') {
+        optAnim.checked = true;
+        cockpitTitleEl.textContent = mode === 'cruiseBow' ? d.hudBowTitle : d.hudCabinTitle;
       }
       if (!isPlaying) {
         isPlaying = true;
@@ -5575,7 +6938,10 @@
       cockpitUpCurrent.copy(camera.up);
       cockpitHudEl.classList.add('visible');
       btnCockpitCam.classList.toggle('active', mode === 'cockpit');
+      btnPassengerCam.classList.toggle('active', mode === 'passenger');
       btnShinkansenCam.classList.toggle('active', mode === 'shinkansen');
+      btnCruiseBowCam.classList.toggle('active', mode === 'cruiseBow');
+      btnCruiseCabinCam.classList.toggle('active', mode === 'cruiseCabin');
       document.querySelectorAll('[data-cam]').forEach((b) => b.classList.remove('active'));
     }
 
@@ -5586,7 +6952,10 @@
       camera.up.set(0, 1, 0);
       cockpitHudEl.classList.remove('visible');
       btnCockpitCam.classList.remove('active');
+      btnPassengerCam.classList.remove('active');
       btnShinkansenCam.classList.remove('active');
+      btnCruiseBowCam.classList.remove('active');
+      btnCruiseCabinCam.classList.remove('active');
       if (returnToPreset) flyTo(returnToPreset);
     }
 
@@ -5602,16 +6971,27 @@
       if (followCamMode === 'cockpit') exitFollowView('panorama');
       else enterFollowView('cockpit');
     });
+    btnPassengerCam.addEventListener('click', () => {
+      if (followCamMode === 'passenger') exitFollowView('panorama');
+      else enterFollowView('passenger');
+    });
     btnShinkansenCam.addEventListener('click', () => {
       if (followCamMode === 'shinkansen') exitFollowView('panorama');
       else enterFollowView('shinkansen');
+    });
+    btnCruiseBowCam.addEventListener('click', () => {
+      if (followCamMode === 'cruiseBow') exitFollowView('panorama');
+      else enterFollowView('cruiseBow');
+    });
+    btnCruiseCabinCam.addEventListener('click', () => {
+      if (followCamMode === 'cruiseCabin') exitFollowView('panorama');
+      else enterFollowView('cruiseCabin');
     });
     btnExitCockpit.addEventListener('click', () => exitFollowView('panorama'));
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && followCamMode) exitFollowView('panorama');
     });
 
-    const optAutoCycle = document.getElementById('opt-auto-cycle');
     const optSpeed = document.getElementById('opt-speed');
     const speedValEl = document.getElementById('speed-val');
     const optLabels = document.getElementById('opt-labels');
@@ -5628,26 +7008,32 @@
     let animSpeed = 1.0;
     let animTime = 0;
     const CYCLE_SEASONS = ['spring', 'summer', 'autumn', 'winter'];
-    const SEASON_CYCLE_SEC = 13.5; // Each full season (Day -> Sunset -> Night -> Dawn) lasts 13.5s at 1.0x speed
+    const SEASON_CYCLE_SEC = 27.0; // Each full season (Day -> Sunset -> Night -> Midnight -> Dawn) lasts 27.0s at 1.0x speed
     let cyclePhase = 0.08; // [0..4): 0=spring, 1=summer, 2=autumn, 3=winter
+    let cycleMode = 'off'; // 'off' | 'both' | 'season' (lock time) | 'time' (lock season)
+
+    function setCycleMode(mode) {
+      cycleMode = mode;
+      document.querySelectorAll('[data-cycle]').forEach((b) => b.classList.toggle('active', b.dataset.cycle === mode));
+      if (mode !== 'off') {
+        const sIdx = Math.max(0, CYCLE_SEASONS.indexOf(currentSeason));
+        const timeOffset = currentTime === 'sunset' ? 0.40 : currentTime === 'night' ? 0.62 : currentTime === 'midnight' ? 0.79 : currentTime === 'dawn' ? 0.92 : 0.08;
+        cyclePhase = sIdx + timeOffset;
+      }
+    }
 
     document.querySelectorAll('[data-season]').forEach((b) => b.addEventListener('click', () => {
-      optAutoCycle.checked = false;
+      // Clicking a season while in 'time' mode keeps 24h cycling locked to the new season!
+      if (cycleMode === 'both' || cycleMode === 'season') setCycleMode(cycleMode === 'both' ? 'time' : 'off');
       setSeason(b.dataset.season);
     }));
     document.querySelectorAll('[data-time]').forEach((b) => b.addEventListener('click', () => {
-      optAutoCycle.checked = false;
+      // Clicking a time while in 'season' mode keeps 4-season cycling locked to the new time!
+      if (cycleMode === 'both' || cycleMode === 'time') setCycleMode(cycleMode === 'both' ? 'season' : 'off');
       setTimeOfDay(b.dataset.time);
     }));
+    document.querySelectorAll('[data-cycle]').forEach((b) => b.addEventListener('click', () => setCycleMode(b.dataset.cycle)));
     document.querySelectorAll('[data-cam]').forEach((b) => b.addEventListener('click', () => flyTo(b.dataset.cam)));
-
-    optAutoCycle.addEventListener('change', () => {
-      if (optAutoCycle.checked) {
-        const sIdx = Math.max(0, CYCLE_SEASONS.indexOf(currentSeason));
-        const timeOffset = currentTime === 'sunset' ? 0.50 : currentTime === 'night' ? 0.78 : 0.08;
-        cyclePhase = sIdx + timeOffset;
-      }
-    });
 
     optSpeed.addEventListener('input', () => {
       animSpeed = parseFloat(optSpeed.value);
@@ -5714,48 +7100,62 @@
         camera.updateProjectionMatrix();
       }
 
-      // 0. Continuous Smooth Auto-Cycle: Spring -> Summer -> Autumn -> Winter (Day -> Sunset -> Night -> Dawn)
-      if (isPlaying && optAutoCycle.checked) {
-        cyclePhase = (cyclePhase + dt / SEASON_CYCLE_SEC) % 4;
+      // 0. Continuous Smooth Auto-Cycle ('both': Seasons x 24h | 'season': Seasons Only | 'time': 24h Only)
+      if (isPlaying && cycleMode !== 'off') {
+        const phaseStep = cycleMode === 'season' ? (dt / (SEASON_CYCLE_SEC * 0.48)) : (dt / SEASON_CYCLE_SEC);
+        cyclePhase = (cyclePhase + phaseStep) % 4;
         const sIdx = Math.floor(cyclePhase) % 4;
         const sNext = (sIdx + 1) % 4;
         const sFrac = cyclePhase - Math.floor(cyclePhase);
 
-        // Smoothly crossfade season during night-to-dawn (0.62 -> 1.0)
-        const sBlend = smoothstep(0.62, 1.0, sFrac);
-        for (let i = 0; i < 4; i++) targetSeasonWeights[CYCLE_SEASONS[i]] = 0;
-        targetSeasonWeights[CYCLE_SEASONS[sIdx]] = 1 - sBlend;
-        targetSeasonWeights[CYCLE_SEASONS[sNext]] = sBlend;
-
-        // Continuous Day -> Sunset -> Night -> Warm Dawn -> Day curve
-        let tDay = 0, tSun = 0, tNit = 0;
-        if (sFrac < 0.24) {
-          tDay = 1;
-        } else if (sFrac < 0.48) {
-          const u = smoothstep(0.24, 0.48, sFrac);
-          tDay = 1 - u; tSun = u;
-        } else if (sFrac < 0.56) {
-          tSun = 1;
-        } else if (sFrac < 0.76) {
-          const u = smoothstep(0.56, 0.76, sFrac);
-          tSun = 1 - u; tNit = u;
-        } else if (sFrac < 0.86) {
-          tNit = 1;
-        } else if (sFrac < 0.94) {
-          const u = smoothstep(0.86, 0.94, sFrac);
-          tNit = 1 - u; tSun = u * 0.65; tDay = u * 0.35;
-        } else {
-          const u = smoothstep(0.94, 1.0, sFrac);
-          tSun = (1 - u) * 0.65; tDay = 0.35 + u * 0.65;
+        // A. Season cycling (for 'both' and 'season' modes)
+        if (cycleMode === 'both' || cycleMode === 'season') {
+          const sBlend = cycleMode === 'season' ? smoothstep(0.15, 0.95, sFrac) : smoothstep(0.62, 1.0, sFrac);
+          for (let i = 0; i < 4; i++) targetSeasonWeights[CYCLE_SEASONS[i]] = 0;
+          targetSeasonWeights[CYCLE_SEASONS[sIdx]] = 1 - sBlend;
+          targetSeasonWeights[CYCLE_SEASONS[sNext]] = sBlend;
+          syncSeasonButtons(sBlend >= 0.5 ? CYCLE_SEASONS[sNext] : CYCLE_SEASONS[sIdx]);
         }
-        targetTimeWeights.day = tDay;
-        targetTimeWeights.sunset = tSun;
-        targetTimeWeights.night = tNit;
 
-        // Highlight active UI button based on dominant weight
-        syncSeasonButtons(sBlend >= 0.5 ? CYCLE_SEASONS[sNext] : CYCLE_SEASONS[sIdx]);
-        const domTime = tNit >= tSun && tNit >= tDay ? 'night' : (tSun >= tDay ? 'sunset' : 'day');
-        syncTimeButtons(domTime);
+        // B. 24h Time-of-Day cycling (for 'both' and 'time' modes)
+        if (cycleMode === 'both' || cycleMode === 'time') {
+          let tDwn = 0, tDay = 0, tSun = 0, tNit = 0, tMid = 0;
+          if (sFrac < 0.20) {
+            tDay = 1;
+          } else if (sFrac < 0.36) {
+            const u = smoothstep(0.20, 0.36, sFrac);
+            tDay = 1 - u; tSun = u;
+          } else if (sFrac < 0.44) {
+            tSun = 1;
+          } else if (sFrac < 0.58) {
+            const u = smoothstep(0.44, 0.58, sFrac);
+            tSun = 1 - u; tNit = u;
+          } else if (sFrac < 0.66) {
+            tNit = 1;
+          } else if (sFrac < 0.76) {
+            const u = smoothstep(0.66, 0.76, sFrac);
+            tNit = 1 - u; tMid = u;
+          } else if (sFrac < 0.82) {
+            tMid = 1;
+          } else if (sFrac < 0.90) {
+            const u = smoothstep(0.82, 0.90, sFrac);
+            tMid = 1 - u; tDwn = u;
+          } else if (sFrac < 0.94) {
+            tDwn = 1;
+          } else {
+            const u = smoothstep(0.94, 1.0, sFrac);
+            tDwn = 1 - u; tDay = u;
+          }
+          targetTimeWeights.dawn = tDwn;
+          targetTimeWeights.day = tDay;
+          targetTimeWeights.sunset = tSun;
+          targetTimeWeights.night = tNit;
+          targetTimeWeights.midnight = tMid;
+
+          const pairs = [['dawn', tDwn], ['day', tDay], ['sunset', tSun], ['night', tNit], ['midnight', tMid]];
+          pairs.sort((a, b) => b[1] - a[1]);
+          syncTimeButtons(pairs[0][0]);
+        }
       }
 
       // Silky-Smooth Exponential Damping for Season, Time-of-Day & Snow Toggle
@@ -5808,23 +7208,35 @@
         snowCapMat.opacity = wwi * 0.95;
       }
 
-      if (seasonChanged || timeChanged || snowChanged) {
+      if (seasonChanged || timeChanged || snowChanged || currentWeather !== 'normal' || stormMood > 0.001 || lightningFlash > 0.001) {
         applyAtmosphereSmooth();
       }
 
       magmaMat.emissiveIntensity = 1.85 + Math.sin(t * 2.8) * 0.4;
+      // Rhythmic Blinking Red Aviation Obstruction Beacons on Towers & Tall Skyscrapers (especially vivid at Midnight!)
+      const beaconPulse = Math.pow(Math.max(0, Math.sin(t * 2.6)), 3);
+      aviationBeaconMat.emissiveIntensity = 0.18 + beaconPulse * (2.2 + timeWeights.night * 1.4 + timeWeights.midnight * 4.2);
 
       if (isPlaying) {
 
-        // A. Hot Air Balloons
+        // A. Festival Hot Air Balloons & Robinson R44 Sightseeing Helicopters
         if (optBalloons.checked) {
           hotAirBalloons.forEach((b) => {
             b.group.visible = true;
             b.angle += dt * b.cfg.speed;
             b.group.position.set(b.cfg.cx + Math.cos(b.angle) * b.cfg.radius, b.cfg.cy + Math.sin(t * b.cfg.bobSpeed + b.angle) * b.cfg.bobAmp, b.cfg.cz + Math.sin(b.angle) * b.cfg.radius);
-            b.group.rotation.y = -b.angle + Math.PI / 2;
-            b.group.rotation.z = Math.sin(t * 1.5 + b.angle) * 0.04;
-            b.light.intensity = 0.65 + Math.sin(t * 8 + b.angle) * 0.45;
+            if (b.isHeli) {
+              b.group.rotation.y = -b.angle + (b.cfg.speed < 0 ? Math.PI : 0);
+              b.group.rotation.x = 0.08;
+              b.group.rotation.z = (b.cfg.speed > 0 ? 0.12 : -0.12) + Math.sin(t * 2.0 + b.angle) * 0.03;
+              b.mainRotor.rotation.y += dt * 28.0;
+              b.tailRotor.rotation.x += dt * 36.0;
+              b.light.intensity = Math.sin(t * 10 + b.angle) > 0.3 ? 1.1 : 0.1;
+            } else {
+              b.group.rotation.y = -b.angle + Math.PI / 2;
+              b.group.rotation.z = Math.sin(t * 1.5 + b.angle) * 0.04;
+              b.light.intensity = 0.65 + Math.sin(t * 8 + b.angle) * 0.45;
+            }
           });
         } else hotAirBalloons.forEach((b) => (b.group.visible = false));
 
@@ -5941,11 +7353,11 @@
           const trainMidU = activeSeg.fromU + (activeSeg.toU - activeSeg.fromU) * segFrac;
           trainTravelDir = activeSeg.dir;
           shinkansenPhaseLabel = activeSeg.label;
-          const carSpacingU = 0.0085;
-          trainLeadU = trainTravelDir === 1 ? trainMidU + 3.5 * carSpacingU : trainMidU - 3.5 * carSpacingU;
+          const carSpacingU = 0.0112;
+          trainLeadU = trainTravelDir === 1 ? trainMidU + 1.0 * carSpacingU : trainMidU - 1.0 * carSpacingU;
 
           bulletCars.forEach((car, idx) => {
-            const u = Math.max(0.01, Math.min(0.992, trainMidU + (3.5 - idx) * carSpacingU));
+            const u = Math.max(0.01, Math.min(0.992, trainMidU + (1 - idx) * carSpacingU));
             car.position.copy(shinkansenCurve.getPointAt(u));
             car.lookAt(shinkansenCurve.getPointAt(Math.min(0.996, u + 0.007)));
           });
@@ -6001,8 +7413,8 @@
           pirateShip.rotation.z = Math.sin(t * 1.3) * 0.035;
           cruiseShip.position.z = 22.5 + Math.sin(t * 0.22) * 5.0;
 
-          // Giant Luxury Cruise Liner gliding slowly along Boso -> Tokyo Bay -> Miura -> Sagami -> Izu -> Suruga Bay
-          const mcPhase = t * 0.042;
+          // Giant Luxury Cruise Liner gliding leisurely at 1/2 speed along Boso -> Tokyo Bay -> Miura -> Sagami -> Izu -> Suruga Bay
+          const mcPhase = t * 0.021;
           const mcU = 0.02 + 0.96 * (0.5 - 0.5 * Math.cos(mcPhase));
           const mcDir = Math.sin(mcPhase) >= 0 ? 1 : -1;
           const mcPos = megaCruiseCurve.getPointAt(mcU);
@@ -6010,6 +7422,67 @@
           megaCruise.position.set(mcPos.x, WATER_Y + Math.sin(t * 1.2) * 0.045, mcPos.z);
           megaCruise.lookAt(mcLook.x, WATER_Y + Math.sin(t * 1.2) * 0.045, mcLook.z);
           megaCruise.rotateZ(Math.sin(t * 0.9) * 0.025);
+
+          // 6 Coastal Fishing Boats (Net-Hauling Trawlers & Stationary Stern-Rod Anglers!)
+          fishingBoats.forEach((fb, idx) => {
+            fb.timer -= dt;
+            if (fb.type === 'rod') {
+              // Stern-rod angler: alternates between motoring to a random spot and stopping completely while fishing!
+              if (fb.state === 'moving') {
+                const dx = fb.target.x - fb.pos.x, dz = fb.target.z - fb.pos.z;
+                const dist = Math.hypot(dx, dz);
+                if (dist < 0.45 || fb.timer <= 0) {
+                  fb.state = 'fishing';
+                  fb.timer = 9.0 + Math.random() * 6.0; // Stay stationary while angling!
+                } else {
+                  const spd = 0.85 * dt;
+                  fb.pos.x += (dx / dist) * spd;
+                  fb.pos.z += (dz / dist) * spd;
+                  fb.heading = Math.atan2(dx, dz);
+                }
+              } else {
+                // Stationary fishing phase: gentle wave bobbing & subtle rod tugs!
+                fb.rods.forEach((r, ri) => { r.rotation.x = Math.sin(t * 2.4 + idx + ri * 1.8) * 0.09; });
+                if (fb.timer <= 0) {
+                  fb.target = pickDeepSeaPoint(fb.zone);
+                  fb.state = 'moving';
+                  fb.timer = 14.0;
+                }
+              }
+            } else {
+              // Net trawler: patrols randomly & periodically pauses to haul fishing net with silver catch onto deck!
+              if (fb.state === 'moving') {
+                const dx = fb.target.x - fb.pos.x, dz = fb.target.z - fb.pos.z;
+                const dist = Math.hypot(dx, dz);
+                if (dist < 0.5) fb.target = pickDeepSeaPoint(fb.zone);
+                else {
+                  const spd = 0.72 * dt;
+                  fb.pos.x += (dx / dist) * spd;
+                  fb.pos.z += (dz / dist) * spd;
+                  fb.heading = Math.atan2(dx, dz);
+                }
+                if (fb.cranePivot) fb.cranePivot.rotation.x = 0;
+                if (fb.catchMesh) fb.catchMesh.visible = false;
+                if (fb.timer <= 0) { fb.state = 'hauling'; fb.haulPhase = 0; }
+              } else {
+                fb.haulPhase += dt * 0.24; // ~4.2s smooth haul-up & lower-back cycle!
+                const lift = Math.sin(Math.min(1, fb.haulPhase) * Math.PI);
+                if (fb.cranePivot) fb.cranePivot.rotation.x = lift * 1.15;
+                if (fb.catchMesh) {
+                  fb.catchMesh.visible = lift > 0.22;
+                  fb.catchMesh.rotation.z = Math.sin(t * 18 + idx) * 0.25; // Fish flopping in net!
+                }
+                if (fb.haulPhase >= 1.0) {
+                  fb.state = 'moving';
+                  fb.timer = 7.5 + Math.random() * 6.0;
+                  fb.target = pickDeepSeaPoint(fb.zone);
+                }
+              }
+            }
+            fb.mesh.position.set(fb.pos.x, WATER_Y + Math.sin(t * 2.1 + idx * 1.4) * 0.032, fb.pos.z);
+            fb.mesh.rotation.y = fb.heading;
+            fb.mesh.rotation.z = Math.sin(t * 1.7 + idx) * 0.045;
+          });
 
           dolphins.forEach((d) => {
             const cycle = (t * 1.5 + d.phase) % (Math.PI * 2);
@@ -6043,9 +7516,105 @@
             wp.outer.scale.setScalar(pulse);
           });
           skyClouds.forEach((cl) => {
-            cl.group.position.x += dt * cl.speed;
+            cl.group.position.x += dt * cl.speed * (currentWeather !== 'normal' ? 2.1 : 1.0);
             if (cl.group.position.x > X_MAX + 32) cl.group.position.x = X_MIN - 32;
           });
+
+          // 7.5 Extreme Weather Events Animation (Thunderstorm + Lightning / Tornado / Hailstorm)
+          const targetStormMood = currentWeather === 'storm' ? 1.0 : (currentWeather === 'tornado' ? 0.85 : (currentWeather === 'hail' ? 0.65 : 0.0));
+          stormMood += (targetStormMood - stormMood) * Math.min(1, rawDt * 2.4);
+
+          if (currentWeather === 'storm') {
+            const rp = rainGeo.attributes.position.array;
+            for (let i = 0; i < RAIN_COUNT; i++) {
+              const d = rainDropMeta[i];
+              d.y -= d.spd * dt; d.x -= 5.8 * dt;
+              if (d.y < WATER_Y) {
+                d.y = 26 + Math.random() * 8;
+                d.x = X_MIN - 4 + Math.random() * (W + 8);
+                d.z = -46 + Math.random() * 92;
+              }
+              const b = i * 6;
+              rp[b] = d.x; rp[b + 1] = d.y; rp[b + 2] = d.z;
+              rp[b + 3] = d.x - 0.36; rp[b + 4] = d.y - d.len; rp[b + 5] = d.z + 0.1;
+            }
+            rainGeo.attributes.position.needsUpdate = true;
+            lightningTimer -= dt;
+            if (lightningTimer <= 0) {
+              triggerLightningBolt();
+              lightningTimer = 1.6 + Math.random() * 2.6;
+            }
+            if (lightningFlash > 0) {
+              lightningFlash = Math.max(0, lightningFlash - rawDt * 4.5);
+              boltMatCore.opacity = lightningFlash;
+              boltMatHalo.opacity = lightningFlash * 0.72;
+              boltMatFork.opacity = lightningFlash * 0.92;
+              lightningFlashLight.intensity = lightningFlash * 16.0;
+              lightningGroup.visible = lightningFlash > 0.04;
+            }
+            stormOvercastGroup.position.x = Math.sin(t * 0.18) * 3.5;
+          } else if (lightningFlash > 0) {
+            lightningFlash = Math.max(0, lightningFlash - rawDt * 5.0);
+            lightningFlashLight.intensity = lightningFlash * 12.0;
+          }
+
+          if (currentWeather === 'tornado') {
+            tornadoAngle += dt * 0.14;
+            const tx = 44 + Math.cos(tornadoAngle) * 26, tz = 18 + Math.sin(tornadoAngle * 1.4) * 16;
+            const tgy = Math.max(WATER_Y, getTerrainHeight(tx, tz));
+            tornadoGroup.position.set(tx, tgy, tz);
+            tornadoRings.forEach((r, idx) => {
+              r.mesh.rotation.y += dt * (7.5 - r.f * 3.8) * (idx % 2 === 0 ? 1 : -0.7);
+              r.mesh.position.x = Math.sin(t * 2.2 + r.f * 4.5) * (0.4 + r.f * 2.2);
+              r.mesh.position.z = Math.cos(t * 1.9 + r.f * 3.8) * (0.4 + r.f * 2.0);
+            });
+            tornadoCollar.rotation.z += dt * 5.5;
+            const dp = debrisGeo.attributes.position.array;
+            for (let i = 0; i < DEBRIS_COUNT; i++) {
+              const d = debrisData[i];
+              d.h += dt * 5.2;
+              if (d.h > 22) d.h = 0.2;
+              d.a += dt * d.spd;
+              const f = d.h / 22;
+              const rad = 0.65 + Math.pow(f, 1.7) * 5.2 + d.rOff;
+              const ox = Math.sin(t * 2.2 + f * 4.5) * (0.4 + f * 2.2);
+              const oz = Math.cos(t * 1.9 + f * 3.8) * (0.4 + f * 2.0);
+              dp[i * 3] = ox + Math.cos(d.a) * rad;
+              dp[i * 3 + 1] = d.h;
+              dp[i * 3 + 2] = oz + Math.sin(d.a) * rad;
+            }
+            debrisGeo.attributes.position.needsUpdate = true;
+          }
+
+          if (currentWeather === 'hail') {
+            for (let i = 0; i < HAIL_COUNT; i++) {
+              const h = hailData[i];
+              h.y += h.vy * dt;
+              h.x += h.vx * dt;
+              const gy = Math.max(WATER_Y, getTerrainHeight(h.x, h.z));
+              if (h.y <= gy + 0.15) {
+                if (!h.bounced) {
+                  h.y = gy + 0.16;
+                  h.vy = 6.5 + Math.random() * 4.0; // Crisp hailstone bounce!
+                  h.bounced = true;
+                } else {
+                  h.y = 26 + Math.random() * 8;
+                  h.x = X_MIN - 2 + Math.random() * (W + 4);
+                  h.z = -46 + Math.random() * 92;
+                  h.vy = -(24 + Math.random() * 10);
+                  h.bounced = false;
+                }
+              } else if (h.bounced) {
+                h.vy -= 36 * dt;
+              }
+              hailDummy.position.set(h.x, h.y, h.z);
+              hailDummy.rotation.set(t * 5 + i, t * 4 + i, 0);
+              hailDummy.scale.setScalar(h.sc);
+              hailDummy.updateMatrix();
+              hailInst.setMatrixAt(i, hailDummy.matrix);
+            }
+            hailInst.instanceMatrix.needsUpdate = true;
+          }
           skyBirds.forEach((b) => { b.a += dt * b.s; b.mesh.position.set(b.cx + Math.cos(b.a) * b.r, b.y + Math.sin(t * 2 + b.a) * 0.28, b.cz + Math.sin(b.a) * b.r); b.mesh.rotation.y = -b.a; });
           for (let i = 0; i < steamParticles.length; i++) {
             const sp = steamParticles[i], s = sp.src;
@@ -6097,7 +7666,8 @@
         camera.up.copy(cockpitUpCurrent);
         camera.lookAt(cockpitLookCurrent);
         orbit.target.copy(cockpitLookCurrent);
-        if (cockpitPhaseEl.textContent !== jetPhaseLabel) cockpitPhaseEl.textContent = jetPhaseLabel;
+        const jetDisp = translateStatus(jetPhaseLabel);
+        if (cockpitPhaseEl.textContent !== jetDisp) cockpitPhaseEl.textContent = jetDisp;
       } else if (followCamMode === 'shinkansen') {
         const cabU = Math.max(0.015, Math.min(0.985, trainLeadU + trainTravelDir * 0.008));
         const aheadU = Math.max(0.005, Math.min(0.995, cabU + trainTravelDir * 0.065));
@@ -6114,7 +7684,59 @@
         camera.up.copy(cockpitUpCurrent);
         camera.lookAt(cockpitLookCurrent);
         orbit.target.copy(cockpitLookCurrent);
-        if (cockpitPhaseEl.textContent !== shinkansenPhaseLabel) cockpitPhaseEl.textContent = shinkansenPhaseLabel;
+        const shinkDisp = translateStatus(shinkansenPhaseLabel);
+        if (cockpitPhaseEl.textContent !== shinkDisp) cockpitPhaseEl.textContent = shinkDisp;
+      } else if (followCamMode === 'passenger' && jumboJet.visible) {
+        jumboJet.updateMatrixWorld(true);
+        cockpitEyeWorld.copy(passEyeLocal);
+        jumboJet.localToWorld(cockpitEyeWorld);
+        cockpitLookWorld.copy(passLookLocal);
+        jumboJet.localToWorld(cockpitLookWorld);
+        const posDamp = 1 - Math.exp(-rawDt * 9.0);
+        const lookDamp = 1 - Math.exp(-rawDt * 7.5);
+        camera.position.lerp(cockpitEyeWorld, posDamp);
+        cockpitLookCurrent.lerp(cockpitLookWorld, lookDamp);
+        cockpitUpCurrent.lerp(worldUpVec, lookDamp).normalize();
+        camera.up.copy(cockpitUpCurrent);
+        camera.lookAt(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+        const jetDisp = translateStatus(jetPhaseLabel);
+        if (cockpitPhaseEl.textContent !== jetDisp) cockpitPhaseEl.textContent = jetDisp;
+      } else if (followCamMode === 'cruiseBow') {
+        megaCruise.updateMatrixWorld(true);
+        cockpitEyeWorld.copy(bowEyeLocal);
+        megaCruise.localToWorld(cockpitEyeWorld);
+        cockpitLookWorld.copy(bowLookLocal);
+        megaCruise.localToWorld(cockpitLookWorld);
+        const posDamp = 1 - Math.exp(-rawDt * 7.5);
+        const lookDamp = 1 - Math.exp(-rawDt * 6.0);
+        camera.position.lerp(cockpitEyeWorld, posDamp);
+        cockpitLookCurrent.lerp(cockpitLookWorld, lookDamp);
+        cockpitUpCurrent.lerp(worldUpVec, lookDamp).normalize();
+        camera.up.copy(cockpitUpCurrent);
+        camera.lookAt(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+        const bowDisp = (I18N_UI[currentLang] || I18N_UI.zh).hudCruiseBowPhase;
+        if (cockpitPhaseEl.textContent !== bowDisp) cockpitPhaseEl.textContent = bowDisp;
+      } else if (followCamMode === 'cruiseCabin') {
+        megaCruise.updateMatrixWorld(true);
+        // Always mount on whichever side balcony faces Mt. Fuji & Japan's coast so hull never blocks the view!
+        tmpFujiLocal.set(FUJI_X, 6.2, FUJI_Z);
+        megaCruise.worldToLocal(tmpFujiLocal);
+        const side = tmpFujiLocal.x >= 0 ? 1 : -1;
+        cockpitEyeWorld.set(side * 0.72, 1.28, 0.15);
+        megaCruise.localToWorld(cockpitEyeWorld);
+        cockpitLookWorld.set(FUJI_X, 6.2, FUJI_Z);
+        const posDamp = 1 - Math.exp(-rawDt * 6.5);
+        const lookDamp = 1 - Math.exp(-rawDt * 5.5);
+        camera.position.lerp(cockpitEyeWorld, posDamp);
+        cockpitLookCurrent.lerp(cockpitLookWorld, lookDamp);
+        cockpitUpCurrent.lerp(worldUpVec, lookDamp).normalize();
+        camera.up.copy(cockpitUpCurrent);
+        camera.lookAt(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+        const cabDisp = (I18N_UI[currentLang] || I18N_UI.zh).hudCruiseCabinPhase;
+        if (cockpitPhaseEl.textContent !== cabDisp) cockpitPhaseEl.textContent = cabDisp;
       }
 
       if (optLabels.checked) {
@@ -6129,6 +7751,7 @@
       composer.render();
     }
 
+    if (I18N_UI[initLang] && initLang !== 'zh') applyLanguage(initLang);
     applyAtmosphereSmooth();
     animate();
   </script>
