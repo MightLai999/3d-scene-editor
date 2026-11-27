@@ -827,6 +827,8 @@
           <button class="btn shinkansen-btn" id="btn-waterbus-cam" data-i18n="btnWaterBus">🚤 東京水上巴士「隅田川遊河視角」（晴空塔・淺草・東京灣）</button>
           <button class="btn shinkansen-btn" id="btn-cruise-bow-cam" data-i18n="btnCruiseBow">🚢 豪華郵輪「船首甲板視角」（破浪巡航六大海灣）</button>
           <button class="btn shinkansen-btn" id="btn-cruise-cabin-cam" data-i18n="btnCruiseCabin">🛏️ 豪華郵輪「船艙陽台視角」（永遠面向富士山陸地）</button>
+          <button class="btn shinkansen-btn" id="btn-racedrive-cam" data-i18n="btnRaceDrive">🏎️ 富士賽車場「玩家賽車駕駛模式」（WASD / 方向鍵飆速）</button>
+          <button class="btn shinkansen-btn" id="btn-coaster-cam" data-i18n="btnCoaster">🎢 富士急樂園「FUJIYAMA 過山車玩家視角」（俯衝飆速體驗）</button>
         </div>
       </div>
 
@@ -1640,9 +1642,15 @@
       // 4. Snow Monkey Northern Mountain Onsen Terrace (-40.5, -28.0)
       h += 1.65 * gauss(x, z, -40.5, -28.0, 4.4, 4.0);
 
-      // 5. Shiraito Falls Curved Cliff Terrace (白糸の滝 — West flank of Mt. Fuji!) at (-30.5, 9.5)
-      h += 2.7 * gauss(x, z, -28.2, 9.5, 2.8, 4.0);
-      h -= 1.6 * gauss(x, z, -32.2, 9.5, 2.2, 2.8);
+      // 4.5 Far-West Rolling Hills / Tenshi Foothill Ridge (紅框西側山丘: x -52..-41, z -4..20)
+      h += 3.85 * gauss(x, z, -47.5, 2.0, 4.4, 6.2);
+      h += 3.45 * gauss(x, z, -46.5, 11.5, 4.2, 5.8);
+      h += 2.65 * gauss(x, z, -47.2, 18.2, 4.0, 4.2);
+      h += 1.45 * gauss(x, z, -44.2, 6.5, 3.6, 8.5);
+
+      // 5. Shiraito Falls Curved Cliff Terrace (白糸の滝 — Shifted slightly west to -34.5, 9.5!)
+      h += 2.7 * gauss(x, z, -32.2, 9.5, 2.8, 4.0);
+      h -= 1.6 * gauss(x, z, -36.2, 9.5, 2.2, 2.8);
 
       // 6. Hakone Owakudani Volcanic Mountain (15.7, 12.6) — Shifted west, directly North of Atami!
       h += 4.4 * gauss(x, z, 15.7, 12.6, 3.8, 3.2);
@@ -1689,21 +1697,21 @@
       h -= 2.85 * smoothstep(0.24, 0.68, ashiMask);
 
       // 10. Flat Graded Plazas:
-      // (a) Fuji-Q Highland right next to Kawaguchiko town (-2.5, -16.5)
-      const fqMask = gauss(x, z, -2.5, -16.5, 6.2, 4.8);
+      // (a) Fuji-Q Highland right next to Kawaguchiko town (-2.5, -16.5 — widened for extended FUJIYAMA coaster!)
+      const fqMask = gauss(x, z, -2.5, -16.5, 7.6, 6.4);
       if (fqMask > 0.2) h = THREE.MathUtils.lerp(h, 1.05, smoothstep(0.2, 0.55, fqMask));
 
-      // (b) Fujinomiya World Heritage Centre SW of Mt. Fuji, near Shiraito Falls (-33.5, 22.5)
-      const herMask = gauss(x, z, -33.5, 22.5, 5.5, 4.6);
+      // (b) Fujinomiya World Heritage Centre SW of Mt. Fuji, shifted slightly NW (-36.2, 20.0)
+      const herMask = gauss(x, z, -36.2, 20.0, 5.5, 4.6);
       if (herMask > 0.2) h = THREE.MathUtils.lerp(h, 0.92, smoothstep(0.2, 0.55, herMask));
 
       // (c) Gotemba Premium Outlets Plaza (御殿場 OUTLET — Right between Mt. Fuji & Hakone!) at (6.8, 12.2)
       const gotMask = gauss(x, z, 6.8, 12.2, 5.6, 4.4);
       if (gotMask > 0.2) h = THREE.MathUtils.lerp(h, 1.05, smoothstep(0.2, 0.55, gotMask));
 
-      // (d) Fuji Speedway NE of Gotemba (14.5, 4.5)
-      const speedwayMask = gauss(x, z, 14.5, 4.5, 5.4, 4.0);
-      if (speedwayMask > 0.22) h = THREE.MathUtils.lerp(h, 0.96, smoothstep(0.22, 0.58, speedwayMask));
+      // (d) Fuji Speedway NE of Gotemba (14.5, 4.5 — widened flat plateau for 16-turn FIA circuit!)
+      const speedwayMask = gauss(x, z, 14.5, 4.5, 6.4, 4.8);
+      if (speedwayMask > 0.20) h = THREE.MathUtils.lerp(h, 0.96, smoothstep(0.20, 0.55, speedwayMask));
 
       // (e) Kamakura Buddha Wooded Hillside beside Miura Peninsula (41.2, 23.0)
       h += 1.55 * gauss(x, z, 41.2, 23.0, 4.0, 3.4);
@@ -2194,12 +2202,22 @@
     const wallMat = new THREE.MeshStandardMaterial({ map: geologyTex, roughness: 0.9, metalness: 0.03, side: THREE.DoubleSide });
 
     function frontCaveIndent(x, y) {
+      // Cozy Fossil & Mole Burrow Cavern under Suruga West (x: -29.4..-18.6, y: -4.2..-9.4)
+      if (x >= -29.4 && x <= -18.6 && y <= -4.2 && y >= -9.4) {
+        const r = Math.hypot((x + 24.0) / 5.4, (y + 6.8) / 2.6);
+        if (r < 1) return -2.7 * Math.cos(r * Math.PI * 0.5);
+      }
       // Deepened Koi Aquifer Cavern under Izu/Atami (x: 11.8..19.2, y: -2.0..-8.6)
       if (x >= 11.8 && x <= 19.2 && y <= -2.0 && y >= -8.6) {
         const r = Math.hypot((x - 15.5) / 3.7, (y + 5.3) / 3.3);
         if (r < 1) return -2.9 * Math.cos(r * Math.PI * 0.5);
       }
-      // Deep Crystal Geode Grotto under Boso/Uraga Trench (x: 56..64, y: -6.2..-10.6)
+      // Glowing Mushroom & Mole Tunnel Cavern under Sagami East (x: 33.4..42.6, y: -4.6..-9.2)
+      if (x >= 33.4 && x <= 42.6 && y <= -4.6 && y >= -9.2) {
+        const r = Math.hypot((x - 38.0) / 4.6, (y + 6.9) / 2.3);
+        if (r < 1) return -2.5 * Math.cos(r * Math.PI * 0.5);
+      }
+      // Deep Crystal Geode Grotto under Boso/Uraga Trench (x: 55.8..64.2, y: -6.0..-10.6)
       if (x >= 55.8 && x <= 64.2 && y <= -6.0 && y >= -10.6) {
         const r = Math.hypot((x - 60.0) / 4.2, (y + 8.3) / 2.3);
         if (r < 1) return -2.2 * Math.cos(r * Math.PI * 0.5);
@@ -2207,16 +2225,32 @@
       return 0;
     }
     function leftIceIndent(z, y) {
-      if (z < -18.5 || z > -9.5 || y > -0.5 || y < -8.8) return 0;
-      const r = Math.hypot((z + 14.0) / 4.5, (y + 4.6) / 4.1);
-      return r < 1 ? 3.5 * Math.cos(r * Math.PI * 0.5) : 0;
+      // Narusawa Ice Cavern (z: -18.5..-9.5, y: -0.5..-8.8)
+      if (z >= -18.5 && z <= -9.5 && y <= -0.5 && y >= -8.8) {
+        const r = Math.hypot((z + 14.0) / 4.5, (y + 4.6) / 4.1);
+        if (r < 1) return 3.5 * Math.cos(r * Math.PI * 0.5);
+      }
+      // Fuji Foothill Terrestrial Mole Burrow (z: 6.8..17.2, y: -0.6..-6.2)
+      if (z >= 6.8 && z <= 17.2 && y <= -0.6 && y >= -6.2) {
+        const r = Math.hypot((z - 12.0) / 5.2, (y + 3.4) / 2.8);
+        if (r < 1) return 2.8 * Math.cos(r * Math.PI * 0.5);
+      }
+      return 0;
+    }
+    function rightCaveIndent(z, y) {
+      // Chiba Boso Dinosaur & Fossil Excavation Cavern (z: -7.6..3.6, y: -1.4..-7.0)
+      if (z >= -7.6 && z <= 3.6 && y <= -1.4 && y >= -7.0) {
+        const r = Math.hypot((z + 2.0) / 5.6, (y + 4.2) / 2.8);
+        if (r < 1) return -2.8 * Math.cos(r * Math.PI * 0.5);
+      }
+      return 0;
     }
 
     [
       new THREE.Mesh(buildCutawaySkirt('z', Z_MAX, segX, X_MIN, X_MAX, false, frontCaveIndent), wallMat),
       new THREE.Mesh(buildCutawaySkirt('z', Z_MIN, segX, X_MIN, X_MAX, true), wallMat),
       new THREE.Mesh(buildCutawaySkirt('x', X_MIN, segZ, Z_MIN, Z_MAX, false, leftIceIndent), wallMat),
-      new THREE.Mesh(buildCutawaySkirt('x', X_MAX, segZ, Z_MIN, Z_MAX, true), wallMat)
+      new THREE.Mesh(buildCutawaySkirt('x', X_MAX, segZ, Z_MIN, Z_MAX, true, rightCaveIndent), wallMat)
     ].forEach((w) => { w.receiveShadow = true; root.add(w); });
 
     const bottomBase = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ color: '#201917', roughness: 0.95 }));
@@ -2328,6 +2362,289 @@
       else { ic.position.set(ix, -3.2 + ih * 0.5, iz); }
       iceCave.add(ic);
     }
+
+    // =========================================================================
+    // 8.5 SUBTERRANEAN FOSSILS, COZY BURROW CAVES & ANIMATED DIGGING CREATURES!
+    // =========================================================================
+    const fossilBoneMat = new THREE.MeshStandardMaterial({ color: '#ece0c6', roughness: 0.76, metalness: 0.04 });
+    const fossilShellMat = new THREE.MeshStandardMaterial({ color: '#d8c39e', roughness: 0.72, metalness: 0.08 });
+    const fossilTriloMat = new THREE.MeshStandardMaterial({ color: '#b59d7a', roughness: 0.78 });
+    const burrowDirtMat = new THREE.MeshStandardMaterial({ color: '#4a3525', roughness: 0.96 });
+    const rootWoodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.92 });
+    const shroomCapMat = new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0ea5e9', emissiveIntensity: 1.4, roughness: 0.35 });
+    const shroomAmberMat = new THREE.MeshStandardMaterial({ color: '#fbbf24', emissive: '#f59e0b', emissiveIntensity: 1.35, roughness: 0.35 });
+    const shroomStemMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', emissive: '#bae6fd', emissiveIntensity: 0.25, roughness: 0.65 });
+
+    // A. Articulated Dinosaur / Ancient Plesiosaur Skeleton Fossil Builder
+    function buildDinoFossil(scale = 1.0) {
+      const g = new THREE.Group();
+      // Curved vertebral spine (16 vertebrae)
+      for (let i = 0; i < 16; i++) {
+        const t = i / 15;
+        const vx = -3.4 + t * 6.8;
+        const vy = Math.sin(t * Math.PI * 1.15) * 0.72 - 0.15;
+        const vSize = 0.17 - Math.abs(t - 0.45) * 0.14;
+        const vert = new THREE.Mesh(new THREE.BoxGeometry(0.28, vSize, 0.16), fossilBoneMat);
+        vert.position.set(vx, vy, 0);
+        vert.rotation.z = Math.cos(t * Math.PI * 1.15) * 0.32;
+        g.add(vert);
+        // Curved ribcage along torso (vertebrae 4..10)
+        if (i >= 4 && i <= 10) {
+          const ribLen = 0.95 - Math.abs(i - 7) * 0.14;
+          const rib = new THREE.Mesh(new THREE.TorusGeometry(ribLen * 0.55, 0.045, 5, 10, Math.PI * 0.82), fossilBoneMat);
+          rib.position.set(vx, vy - ribLen * 0.35, 0.04);
+          rib.rotation.z = -Math.PI * 0.62;
+          g.add(rib);
+        }
+      }
+      // Sculpted Dino Skull + Open Jaw + Eye Socket
+      const skull = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.44, 0.26), fossilBoneMat);
+      skull.position.set(3.85, 0.05, 0.04); skull.rotation.z = -0.18;
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.18, 0.22), fossilBoneMat);
+      jaw.position.set(3.82, -0.32, 0.04); jaw.rotation.z = 0.22;
+      const eyeHole = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), burrowDirtMat);
+      eyeHole.position.set(3.68, 0.12, 0.13);
+      // Forelimb & Hindlimb bones
+      for (const [lx, ly, ang] of [[1.55, -0.58, -0.35], [-0.95, -0.45, 0.28]]) {
+        const femur = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.85, 6), fossilBoneMat);
+        femur.position.set(lx, ly, 0.05); femur.rotation.z = ang;
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.72, 6), fossilBoneMat);
+        shin.position.set(lx - Math.sin(ang) * 0.55, ly - 0.58, 0.05); shin.rotation.z = -ang * 0.8;
+        g.add(femur, shin);
+      }
+      g.add(skull, jaw, eyeHole);
+      g.scale.setScalar(scale);
+      return g;
+    }
+
+    // B. Spiral Ammonite Fossil Builder (菊石化石)
+    function buildAmmoniteFossil(scale = 1.0) {
+      const g = new THREE.Group();
+      for (let i = 0; i < 26; i++) {
+        const a = i * 0.42;
+        const r = 0.06 + i * 0.028;
+        const rad = 0.055 + i * 0.0085;
+        const seg = new THREE.Mesh(new THREE.SphereGeometry(rad, 7, 6), fossilShellMat);
+        seg.scale.set(1.0, 1.0, 0.52);
+        seg.position.set(Math.cos(a) * r, Math.sin(a) * r, 0);
+        g.add(seg);
+      }
+      g.scale.setScalar(scale);
+      return g;
+    }
+
+    // C. Trilobite Fossil Builder (三葉蟲化石)
+    function buildTrilobiteFossil(scale = 1.0) {
+      const g = new THREE.Group();
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 6), fossilTriloMat);
+      head.scale.set(1.25, 0.72, 0.38); head.position.set(0, 0.36, 0);
+      g.add(head);
+      for (let i = 0; i < 6; i++) {
+        const w = 0.62 - i * 0.065;
+        const seg = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, w, 4, 6), fossilTriloMat);
+        seg.rotation.z = Math.PI / 2; seg.scale.set(1, 1, 0.45);
+        seg.position.set(0, 0.14 - i * 0.13, 0);
+        g.add(seg);
+      }
+      const ridge = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.78, 4, 6), fossilBoneMat);
+      ridge.scale.set(1, 1, 0.45); ridge.position.set(0, -0.14, 0.04);
+      g.add(ridge);
+      g.scale.setScalar(scale);
+      return g;
+    }
+
+    // Place Fossils Embedded Across Front (South), West, and East Geological Strata!
+    const frontDino = buildDinoFossil(1.05);
+    frontDino.position.set(-4.5, -6.5, Z_MAX + 0.08);
+    root.add(frontDino);
+
+    const eastDino = buildDinoFossil(0.95);
+    eastDino.rotation.y = Math.PI / 2;
+    eastDino.position.set(X_MAX - 1.45, -4.1, -2.2);
+    root.add(eastDino);
+
+    const ammoniteSpecs = [
+      [-37.0, -7.2, Z_MAX + 0.08, 0, 1.15],
+      [26.5,  -7.8, Z_MAX + 0.08, 0, 1.05],
+      [75.5,  -7.2, Z_MAX + 0.08, 0, 1.25],
+      [X_MIN - 0.08, -6.2, 26.0, -Math.PI / 2, 1.15],
+      [X_MAX + 0.08, -6.8, -20.0, Math.PI / 2, 1.20]
+    ];
+    ammoniteSpecs.forEach(([ax, ay, az, ry, sc]) => {
+      const am = buildAmmoniteFossil(sc);
+      am.position.set(ax, ay, az); am.rotation.y = ry;
+      root.add(am);
+    });
+
+    const triloSpecs = [
+      [-15.5, -8.8, Z_MAX + 0.08, 0, 0.35, 1.1],
+      [48.5,  -8.4, Z_MAX + 0.08, 0, -0.45, 1.05],
+      [86.0,  -8.2, Z_MAX + 0.08, 0, 0.25, 1.15],
+      [X_MIN - 0.08, -8.0, 2.0, -Math.PI / 2, 0.5, 1.05]
+    ];
+    triloSpecs.forEach(([tx, ty, tz, ry, rz, sc]) => {
+      const tr = buildTrilobiteFossil(sc);
+      tr.position.set(tx, ty, tz); tr.rotation.y = ry; tr.rotation.z = rz;
+      root.add(tr);
+    });
+
+    // D. Cute Animated Burrowing Moles (會挖土的可愛鼴鼠/土撥鼠!) + Flying Dirt Clods
+    const moleFurMat = new THREE.MeshStandardMaterial({ color: '#4e382b', roughness: 0.88 });
+    const moleBellyMat = new THREE.MeshStandardMaterial({ color: '#a68b76', roughness: 0.9 });
+    const molePinkMat = new THREE.MeshStandardMaterial({ color: '#f4a29e', roughness: 0.55 });
+    const moleEyeMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.2 });
+    const helmetMat = new THREE.MeshStandardMaterial({ color: '#facc15', roughness: 0.3, metalness: 0.2 });
+    const headlampMat = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#fef08a', emissiveIntensity: 3.0 });
+
+    const diggingCreatures = [];
+    function buildDiggingMole(withHelmet = false, scale = 1.0) {
+      const mg = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), moleFurMat);
+      body.scale.set(0.95, 0.86, 1.28); body.position.y = 0.36;
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 6), moleBellyMat);
+      belly.scale.set(0.88, 0.72, 1.05); belly.position.set(0, 0.28, 0.08);
+      const snout = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.34, 8), moleBellyMat);
+      snout.rotation.x = Math.PI / 2; snout.position.set(0, 0.38, 0.56);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(0.075, 7, 6), molePinkMat);
+      nose.position.set(0, 0.38, 0.73);
+      for (const ex of [-0.14, 0.14]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 6), moleEyeMat);
+        eye.position.set(ex, 0.48, 0.42); mg.add(eye);
+      }
+      // Oversized pink digging paws (pivoted at shoulders for lively digging animation!)
+      const leftPaw = new THREE.Group(); leftPaw.position.set(-0.34, 0.24, 0.34);
+      const rightPaw = new THREE.Group(); rightPaw.position.set(0.34, 0.24, 0.34);
+      for (const pg of [leftPaw, rightPaw]) {
+        const pad = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.28), molePinkMat);
+        pad.position.set(0, 0, 0.10); pg.add(pad);
+        for (let c = -1; c <= 1; c++) {
+          const claw = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.13, 5), fossilBoneMat);
+          claw.rotation.x = Math.PI / 2; claw.position.set(c * 0.065, -0.01, 0.26); pg.add(claw);
+        }
+      }
+      // Back feet & tiny stubby tail
+      for (const bx of [-0.24, 0.24]) {
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.22), molePinkMat);
+        foot.position.set(bx, 0.05, -0.26); mg.add(foot);
+      }
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.20, 6), molePinkMat);
+      tail.rotation.x = -Math.PI * 0.65; tail.position.set(0, 0.22, -0.56);
+      mg.add(body, belly, snout, nose, leftPaw, rightPaw, tail);
+      if (withHelmet) {
+        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.27, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), helmetMat);
+        helm.position.set(0, 0.56, 0.24);
+        const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.06, 8), headlampMat);
+        lamp.rotation.x = Math.PI / 2; lamp.position.set(0, 0.68, 0.46);
+        mg.add(helm, lamp);
+      }
+      // 4 animated flying dirt clods behind the digging mole!
+      const clods = [];
+      for (let d = 0; d < 4; d++) {
+        const clod = new THREE.Mesh(new THREE.DodecahedronGeometry(0.075, 0), burrowDirtMat);
+        mg.add(clod);
+        clods.push({ mesh: clod, phase: d * 0.25, side: (d % 2 === 0 ? -1 : 1) * (0.25 + d * 0.05) });
+      }
+      mg.scale.setScalar(scale);
+      return { group: mg, leftPaw, rightPaw, clods };
+    }
+
+    function addBurrowMushrooms(parent, pts) {
+      pts.forEach(([mx, my, mz, sc, amber]) => {
+        const sg = new THREE.Group(); sg.position.set(mx, my, mz);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * sc, 0.07 * sc, 0.34 * sc, 6), shroomStemMat);
+        stem.position.y = 0.17 * sc;
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.20 * sc, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.58), amber ? shroomAmberMat : shroomCapMat);
+        cap.position.y = 0.32 * sc;
+        sg.add(stem, cap); parent.add(sg);
+      });
+    }
+
+    // 1. Front Wall Burrow #1 (x = -24.0, y = -6.8, Z_MAX): Cozy Fossil & Digging Mole Workshop!
+    const frontBurrow1 = new THREE.Group();
+    frontBurrow1.position.set(-24.0, -8.55, Z_MAX - 1.05);
+    root.add(frontBurrow1);
+    const fb1Floor = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 4.1, 0.35, 12), burrowDirtMat);
+    fb1Floor.scale.set(1.25, 1, 0.55); fb1Floor.position.y = -0.1; frontBurrow1.add(fb1Floor);
+    // Dirt mound & hanging roots
+    const mound1 = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.72, 9), burrowDirtMat);
+    mound1.position.set(1.8, 0.35, -0.1); frontBurrow1.add(mound1);
+    for (let r = 0; r < 6; r++) {
+      const rt = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.08, randRange(0.7, 1.4), 5), rootWoodMat);
+      rt.position.set(-2.6 + r * 1.05, 3.35, -0.2); rt.rotation.z = randRange(-0.22, 0.22); frontBurrow1.add(rt);
+    }
+    addBurrowMushrooms(frontBurrow1, [[-2.9, 0.06, 0.1, 1.2, true], [-2.4, 0.06, -0.2, 0.85, false], [2.8, 0.06, 0.0, 1.1, false]]);
+    // Lead Miner Mole actively digging into the right-side rock face!
+    const mole1 = buildDiggingMole(true, 1.35);
+    mole1.group.position.set(0.65, 0.06, 0.15); mole1.group.rotation.y = Math.PI / 2;
+    frontBurrow1.add(mole1.group);
+    diggingCreatures.push({ ...mole1, mode: 'dig', basePos: mole1.group.position.clone(), speed: 9.5, phase: 0 });
+    // Helper Mole patrolling left-right carrying a tiny glowing amber gem!
+    const mole2 = buildDiggingMole(false, 1.1);
+    const gemCarried = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), shroomAmberMat);
+    gemCarried.position.set(0, 0.42, 0.86); mole2.group.add(gemCarried);
+    mole2.group.position.set(-1.35, 0.06, 0.28);
+    frontBurrow1.add(mole2.group);
+    diggingCreatures.push({ ...mole2, mode: 'patrol', basePos: mole2.group.position.clone(), range: 1.15, speed: 1.1, phase: 1.2 });
+
+    // 2. Front Wall Burrow #2 (x = 38.0, y = -6.9, Z_MAX): Bioluminescent Mushroom Cave & Peek-a-boo Mole!
+    const frontBurrow2 = new THREE.Group();
+    frontBurrow2.position.set(38.0, -8.55, Z_MAX - 0.95);
+    root.add(frontBurrow2);
+    const fb2Floor = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 0.35, 12), burrowDirtMat);
+    fb2Floor.scale.set(1.25, 1, 0.55); fb2Floor.position.y = -0.1; frontBurrow2.add(fb2Floor);
+    addBurrowMushrooms(frontBurrow2, [
+      [-2.2, 0.06, -0.1, 1.35, false], [-1.6, 0.06, 0.2, 0.9, true],
+      [1.8, 0.06, -0.15, 1.45, false], [2.35, 0.06, 0.15, 0.95, true], [0.2, 0.06, -0.45, 1.1, false]
+    ]);
+    const mole3 = buildDiggingMole(true, 1.28);
+    mole3.group.position.set(-0.4, 0.06, 0.12); mole3.group.rotation.y = -Math.PI * 0.35;
+    frontBurrow2.add(mole3.group);
+    diggingCreatures.push({ ...mole3, mode: 'dig', basePos: mole3.group.position.clone(), speed: 10.5, phase: 2.1 });
+    // Peek-a-boo Mole popping out of a burrow mound!
+    const peekMound = new THREE.Mesh(new THREE.ConeGeometry(0.75, 0.55, 8), burrowDirtMat);
+    peekMound.position.set(1.15, 0.25, 0.22); frontBurrow2.add(peekMound);
+    const mole4 = buildDiggingMole(false, 1.05);
+    mole4.group.position.set(1.15, 0.15, 0.22); mole4.group.rotation.y = 0.2;
+    frontBurrow2.add(mole4.group);
+    diggingCreatures.push({ ...mole4, mode: 'peek', basePos: mole4.group.position.clone(), speed: 1.6, phase: 0.5 });
+
+    // 3. West Wall Terrestrial Soil Burrow (X_MIN, z = 12.0, y = -3.4) + East Wall Fossil Excavating Mole!
+    const westBurrow = new THREE.Group();
+    westBurrow.position.set(X_MIN + 1.15, -5.35, 12.0);
+    westBurrow.rotation.y = -Math.PI / 2;
+    root.add(westBurrow);
+    const wbFloor = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.8, 0.35, 12), burrowDirtMat);
+    wbFloor.scale.set(1.2, 1, 0.55); wbFloor.position.y = -0.1; westBurrow.add(wbFloor);
+    addBurrowMushrooms(westBurrow, [[-2.1, 0.06, 0.0, 1.25, true], [2.2, 0.06, 0.1, 1.1, false]]);
+    const mole5 = buildDiggingMole(true, 1.3);
+    mole5.group.position.set(0.0, 0.06, 0.15); mole5.group.rotation.y = Math.PI / 2;
+    westBurrow.add(mole5.group);
+    diggingCreatures.push({ ...mole5, mode: 'dig', basePos: mole5.group.position.clone(), speed: 9.0, phase: 3.4 });
+
+    // 4. Wiggling Giant Soil Earthworms along Upper Cutaway Topsoil!
+    const wormMat = new THREE.MeshStandardMaterial({ color: '#f472b6', roughness: 0.45 });
+    const caveWorms = [];
+    [[X_MIN - 0.08, -1.4, 21.0, -Math.PI / 2], [X_MAX + 0.08, -1.6, 8.5, Math.PI / 2], [-31.5, -5.2, Z_MAX + 0.08, 0]].forEach(([wx, wy, wz, ry], wi) => {
+      const wg = new THREE.Group(); wg.position.set(wx, wy, wz); wg.rotation.y = ry;
+      const segs = [];
+      for (let s = 0; s < 7; s++) {
+        const sm = new THREE.Mesh(new THREE.SphereGeometry(0.11 - Math.abs(s - 3) * 0.012, 6, 5), wormMat);
+        sm.position.set((s - 3) * 0.18, 0, 0); wg.add(sm); segs.push(sm);
+      }
+      root.add(wg);
+      caveWorms.push({ segs, phase: wi * 2.1 });
+    });
+
+    // Warm Cozy Lighting inside the Front Mole Burrow & Glowing Mushroom Cave!
+    const burrowLight1 = new THREE.PointLight(0xffb454, 2.8, 22, 1.35);
+    burrowLight1.position.set(-24.0, -6.5, Z_MAX + 1.8);
+    const burrowLight2 = new THREE.PointLight(0x38bdf8, 2.4, 20, 1.35);
+    burrowLight2.position.set(38.0, -6.6, Z_MAX + 1.8);
+    const westBurrowLight = new THREE.PointLight(0xfbbf24, 2.4, 18, 1.35);
+    westBurrowLight.position.set(X_MIN - 1.6, -3.5, 12.0);
+    const eastFossilLight = new THREE.PointLight(0xfde68a, 2.4, 18, 1.35);
+    eastFossilLight.position.set(X_MAX + 1.6, -4.0, -2.0);
+    scene.add(burrowLight1, burrowLight2, westBurrowLight, eastFossilLight);
 
     // =========================================================================
     // 9. 2.0 ANIMATED NORMAL-MAP OCEAN, RESIN LAKES, SHIP WAKES & RICH SEABED
@@ -3192,12 +3509,12 @@
     });
     createToriiGate(FUJI_X, getTerrainHeight(FUJI_X, FUJI_Z - FUJI_RIM_R) - 0.05, FUJI_Z - FUJI_RIM_R, 0, 0.55);
 
-    // --- B. WEST FLANK: Shiraito Falls (白糸の滝 at -30.5, 9.5) & Fujinomiya World Heritage Centre (-33.5, 22.5) ---
+    // --- B. WEST FLANK: Shiraito Falls (白糸の滝 at -34.5, 9.5) & Fujinomiya World Heritage Centre (-36.2, 20.0) ---
     const fallsGroup = new THREE.Group();
-    const fallPoolY = getTerrainHeight(-32.2, 9.5) + 0.08;
-    const fallTopY = Math.max(fallPoolY + 2.9, getTerrainHeight(-28.4, 9.5));
+    const fallPoolY = getTerrainHeight(-36.2, 9.5) + 0.08;
+    const fallTopY = Math.max(fallPoolY + 2.9, getTerrainHeight(-32.4, 9.5));
     const fallDropH = fallTopY - fallPoolY;
-    fallsGroup.position.set(-30.5, fallPoolY, 9.5);
+    fallsGroup.position.set(-34.5, fallPoolY, 9.5);
     fallsGroup.rotation.y = -Math.PI / 2; // Facing west toward Fujinomiya valley!
     root.add(fallsGroup);
 
@@ -3249,9 +3566,9 @@
     const rail2 = rail1.clone(); rail2.position.z = 3.34;
     fallsGroup.add(viewBridge, rail1, rail2);
 
-    // Fujinomiya Mt. Fuji World Heritage Centre (靜岡縣富士山世界遺產中心) at (-33.5, 22.5)
+    // Fujinomiya Mt. Fuji World Heritage Centre (靜岡縣富士山世界遺產中心) at (-36.2, 20.0)
     const heritageGroup = new THREE.Group();
-    const herX = -33.5, herZ = 22.5;
+    const herX = -36.2, herZ = 20.0;
     heritageGroup.position.set(herX, getTerrainHeight(herX, herZ), herZ);
     root.add(heritageGroup);
 
@@ -3359,105 +3676,209 @@
       mk.add(mb, mh, mf); onsenGroup.add(mk);
     }
 
-    // --- D. FUJI-Q HIGHLAND (6 Rides — RIGHT NEXT TO KAWAGUCHIKO TOWN at -2.5, -16.5!) ---
+    // --- D. FUJI-Q HIGHLAND (High-Detail 6 Rides + Extended FUJIYAMA Hypercoaster at -2.5, -16.5!) ---
     const fujiQ = new THREE.Group();
     const fqX = -2.5, fqZ = -16.5;
     fujiQ.position.set(fqX, getTerrainHeight(fqX, fqZ), fqZ);
     root.add(fujiQ);
 
-    const fqPlaza = new THREE.Mesh(new THREE.CylinderGeometry(5.6, 5.8, 0.1, 32), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.85 }));
-    fqPlaza.position.y = 0.03; fqPlaza.receiveShadow = true; fujiQ.add(fqPlaza);
+    // Landscaped Theme-Park Plaza with Central Promenade & Fountain Ring
+    const fqPlaza = new THREE.Mesh(new THREE.CylinderGeometry(6.9, 7.15, 0.12, 36), new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.85 }));
+    fqPlaza.position.y = 0.04; fqPlaza.receiveShadow = true; fujiQ.add(fqPlaza);
+    const fqInnerWalk = new THREE.Mesh(new THREE.RingGeometry(1.1, 4.9, 32), new THREE.MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.82 }));
+    fqInnerWalk.rotation.x = -Math.PI / 2; fqInnerWalk.position.y = 0.11; fujiQ.add(fqInnerWalk);
+    const fqFountain = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.78, 0.24, 16), new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.35, roughness: 0.18 }));
+    fqFountain.position.set(0.3, 0.14, 0.2); fujiQ.add(fqFountain);
 
     const podCols = ['#ef4444', '#38bdf8', '#22c55e', '#f59e0b', '#ec4899', '#a855f7'];
     const wheelRimMat = new THREE.MeshStandardMaterial({ color: '#fef08a', emissive: '#fbbf24', emissiveIntensity: 0.3 });
     nightEmissives.push({ mat: wheelRimMat, day: 0.25, sunset: 0.9, night: 2.0 });
+    const fqGlassMat = new THREE.MeshStandardMaterial({ color: '#bae6fd', roughness: 0.12, metalness: 0.5, transparent: true, opacity: 0.78 });
 
-    // 1. Giant Ferris Wheel
-    const wheelRotor = new THREE.Group(); wheelRotor.position.set(2.4, 3.1, -1.6); fujiQ.add(wheelRotor);
-    for (const sx of [-0.65, 0.65]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.095, 3.25, 8), whiteMat);
-      leg.position.set(2.4 + sx, 1.55, -1.6); leg.rotation.z = sx > 0 ? 0.2 : -0.2; fujiQ.add(leg);
+    // 1. Shining Flower Giant Ferris Wheel (Double-Rim Spoked Wheel + Twin A-Frame Legs + 18 Glass Gondolas!)
+    const wheelRotor = new THREE.Group(); wheelRotor.position.set(2.55, 3.25, -1.65); fujiQ.add(wheelRotor);
+    for (const sz of [-0.32, 0.32]) for (const sx of [-0.82, 0.82]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.085, 3.45, 8), whiteMat);
+      leg.position.set(2.55 + sx, 1.62, -1.65 + sz);
+      leg.rotation.z = sx > 0 ? 0.23 : -0.23; leg.rotation.x = sz > 0 ? -0.06 : 0.06;
+      leg.castShadow = true; fujiQ.add(leg);
     }
-    wheelRotor.add(new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.07, 8, 36), wheelRimMat));
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2;
-      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 4.2, 5), whiteMat); sp.rotation.z = a;
-      const pod = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.24), new THREE.MeshStandardMaterial({ color: podCols[i % 6] }));
-      pod.position.set(Math.cos(a) * 2.1, Math.sin(a) * 2.1, 0);
-      wheelRotor.add(sp, pod);
+    const fwHub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.56, 14), wheelRimMat);
+    fwHub.rotation.x = Math.PI / 2; wheelRotor.add(fwHub);
+    for (const rz of [-0.14, 0.14]) {
+      const outerRim = new THREE.Mesh(new THREE.TorusGeometry(2.25, 0.052, 8, 40), wheelRimMat);
+      outerRim.position.z = rz;
+      const innerRim = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.032, 6, 32), whiteMat);
+      innerRim.position.z = rz;
+      wheelRotor.add(outerRim, innerRim);
+    }
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      const sp = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 4.48, 5), whiteMat); sp.rotation.z = a;
+      const podG = new THREE.Group();
+      podG.position.set(Math.cos(a) * 2.25, Math.sin(a) * 2.25, 0);
+      const podBody = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.24, 8), new THREE.MeshStandardMaterial({ color: podCols[i % 6], roughness: 0.35 }));
+      const podGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.136, 0.136, 0.10, 8), fqGlassMat); podGlass.position.y = 0.02;
+      const podRoof = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.08, 8), whiteMat); podRoof.position.y = 0.15;
+      podG.add(podBody, podGlass, podRoof);
+      wheelRotor.add(sp, podG);
     }
 
-    // 2. Mega Coaster
+    // 2. Extended FUJIYAMA Hypercoaster (2.2x Longer 20-Point Track + Cross-Ties + 36 Supports + Station + 5-Car Train!)
     const coasterCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-4.2, 0.5, 1.6), new THREE.Vector3(-3.0, 2.9, 0.4), new THREE.Vector3(-1.6, 0.6, -0.8),
-      new THREE.Vector3(-0.6, 2.1, -1.2), new THREE.Vector3(-1.1, 3.3, -0.4), new THREE.Vector3(-1.9, 1.8, 0.2),
-      new THREE.Vector3(-1.2, 0.5, 1.2), new THREE.Vector3(-2.8, 1.4, 2.4)
-    ], true);
-    fujiQ.add(new THREE.Mesh(new THREE.TubeGeometry(coasterCurve, 96, 0.08, 8, true), new THREE.MeshStandardMaterial({ color: '#0284c7', metalness: 0.45, roughness: 0.3 })));
-    for (let s = 0; s < 14; s++) {
-      const cp = coasterCurve.getPointAt(s / 14);
-      if (cp.y > 0.35) {
-        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, cp.y, 5), pylonMetal);
-        col.position.set(cp.x, cp.y * 0.5, cp.z); fujiQ.add(col);
+      new THREE.Vector3(-4.8, 0.65,  3.2), // Station Launch
+      new THREE.Vector3(-5.8, 2.35,  1.6), // Lift Hill Mid
+      new THREE.Vector3(-6.2, 4.65, -0.6), // Tallest Lift Crest (FUJIYAMA Peak!)
+      new THREE.Vector3(-5.5, 2.10, -3.0), // Huge First Drop!
+      new THREE.Vector3(-3.8, 0.72, -4.8), // Valley Bottom (Max Speed!)
+      new THREE.Vector3(-1.4, 3.65, -5.4), // Giant Airtime Camelback #1
+      new THREE.Vector3( 1.5, 1.05, -5.2), // High-Speed Dip
+      new THREE.Vector3( 4.2, 2.65, -4.2), // East Banked Hill
+      new THREE.Vector3( 5.8, 1.85, -2.0), // Wide Sweeping Turnaround Helix
+      new THREE.Vector3( 5.9, 1.15,  0.8), // Low-Altitude Speed Curve
+      new THREE.Vector3( 5.2, 2.55,  3.2), // SE Airtime Hill
+      new THREE.Vector3( 3.2, 0.85,  4.8), // South Valley
+      new THREE.Vector3( 0.8, 2.35,  5.3), // Bunny Hop #1
+      new THREE.Vector3(-1.4, 0.92,  5.0), // Dip #2
+      new THREE.Vector3(-3.4, 1.95,  4.4)  // Final Brake Run into Station
+    ], true, 'catmullrom', 0.45);
+
+    const coasterRailMat = new THREE.MeshStandardMaterial({ color: '#0284c7', metalness: 0.52, roughness: 0.28 });
+    const coasterSpineMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', metalness: 0.45, roughness: 0.35 });
+    fujiQ.add(new THREE.Mesh(new THREE.TubeGeometry(coasterCurve, 220, 0.068, 8, true), coasterRailMat));
+    // Twin Steel Running Rails & Cross-Tie Sleepers along the extended circuit
+    const tieGeo = new THREE.BoxGeometry(0.28, 0.032, 0.045);
+    const tieInst = new THREE.InstancedMesh(tieGeo, coasterSpineMat, 96);
+    const tieDummy = new THREE.Object3D();
+    for (let ti = 0; ti < 96; ti++) {
+      const u = ti / 96;
+      const tp = coasterCurve.getPointAt(u), tl = coasterCurve.getPointAt((u + 0.008) % 1);
+      tieDummy.position.copy(tp); tieDummy.lookAt(tl); tieDummy.updateMatrix();
+      tieInst.setMatrixAt(ti, tieDummy.matrix);
+    }
+    tieInst.instanceMatrix.needsUpdate = true;
+    fujiQ.add(tieInst);
+    // 36 Tapered Steel Support Columns with Concrete Footings
+    for (let s = 0; s < 36; s++) {
+      const cp = coasterCurve.getPointAt(s / 36);
+      if (cp.y > 0.42) {
+        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.048, cp.y, 6), pylonMetal);
+        col.position.set(cp.x, cp.y * 0.5, cp.z); col.castShadow = true; fujiQ.add(col);
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.14), whiteMat);
+        foot.position.set(cp.x, 0.04, cp.z); fujiQ.add(foot);
       }
     }
+    // FUJIYAMA Coaster Boarding Station at (-4.8, 0.1, 3.2)
+    const stGroup = new THREE.Group(); stGroup.position.set(-4.8, 0.08, 3.2); stGroup.rotation.y = 0.55;
+    const stBase = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.56, 1.55), whiteMat); stBase.position.y = 0.28;
+    const stRoof = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.12, 1.72), new THREE.MeshStandardMaterial({ color: '#0284c7', roughness: 0.4 })); stRoof.position.y = 1.05;
+    for (const [px, pz] of [[-0.45, -0.68], [0.45, -0.68], [-0.45, 0.68], [0.45, 0.68]]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.52, 5), pylonMetal); post.position.set(px, 0.78, pz); stGroup.add(post);
+    }
+    stGroup.add(stBase, stRoof); fujiQ.add(stGroup);
+
+    // 5-Car Sculpted FUJIYAMA Coaster Train (Aerodynamic Nose, Safety Bars & Lead Headlight!)
     const coasterCars = [];
-    for (let c = 0; c < 4; c++) {
-      const car = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.17, 0.42), new THREE.MeshStandardMaterial({ color: podCols[c] }));
-      fujiQ.add(car); coasterCars.push(car);
+    let coasterLeadU = 0;
+    const coasterLeadHeadMat = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#fef08a', emissiveIntensity: 2.6 });
+    for (let c = 0; c < 5; c++) {
+      const cg = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.40), new THREE.MeshStandardMaterial({ color: podCols[c % 6], roughness: 0.28, metalness: 0.35 }));
+      body.position.y = 0.08;
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.04, 0.42), whiteMat); trim.position.y = 0.03;
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.12, 0.06), new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.7 })); seat.position.set(0, 0.16, -0.10);
+      const lapBar = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.014, 5, 10, Math.PI), pylonMetal); lapBar.position.set(0, 0.15, 0.06);
+      cg.add(body, trim, seat, lapBar);
+      if (c === 0) {
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.18, 6), new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.25 }));
+        nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.08, 0.26);
+        const hl = new THREE.Mesh(new THREE.SphereGeometry(0.032, 6, 6), coasterLeadHeadMat); hl.position.set(0, 0.09, 0.33);
+        cg.add(nose, hl);
+      }
+      fujiQ.add(cg); coasterCars.push(cg);
     }
 
-    // 3. Red Drop Tower
+    // 3. Red/White Truss Drop Tower (4 Corner Columns + Lattice Rings + 8-Seat Gondola!)
     const dropTowerGroup = new THREE.Group(); dropTowerGroup.position.set(3.2, 0, 1.8); fujiQ.add(dropTowerGroup);
-    const dtTower = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 4.4, 8), new THREE.MeshStandardMaterial({ color: '#ef4444', metalness: 0.35, roughness: 0.4 }));
-    dtTower.position.y = 2.2; dtTower.castShadow = true;
-    const dtCrown = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10), wheelRimMat); dtCrown.position.y = 4.45;
-    const dropGondola = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.14, 8, 16), new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#f59e0b', emissiveIntensity: 0.45 }));
-    dropGondola.rotation.x = Math.PI / 2; dropGondola.position.y = 1.0;
-    dropTowerGroup.add(dtTower, dtCrown, dropGondola);
+    const dtRedMat = new THREE.MeshStandardMaterial({ color: '#ef4444', metalness: 0.38, roughness: 0.38 });
+    for (const [cx, cz] of [[-0.14, -0.14], [0.14, -0.14], [-0.14, 0.14], [0.14, 0.14]]) {
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 4.6, 6), dtRedMat);
+      col.position.set(cx, 2.3, cz); col.castShadow = true; dropTowerGroup.add(col);
+    }
+    for (let r = 0; r < 9; r++) {
+      const ring = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.045, 0.32), r % 2 === 0 ? whiteMat : dtRedMat);
+      ring.position.y = 0.45 + r * 0.48; dropTowerGroup.add(ring);
+    }
+    const dtCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.26, 0.34, 12), wheelRimMat); dtCrown.position.y = 4.72;
+    const dtBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), new THREE.MeshStandardMaterial({ color: '#ef4444', emissive: '#ef4444', emissiveIntensity: 2.4 })); dtBeacon.position.y = 5.02;
+    const dropGondola = new THREE.Group(); dropGondola.position.y = 1.0;
+    const dgRing = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.10, 8, 18), new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#f59e0b', emissiveIntensity: 0.45 }));
+    dgRing.rotation.x = Math.PI / 2; dropGondola.add(dgRing);
+    for (let s = 0; s < 8; s++) {
+      const a = (s / 8) * Math.PI * 2;
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.12), new THREE.MeshStandardMaterial({ color: podCols[s % 6] }));
+      st.position.set(Math.cos(a) * 0.56, 0.04, Math.sin(a) * 0.56); st.rotation.y = -a;
+      dropGondola.add(st);
+    }
+    dropTowerGroup.add(dtCrown, dtBeacon, dropGondola);
 
-    // 4. Star Flyer
-    const starFlyerGroup = new THREE.Group(); starFlyerGroup.position.set(0.2, 0, -3.1); fujiQ.add(starFlyerGroup);
-    const sfPole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 4.1, 10), pylonMetal); sfPole.position.y = 2.05; starFlyerGroup.add(sfPole);
-    const sfRotor = new THREE.Group(); sfRotor.position.y = 3.5; starFlyerGroup.add(sfRotor);
-    sfRotor.add(new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.55, 8), new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.35 })));
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.35, 4), whiteMat);
-      chain.position.set(Math.cos(a) * 1.15, -0.58, Math.sin(a) * 1.15);
+    // 4. Star Flyer (12-Swing Tapered Sky Tower!)
+    const starFlyerGroup = new THREE.Group(); starFlyerGroup.position.set(0.2, 0, -2.9); fujiQ.add(starFlyerGroup);
+    const sfPole = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.20, 4.3, 12), pylonMetal); sfPole.position.y = 2.15; sfPole.castShadow = true; starFlyerGroup.add(sfPole);
+    const sfTopBall = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), wheelRimMat); sfTopBall.position.y = 4.38; starFlyerGroup.add(sfTopBall);
+    const sfRotor = new THREE.Group(); sfRotor.position.y = 3.65; starFlyerGroup.add(sfRotor);
+    sfRotor.add(new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.58, 12), new THREE.MeshStandardMaterial({ color: '#38bdf8', emissive: '#0284c7', emissiveIntensity: 0.38 })));
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 1.48, 4), whiteMat);
+      chain.position.set(Math.cos(a) * 1.18, -0.62, Math.sin(a) * 1.18);
       chain.rotation.z = Math.cos(a) * 0.48; chain.rotation.x = -Math.sin(a) * 0.48;
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.16), new THREE.MeshStandardMaterial({ color: podCols[i % 6] }));
-      seat.position.set(Math.cos(a) * 1.48, -1.15, Math.sin(a) * 1.48);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.11, 0.14), new THREE.MeshStandardMaterial({ color: podCols[i % 6] }));
+      seat.position.set(Math.cos(a) * 1.54, -1.24, Math.sin(a) * 1.54); seat.rotation.y = -a;
       sfRotor.add(chain, seat);
     }
 
-    // 5. Carousel
-    const carouselGroup = new THREE.Group(); carouselGroup.position.set(0.6, 0, 2.6); fujiQ.add(carouselGroup);
-    const carBase = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.12, 0.22, 18), whiteMat); carBase.position.y = 0.11; carouselGroup.add(carBase);
+    // 5. Grand Ornate Carousel (Two-Tier Base + Tented Canopy + 8 Sculpted Horses!)
+    const carouselGroup = new THREE.Group(); carouselGroup.position.set(0.55, 0, 2.55); fujiQ.add(carouselGroup);
+    const carBase1 = new THREE.Mesh(new THREE.CylinderGeometry(1.16, 1.24, 0.14, 20), whiteMat); carBase1.position.y = 0.07;
+    const carBase2 = new THREE.Mesh(new THREE.CylinderGeometry(1.04, 1.08, 0.14, 20), goldMat); carBase2.position.y = 0.21;
+    carouselGroup.add(carBase1, carBase2);
     const carouselRotor = new THREE.Group(); carouselGroup.add(carouselRotor);
-    const carCanopy = new THREE.Mesh(new THREE.ConeGeometry(1.15, 0.72, 12), vermilionMat); carCanopy.position.y = 1.45;
-    const carTrim = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.05, 6, 20), wheelRimMat); carTrim.rotation.x = Math.PI / 2; carTrim.position.y = 1.12;
-    carouselRotor.add(carCanopy, carTrim);
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2;
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.0, 5), goldMat); pole.position.set(Math.cos(a) * 0.78, 0.65, Math.sin(a) * 0.78);
-      const horse = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.3), new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? '#f8fafc' : '#fbcfe8' }));
-      horse.position.set(Math.cos(a) * 0.78, 0.55 + (i % 2) * 0.12, Math.sin(a) * 0.78); horse.rotation.y = -a;
-      carouselRotor.add(pole, horse);
+    const carCore = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.05, 12), whiteMat); carCore.position.y = 0.78;
+    const carCanopy = new THREE.Mesh(new THREE.ConeGeometry(1.22, 0.76, 16), vermilionMat); carCanopy.position.y = 1.62;
+    const carFinial = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), goldMat); carFinial.position.y = 2.04;
+    const carTrim = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.055, 6, 24), wheelRimMat); carTrim.rotation.x = Math.PI / 2; carTrim.position.y = 1.25;
+    carouselRotor.add(carCore, carCanopy, carFinial, carTrim);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.02, 5), goldMat); pole.position.set(Math.cos(a) * 0.82, 0.76, Math.sin(a) * 0.82);
+      const hg = new THREE.Group(); hg.position.set(Math.cos(a) * 0.82, 0.64 + (i % 2) * 0.14, Math.sin(a) * 0.82); hg.rotation.y = -a;
+      const hMat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? '#f8fafc' : '#fbcfe8' });
+      const hBody = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.14, 0.28), hMat);
+      const hNeck = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.08), hMat); hNeck.position.set(0, 0.11, 0.11); hNeck.rotation.x = -0.35;
+      hg.add(hBody, hNeck);
+      carouselRotor.add(pole, hg);
     }
 
-    // 6. Pirate Pendulum Ship
-    const pendulumGroup = new THREE.Group(); pendulumGroup.position.set(-2.6, 0, -2.5); fujiQ.add(pendulumGroup);
-    for (const sz of [-0.55, 0.55]) for (const sx of [-0.45, 0.45]) {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 2.2, 6), pylonMetal);
-      leg.position.set(sx, 1.05, sz); leg.rotation.z = sx > 0 ? 0.22 : -0.22; pendulumGroup.add(leg);
+    // 6. Tondemina Giant Pendulum (4-Leg Steel Arch + Counterweighted Boom + Circular 12-Seat Ring!)
+    const pendulumGroup = new THREE.Group(); pendulumGroup.position.set(-2.5, 0, -2.35); fujiQ.add(pendulumGroup);
+    for (const sz of [-0.62, 0.62]) for (const sx of [-0.52, 0.52]) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.07, 2.55, 6), pylonMetal);
+      leg.position.set(sx, 1.22, sz); leg.rotation.z = sx > 0 ? 0.22 : -0.22; leg.castShadow = true; pendulumGroup.add(leg);
     }
-    const pendulumPivot = new THREE.Group(); pendulumPivot.position.y = 2.05; pendulumGroup.add(pendulumPivot);
-    const pArm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.55, 5), whiteMat); pArm1.position.set(-0.2, -0.78, 0);
-    const pArm2 = pArm1.clone(); pArm2.position.x = 0.2;
-    const pBoat = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.32, 0.46), hullMat); pBoat.position.y = -1.55;
-    const pTrim = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.1, 0.5), goldMat); pTrim.position.y = -1.38;
-    pendulumPivot.add(pArm1, pArm2, pBoat, pTrim);
+    const pCross = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.38, 8), vermilionMat);
+    pCross.rotation.x = Math.PI / 2; pCross.position.y = 2.38; pendulumGroup.add(pCross);
+    const pendulumPivot = new THREE.Group(); pendulumPivot.position.y = 2.38; pendulumGroup.add(pendulumPivot);
+    const pBoom = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 2.05, 8), whiteMat); pBoom.position.y = -0.78;
+    const pCounter = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.32), vermilionMat); pCounter.position.y = 0.34;
+    const pDisc = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.10, 8, 18), goldMat); pDisc.rotation.x = Math.PI / 2; pDisc.position.y = -1.78;
+    pendulumPivot.add(pBoom, pCounter, pDisc);
+    for (let s = 0; s < 12; s++) {
+      const a = (s / 12) * Math.PI * 2;
+      const ps = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.16, 0.11), new THREE.MeshStandardMaterial({ color: podCols[s % 6] }));
+      ps.position.set(Math.cos(a) * 0.66, -1.78, Math.sin(a) * 0.66); ps.rotation.y = -a;
+      pendulumPivot.add(ps);
+    }
 
     // --- E. OSHINO HAKKAI (忍野八海 — Between Kawaguchiko & Yamanakako on NE side of Fuji at 5.5, -11.5!) ---
     const thatchMat = new THREE.MeshStandardMaterial({ color: '#a89060', roughness: 0.92 });
@@ -3661,25 +4082,343 @@
     // Shirahama Coastal Red Torii on East Izu Coast
     createToriiGate(13.3, getTerrainHeight(13.3, 37.5) - 0.05, 37.5, -0.5, 0.85);
 
-    // --- G. FUJI SPEEDWAY RACING CIRCUIT (ESE of Mt. Fuji at 14.5, 7.5) ---
+    // --- G. 2.1 ULTRA-DETAILED PLAYABLE FUJI INTERNATIONAL SPEEDWAY (富士國際賽車場 — 16-Turn Official Layout!) ---
     const speedwayGroup = new THREE.Group();
-    speedwayGroup.position.set(14.5, 0.99, 4.5);
-    speedwayGroup.rotation.y = -0.25;
+    speedwayGroup.position.set(14.5, 0.985, 4.5);
+    speedwayGroup.rotation.y = -0.18;
     root.add(speedwayGroup);
+
+    // Flat turf infield apron & gravel runoff pad
+    const swInfield = new THREE.Mesh(
+      new THREE.BoxGeometry(9.6, 0.04, 5.4),
+      new THREE.MeshStandardMaterial({ color: '#3b6b35', roughness: 0.92 })
+    );
+    swInfield.position.set(0.0, 0.01, -0.05); swInfield.receiveShadow = true;
+    speedwayGroup.add(swInfield);
+
+    // Authentic 16-Turn Fuji Speedway Circuit (Main Straight -> T1 -> Coca-Cola -> 100R -> Hairpin -> 300R -> Dunlop -> 13th -> Netz -> Panasonic!)
     const raceCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-3.3, 0.05, -1.6), new THREE.Vector3(3.1, 0.05, -1.6), new THREE.Vector3(3.8, 0.05, -0.2),
-      new THREE.Vector3(2.3, 0.05, 1.4), new THREE.Vector3(0.4, 0.05, 0.45), new THREE.Vector3(-1.3, 0.05, 1.6),
-      new THREE.Vector3(-3.7, 0.05, 0.65)
-    ], true);
-    const raceAsphalt = new THREE.Mesh(new THREE.TubeGeometry(raceCurve, 90, 0.38, 6, true), new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.82 }));
-    raceAsphalt.scale.y = 0.14; speedwayGroup.add(raceAsphalt);
-    const grandstand = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.58, 0.68), whiteMat); grandstand.position.set(-0.2, 0.29, -2.35); grandstand.castShadow = true; speedwayGroup.add(grandstand);
-    const raceCars = [];
-    const f1Colors = ['#ef4444', '#facc15', '#38bdf8', '#22c55e'];
-    for (let i = 0; i < 4; i++) {
-      const rc = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.11, 0.38), new THREE.MeshStandardMaterial({ color: f1Colors[i], roughness: 0.3 }));
-      speedwayGroup.add(rc); raceCars.push({ mesh: rc, offset: i * 0.24 });
+      new THREE.Vector3( 3.65, 0.045,  1.62), // Exit Panasonic onto 1.475km Main Straight
+      new THREE.Vector3( 1.20, 0.045,  1.62), // Mid Main Straight
+      new THREE.Vector3(-1.35, 0.045,  1.62), // Start / Finish Checkered Line
+      new THREE.Vector3(-3.65, 0.045,  1.62), // End of Main Straight braking zone
+      new THREE.Vector3(-4.18, 0.045,  1.42), // T1 (1st Corner) apex!
+      new THREE.Vector3(-3.62, 0.045,  0.88), // T2 exit
+      new THREE.Vector3(-1.95, 0.045,  0.42), // T3 (Coca-Cola Corner)
+      new THREE.Vector3(-1.52, 0.045, -0.92), // T4 (100R entry)
+      new THREE.Vector3(-0.72, 0.045, -1.78), // 100R mid-sweeper!
+      new THREE.Vector3( 0.14, 0.045, -1.32), // T5 (100R exit)
+      new THREE.Vector3( 0.12, 0.045,  0.34), // T6 (Hairpin entry)
+      new THREE.Vector3( 0.62, 0.045,  0.48), // T7 (Hairpin exit)
+      new THREE.Vector3( 1.18, 0.045, -0.82), // T8 uphill blast
+      new THREE.Vector3( 2.38, 0.045, -1.68), // T9 (300R high-speed sweeper!)
+      new THREE.Vector3( 3.72, 0.045, -1.58), // Approach to Dunlop
+      new THREE.Vector3( 3.92, 0.045, -1.22), // T10 (Dunlop Corner)
+      new THREE.Vector3( 3.58, 0.045, -0.84), // T11 chicane left
+      new THREE.Vector3( 4.02, 0.045, -0.42), // T12 exit
+      new THREE.Vector3( 4.18, 0.045,  0.26), // T13 (13th Corner)
+      new THREE.Vector3( 3.32, 0.045,  0.28), // T14 (Netz entry)
+      new THREE.Vector3( 3.04, 0.045,  0.78), // T15 (Netz apex)
+      new THREE.Vector3( 3.48, 0.045,  1.06), // Exit Netz
+      new THREE.Vector3( 4.24, 0.045,  1.22)  // T16 (Panasonic Final Corner!)
+    ], true, 'catmullrom', 0.35);
+
+    // Pre-sample 260 points for smooth road geometry & real-time player on-track physics!
+    const raceSamples = [];
+    for (let s = 0; s < 260; s++) raceSamples.push(raceCurve.getPointAt(s / 260));
+
+    // Procedural FIA Asphalt + White Sidelines + Red/White Apex Curbs Texture
+    function createSpeedwayTrackTexture() {
+      const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+      const g = c.getContext('2d');
+      // Red & white FIA curbs on outer 10% edges
+      for (let y = 0; y < 256; y += 32) {
+        g.fillStyle = (y / 32) % 2 === 0 ? '#dc2626' : '#f8fafc';
+        g.fillRect(0, y, 18, 32); g.fillRect(238, y, 18, 32);
+      }
+      // Dark weathered racing tarmac
+      g.fillStyle = '#272d36'; g.fillRect(18, 0, 220, 256);
+      // Subtle dark rubber racing groove
+      g.fillStyle = 'rgba(12,16,22,0.42)'; g.fillRect(72, 0, 46, 256); g.fillRect(138, 0, 46, 256);
+      // Crisp white track limit lines
+      g.fillStyle = '#f8fafc'; g.fillRect(20, 0, 6, 256); g.fillRect(230, 0, 6, 256);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 38); tex.anisotropy = 4;
+      return tex;
     }
+
+    // Build flat, crisp asphalt track ribbon + subtle gravel runoff border
+    const raceTrackMat = new THREE.MeshStandardMaterial({ map: createSpeedwayTrackTexture(), roughness: 0.76, metalness: 0.08, side: THREE.DoubleSide });
+    const gravelMat = new THREE.MeshStandardMaterial({ color: '#b4a892', roughness: 0.95, side: THREE.DoubleSide });
+    (function buildSpeedwayTrackMesh() {
+      const segs = 260, halfW = 0.215, gravW = 0.295;
+      const tVerts = [], tUvs = [], tIdx = [], gVerts = [], gIdx = [];
+      for (let i = 0; i <= segs; i++) {
+        const u = (i % segs) / segs;
+        const p = raceCurve.getPointAt(u), tan = raceCurve.getTangentAt(u);
+        const nx = -tan.z, nz = tan.x, len = Math.hypot(nx, nz) || 1;
+        const rx = nx / len, rz = nz / len;
+        tVerts.push(p.x - rx * halfW, p.y, p.z - rz * halfW, p.x + rx * halfW, p.y, p.z + rz * halfW);
+        tUvs.push(0, i / segs, 1, i / segs);
+        gVerts.push(p.x - rx * gravW, p.y - 0.008, p.z - rz * gravW, p.x + rx * gravW, p.y - 0.008, p.z + rz * gravW);
+        if (i < segs) { const a = i * 2; tIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); gIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+      }
+      const tGeo = new THREE.BufferGeometry();
+      tGeo.setAttribute('position', new THREE.Float32BufferAttribute(tVerts, 3));
+      tGeo.setAttribute('uv', new THREE.Float32BufferAttribute(tUvs, 2));
+      tGeo.setIndex(tIdx); tGeo.computeVertexNormals();
+      const gGeo = new THREE.BufferGeometry();
+      gGeo.setAttribute('position', new THREE.Float32BufferAttribute(gVerts, 3));
+      gGeo.setIndex(gIdx); gGeo.computeVertexNormals();
+      const tMesh = new THREE.Mesh(tGeo, raceTrackMat); tMesh.receiveShadow = true;
+      speedwayGroup.add(new THREE.Mesh(gGeo, gravelMat), tMesh);
+    })();
+
+    // Parallel Pit Lane & Checkered Start/Finish Line + Grid Boxes
+    const pitLaneMesh = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.014, 0.24), new THREE.MeshStandardMaterial({ color: '#333b47', roughness: 0.82 }));
+    pitLaneMesh.position.set(0.0, 0.042, 1.24); pitLaneMesh.receiveShadow = true;
+    const pitWall = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.09, 0.045), whiteMat);
+    pitWall.position.set(0.0, 0.085, 1.39);
+    speedwayGroup.add(pitLaneMesh, pitWall);
+    // Checkered Start/Finish Strip at x = -1.35, z = 1.62
+    const chkCanvas = document.createElement('canvas'); chkCanvas.width = 64; chkCanvas.height = 128;
+    const chkCtx = chkCanvas.getContext('2d');
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 4; x++) {
+      chkCtx.fillStyle = (x + y) % 2 === 0 ? '#f8fafc' : '#0f172a'; chkCtx.fillRect(x * 16, y * 16, 16, 16);
+    }
+    const chkTex = new THREE.CanvasTexture(chkCanvas); chkTex.colorSpace = THREE.SRGBColorSpace;
+    const startLine = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.38), new THREE.MeshBasicMaterial({ map: chkTex }));
+    startLine.rotation.x = -Math.PI / 2; startLine.position.set(-1.35, 0.052, 1.62);
+    speedwayGroup.add(startLine);
+
+    // Iconic Sawtooth-Roof Main Grandstand (Photo #2!) + Sponsor Boards + 360+ Animated Cheering Spectators!
+    const gsGroup = new THREE.Group();
+    gsGroup.position.set(-0.2, 0.04, 2.26);
+    speedwayGroup.add(gsGroup);
+    const gsConcreteMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.72 });
+    const gsRoofMat = new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.42, metalness: 0.28 });
+    // 5 Stepped Tiered Seating Rows facing the Main Straight (-Z)
+    for (let tier = 0; tier < 5; tier++) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.085, 0.12), gsConcreteMat);
+      step.position.set(0, 0.045 + tier * 0.085, -0.22 + tier * 0.11); step.castShadow = true; step.receiveShadow = true;
+      gsGroup.add(step);
+    }
+    const gsBackWall = new THREE.Mesh(new THREE.BoxGeometry(4.52, 0.56, 0.08), gsConcreteMat);
+    gsBackWall.position.set(0, 0.28, 0.30); gsBackWall.castShadow = true;
+    gsGroup.add(gsBackWall);
+    // 20 Signature Serrated Sawtooth Cantilevered Roof Fins (exact Fuji Speedway silhouette!)
+    const gsSawFinShape = new THREE.Shape();
+    gsSawFinShape.moveTo(0, 0); gsSawFinShape.lineTo(0.22, 0); gsSawFinShape.lineTo(0.06, 0.14); gsSawFinShape.closePath();
+    const sawFinGeo = new THREE.ExtrudeGeometry(gsSawFinShape, { depth: 0.76, bevelEnabled: false });
+    for (let f = 0; f < 20; f++) {
+      const fin = new THREE.Mesh(sawFinGeo, gsRoofMat);
+      fin.position.set(-2.22 + f * 0.222, 0.54, -0.40); fin.castShadow = true;
+      gsGroup.add(fin);
+    }
+    // Colorful Trackside Sponsor Board Banner along Grandstand Front
+    const spCanvas = document.createElement('canvas'); spCanvas.width = 512; spCanvas.height = 64;
+    const spG = spCanvas.getContext('2d');
+    const spCols = ['#facc15', '#dc2626', '#1e293b', '#0284c7', '#facc15', '#16a34a'];
+    const spTxt = ['DUNLOP', 'FUJI SPEEDWAY', 'TOYOTA GAZOO', 'SUBARU', 'AUTOBACS', 'ENEOS'];
+    for (let i = 0; i < 6; i++) {
+      spG.fillStyle = spCols[i]; spG.fillRect(i * 86, 0, 86, 64);
+      spG.fillStyle = i === 0 || i === 4 ? '#0f172a' : '#f8fafc';
+      spG.font = 'bold 14px Arial'; spG.textAlign = 'center'; spG.textBaseline = 'middle';
+      spG.fillText(spTxt[i], i * 86 + 43, 32);
+    }
+    const spTex = new THREE.CanvasTexture(spCanvas); spTex.colorSpace = THREE.SRGBColorSpace;
+    const sponsorBanner = new THREE.Mesh(new THREE.PlaneGeometry(4.45, 0.10), new THREE.MeshBasicMaterial({ map: spTex }));
+    sponsorBanner.position.set(0, 0.10, -0.295); sponsorBanner.rotation.y = Math.PI;
+    gsGroup.add(sponsorBanner);
+
+    // 320+ Colorful Animated Cheering Spectators packed in Main Grandstand!
+    const SPEC_COUNT = 320;
+    const specGeo = new THREE.CylinderGeometry(0.015, 0.018, 0.052, 5);
+    const specMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.75 });
+    const spectatorInst = new THREE.InstancedMesh(specGeo, specMat, SPEC_COUNT);
+    const spectatorMeta = [];
+    const specPalette = ['#ef4444', '#38bdf8', '#facc15', '#f8fafc', '#fb923c', '#22c55e', '#a855f7', '#ec4899'];
+    const specDummy = new THREE.Object3D();
+    for (let i = 0; i < SPEC_COUNT; i++) {
+      const tier = i % 5;
+      const sx = -2.12 + ((i * 0.618034) % 1) * 4.24;
+      const sy = 0.115 + tier * 0.085;
+      const sz = -0.22 + tier * 0.11 + (((i * 13) % 7) - 3) * 0.008;
+      spectatorMeta.push({ x: sx, y: sy, z: sz, phase: i * 0.73 });
+      specDummy.position.set(sx, sy, sz); specDummy.updateMatrix();
+      spectatorInst.setMatrixAt(i, specDummy.matrix);
+      spectatorInst.setColorAt(i, new THREE.Color(specPalette[i % specPalette.length]));
+    }
+    spectatorInst.instanceMatrix.needsUpdate = true;
+    if (spectatorInst.instanceColor) spectatorInst.instanceColor.needsUpdate = true;
+    gsGroup.add(spectatorInst);
+
+    // 3-Story White Pit Building, Open Pit Garages & Race Control Tower (Photo #3!)
+    const pitBldg = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.42, 0.44), whiteMat);
+    pitBldg.position.set(0.15, 0.25, 0.90); pitBldg.castShadow = true; pitBldg.receiveShadow = true;
+    const pitWinGlow = new THREE.MeshStandardMaterial({ color: '#1e293b', emissive: '#fde68a', emissiveIntensity: 0.25, roughness: 0.25 });
+    nightEmissives.push({ mat: pitWinGlow, day: 0.12, sunset: 0.9, night: 2.0 });
+    const pitGarageStrip = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 0.04), pitWinGlow);
+    pitGarageStrip.position.set(0.15, 0.11, 1.125);
+    const pitUpperWin = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.10, 0.04), pitWinGlow);
+    pitUpperWin.position.set(0.15, 0.32, 1.125);
+    const ctrlTower = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.64, 0.42), whiteMat);
+    ctrlTower.position.set(-1.35, 0.36, 0.90); ctrlTower.castShadow = true;
+    const ctrlGlass = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.14, 0.44), pitWinGlow);
+    ctrlGlass.position.set(-1.35, 0.56, 0.90);
+    speedwayGroup.add(pitBldg, pitGarageStrip, pitUpperWin, ctrlTower, ctrlGlass);
+
+    // Black Main-Straight Overpass Gantry ("FUJI SPEEDWAY · EXPERIENCE AMAZING" — Photo #3!) + Start Signal Lights!
+    const brCanvas = document.createElement('canvas'); brCanvas.width = 512; brCanvas.height = 96;
+    const brG = brCanvas.getContext('2d');
+    brG.fillStyle = '#0f172a'; brG.fillRect(0, 0, 512, 96);
+    brG.fillStyle = '#f8fafc'; brG.font = 'bold 30px Arial'; brG.textAlign = 'center'; brG.textBaseline = 'middle';
+    brG.fillText('FUJI SPEEDWAY  ·  EXPERIENCE AMAZING', 256, 48);
+    const brTex = new THREE.CanvasTexture(brCanvas); brTex.colorSpace = THREE.SRGBColorSpace;
+    const gantryBeam = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 1.05), [
+      new THREE.MeshStandardMaterial({ map: brTex, roughness: 0.35 }), new THREE.MeshStandardMaterial({ map: brTex, roughness: 0.35 }),
+      new THREE.MeshStandardMaterial({ color: '#0f172a' }), new THREE.MeshStandardMaterial({ color: '#0f172a' }),
+      new THREE.MeshStandardMaterial({ color: '#0f172a' }), new THREE.MeshStandardMaterial({ color: '#0f172a' })
+    ]);
+    gantryBeam.position.set(-2.15, 0.48, 1.54); gantryBeam.castShadow = true;
+    for (const gz of [1.06, 2.02]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.50, 0.10), new THREE.MeshStandardMaterial({ color: '#1e293b' }));
+      leg.position.set(-2.15, 0.25, gz); speedwayGroup.add(leg);
+    }
+    speedwayGroup.add(gantryBeam);
+    // Start Lights Signal Bar at Checkered Line (-1.35, 1.62)
+    const sigBar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.56), new THREE.MeshStandardMaterial({ color: '#1e293b' }));
+    sigBar.position.set(-1.35, 0.38, 1.62);
+    const sigGreenMat = new THREE.MeshStandardMaterial({ color: '#22c55e', emissive: '#22c55e', emissiveIntensity: 2.2 });
+    for (let s = 0; s < 5; s++) {
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.016, 5, 5), sigGreenMat);
+      lamp.position.set(-1.31, 0.38, 1.48 + s * 0.07); speedwayGroup.add(lamp);
+    }
+    speedwayGroup.add(sigBar);
+
+    // Sculpted Miniature Super GT500 Race Car Builder (Scaled Down to Realistic 0.175 x 0.082!)
+    const gtWheelMat = new THREE.MeshStandardMaterial({ color: '#111827', roughness: 0.85 });
+    const gtGlassMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.12, metalness: 0.88 });
+    const gtHeadMat = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#fef9c3', emissiveIntensity: 2.2 });
+    function buildSuperGTCar(primaryHex, accentHex, isPlayer = false) {
+      const cg = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.24, metalness: 0.52, envMapIntensity: 1.4 });
+      const accMat = new THREE.MeshStandardMaterial({ color: accentHex, roughness: 0.32, metalness: 0.35 });
+      const tailMat = new THREE.MeshStandardMaterial({ color: '#dc2626', emissive: '#ef4444', emissiveIntensity: isPlayer ? 1.2 : 1.4 });
+      // Low aerodynamic chassis + nose splitter + cabin + rear GT wing
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.024, 0.168), bodyMat);
+      chassis.position.y = 0.018; chassis.castShadow = true;
+      const splitter = new THREE.Mesh(new THREE.BoxGeometry(0.084, 0.008, 0.036), accMat);
+      splitter.position.set(0, 0.008, 0.078);
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.022, 0.074), gtGlassMat);
+      cabin.position.set(0, 0.036, -0.008);
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(0.086, 0.006, 0.022), accMat);
+      wing.position.set(0, 0.044, -0.076);
+      // 4 racing wheels
+      for (const [wx, wz] of [[-0.041, 0.050], [0.041, 0.050], [-0.041, -0.050], [0.041, -0.050]]) {
+        const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.014, 8), gtWheelMat);
+        wh.rotation.z = Math.PI / 2; wh.position.set(wx, 0.013, wz); cg.add(wh);
+      }
+      // Headlights & Taillights
+      for (const sx of [-0.026, 0.026]) {
+        const hl = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.008, 0.006), gtHeadMat);
+        hl.position.set(sx, 0.020, 0.085); cg.add(hl);
+        const tl = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.008, 0.006), tailMat);
+        tl.position.set(sx, 0.022, -0.085); cg.add(tl);
+      }
+      cg.add(chassis, splitter, cabin, wing);
+      cg.scale.setScalar(0.5); // Half-scale dimensions (0.088 x 0.041) for authentic wide-track racing feel!
+      return { mesh: cg, tailMat };
+    }
+
+    // 18 Trackside Night Floodlight Poles + Unobstructed Soft Ground Light Pools + High Lamp Halos + 3 Overhead PointLights!
+    const speedwayPoleMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.55, metalness: 0.65 });
+    const speedwayLampMat = new THREE.MeshStandardMaterial({ color: '#fef9c3', emissive: '#fffbeb', emissiveIntensity: 0.1, roughness: 0.2 });
+    nightEmissives.push({ mat: speedwayLampMat, day: 0.06, sunset: 1.4, night: 3.2, midnight: 3.6 });
+    const speedwayPoolTex = (function () {
+      const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+      const g = c.getContext('2d');
+      const grad = g.createRadialGradient(64, 64, 2, 64, 64, 62);
+      grad.addColorStop(0.0, 'rgba(255, 248, 224, 0.58)');
+      grad.addColorStop(0.38, 'rgba(255, 242, 205, 0.24)');
+      grad.addColorStop(0.75, 'rgba(255, 236, 190, 0.06)');
+      grad.addColorStop(1.0, 'rgba(255, 236, 190, 0.0)');
+      g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    })();
+    const speedwayPoolMat = new THREE.MeshBasicMaterial({
+      map: speedwayPoolTex, transparent: true, opacity: 0.0, depthWrite: false,
+      blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -2
+    });
+    const speedwayHaloMat = new THREE.SpriteMaterial({
+      map: particleTex, color: '#fff6d6', transparent: true, opacity: 0.0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    const swMastGeo = new THREE.CylinderGeometry(0.011, 0.018, 0.64, 6);
+    const swArmGeo = new THREE.BoxGeometry(0.14, 0.014, 0.018);
+    const swHeadGeo = new THREE.BoxGeometry(0.085, 0.022, 0.055);
+    const swPoolGeo = new THREE.PlaneGeometry(0.95, 0.95);
+    const FLOOD_COUNT = 18;
+    for (let fl = 0; fl < FLOOD_COUNT; fl++) {
+      const u = (fl + 0.35) / FLOOD_COUNT;
+      const pt = raceCurve.getPointAt(u), tan = raceCurve.getTangentAt(u);
+      const nx = -tan.z, nz = tan.x, nl = Math.hypot(nx, nz) || 1;
+      const rx = nx / nl, rz = nz / nl;
+      // Place floodlight poles along the outer verge, angling inward over the tarmac
+      const side = (pt.z > 1.3 && pt.x > -2.4 && pt.x < 2.4) ? -1 : 1; // Keep Main Straight clear of grandstand roof
+      const px = pt.x + rx * side * 0.36, pz = pt.z + rz * side * 0.36;
+      const pg = new THREE.Group();
+      pg.position.set(px, 0.04, pz);
+      pg.rotation.y = Math.atan2(-rx * side, -rz * side);
+      const mast = new THREE.Mesh(swMastGeo, speedwayPoleMat); mast.position.y = 0.32;
+      const arm = new THREE.Mesh(swArmGeo, speedwayPoleMat); arm.position.set(0, 0.63, 0.06); arm.rotation.y = Math.PI / 2;
+      const head = new THREE.Mesh(swHeadGeo, speedwayLampMat); head.position.set(0, 0.615, 0.12); head.rotation.x = 0.25;
+      // High-altitude soft lamp halo (above driver sightline — never blocks the road!)
+      const halo = new THREE.Sprite(speedwayHaloMat); halo.position.set(0, 0.60, 0.14); halo.scale.set(0.24, 0.24, 1);
+      // Flat feathered light pool right on the asphalt surface (zero visual obstruction!)
+      const pool = new THREE.Mesh(swPoolGeo, speedwayPoolMat);
+      pool.rotation.x = -Math.PI / 2; pool.position.set(0, 0.011, 0.32);
+      pg.add(mast, arm, head, halo, pool);
+      speedwayGroup.add(pg);
+    }
+    const speedwayLights = [];
+    for (const [lx, ly, lz] of [[-1.6, 1.45, 1.35], [0.8, 1.45, -1.30], [3.2, 1.45, 0.45]]) {
+      const sl = new THREE.PointLight(0xfff4d6, 0.0, 9.0, 1.35);
+      sl.position.set(lx, ly, lz);
+      speedwayGroup.add(sl);
+      speedwayLights.push(sl);
+    }
+
+    // 6 AI Rival Super GT500 Cars racing around the 16-turn circuit (pace halved to match player top speed!)
+    const raceCars = [];
+    const gtLiveries = [
+      ['#e11d48', '#fef08a'], ['#0284c7', '#f8fafc'], ['#facc15', '#1e293b'],
+      ['#16a34a', '#f8fafc'], ['#f97316', '#1e293b'], ['#e2e8f0', '#dc2626']
+    ];
+    for (let i = 0; i < gtLiveries.length; i++) {
+      const { mesh } = buildSuperGTCar(gtLiveries[i][0], gtLiveries[i][1], false);
+      speedwayGroup.add(mesh);
+      raceCars.push({ mesh, offset: i / gtLiveries.length, speed: 0.029 + (i % 3) * 0.0025, lane: ((i % 2) * 2 - 1) * 0.065 });
+    }
+
+    // 1 Player-Controlled Super GT500 Hero Car (Crimson & Gold — Starts at Checkered Line facing T1!)
+    const { mesh: playerRaceCar, tailMat: playerBrakeMat } = buildSuperGTCar('#dc2626', '#facc15', true);
+    const playerHeadlightPool = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.68), speedwayPoolMat);
+    playerHeadlightPool.rotation.x = -Math.PI / 2;
+    playerHeadlightPool.position.set(0, 0.008, 0.42);
+    playerRaceCar.add(playerHeadlightPool);
+    playerRaceCar.position.set(-1.35, 0.048, 1.62);
+    playerRaceCar.rotation.y = -Math.PI / 2; // Facing -X toward Turn 1!
+    speedwayGroup.add(playerRaceCar);
+    const raceDriveState = {
+      x: -1.35, z: 1.62, heading: -Math.PI / 2, speed: 0, steer: 0,
+      camView: 'chase', // 'chase' | 'hood'
+      lap: 1, lapTime: 0, bestLap: null, checkpointMask: 0
+    };
+    const raceKeys = { up: false, down: false, left: false, right: false };
 
     // --- H. TOKAIDO SHINKANSEN (Track extends west to Shizuoka [-51.8, 30.8]; Train operates Shin-Fuji <-> Atami <-> Shin-Yokohama <-> Tokyo!) ---
     const shinkansenRaw = [
@@ -5203,27 +5942,42 @@
     }
     const sumidaWaterTex = createSumidaFlowTexture();
     const sumidaWaterMat = new THREE.MeshStandardMaterial({
-      map: sumidaWaterTex, roughness: 0.16, metalness: 0.36, envMapIntensity: 1.45, side: THREE.DoubleSide
+      map: sumidaWaterTex, roughness: 0.16, metalness: 0.36, envMapIntensity: 1.45,
+      transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, side: THREE.DoubleSide
     });
+    sumidaWaterMat.onBeforeCompile = (shader) => {
+      shader.vertexShader = 'attribute float aEstuaryFade;\nvarying float vEstuaryFade;\n' +
+        shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvEstuaryFade = aEstuaryFade;');
+      shader.fragmentShader = 'varying float vEstuaryFade;\n' +
+        shader.fragmentShader.replace('#include <dithering_fragment>', 'gl_FragColor.a *= vEstuaryFade;\n#include <dithering_fragment>');
+    };
     const sumidaBankMat = new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.8, side: THREE.DoubleSide });
-    (function buildSumidaRibbon() {
-      const segs = 84, halfW = 0.78, bankW = 0.96;
-      const wVerts = [], wUvs = [], wIdx = [], bVerts = [], bIdx = [];
+    function createSeamlessRiverMeshes(curve, segs, halfW, bankW) {
+      const wVerts = [], wUvs = [], wFade = [], wIdx = [], bVerts = [], bIdx = [];
       for (let i = 0; i <= segs; i++) {
         const u = i / segs;
-        const p = sumidaCurve.getPointAt(u);
-        const tan = sumidaCurve.getTangentAt(u);
+        const p = curve.getPointAt(u);
+        const tan = curve.getTangentAt(u);
         const nx = -tan.z, nz = tan.x;
         const len = Math.hypot(nx, nz) || 1;
         const rx = nx / len, rz = nz / len;
-        const wScale = 0.85 + u * 0.58; // Gently widens into Tokyo Bay estuary!
-        const surfY = Math.max(getTerrainHeight(p.x, p.z), WATER_Y) + 0.085;
-        const bankY = surfY - 0.035;
+        const th = getTerrainHeight(p.x, p.z);
+        // Funnel-shaped estuary flare near river mouth
+        const estuaryFlare = Math.pow(Math.max(0, u - 0.70) / 0.30, 1.7) * 1.15;
+        const wScale = 0.86 + u * 0.44 + estuaryFlare;
+        // Smooth elevation drop to flush sea level + seamless alpha feathering over Tokyo Bay
+        const landFactor = smoothstep(WATER_Y - 0.55, WATER_Y + 0.08, th);
+        const surfY = WATER_Y + 0.015 + Math.max(0, th - WATER_Y) + landFactor * 0.06;
+        const bankOnShore = smoothstep(WATER_Y - 0.15, WATER_Y + 0.08, th);
+        const curBankW = halfW * wScale + (bankW - halfW) * wScale * bankOnShore;
+        const bankY = surfY - 0.032 - (1 - bankOnShore) * 0.14;
+        const fade = Math.min(1.0 - smoothstep(0.76, 1.0, u), 0.12 + landFactor * 0.88);
         wVerts.push(p.x - rx * halfW * wScale, surfY, p.z - rz * halfW * wScale);
         wVerts.push(p.x + rx * halfW * wScale, surfY, p.z + rz * halfW * wScale);
         wUvs.push(0, u, 1, u);
-        bVerts.push(p.x - rx * bankW * wScale, bankY, p.z - rz * bankW * wScale);
-        bVerts.push(p.x + rx * bankW * wScale, bankY, p.z + rz * bankW * wScale);
+        wFade.push(fade, fade);
+        bVerts.push(p.x - rx * curBankW, bankY, p.z - rz * curBankW);
+        bVerts.push(p.x + rx * curBankW, bankY, p.z + rz * curBankW);
         if (i < segs) {
           const a = i * 2;
           wIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
@@ -5233,12 +5987,14 @@
       const wGeo = new THREE.BufferGeometry();
       wGeo.setAttribute('position', new THREE.Float32BufferAttribute(wVerts, 3));
       wGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wUvs, 2));
+      wGeo.setAttribute('aEstuaryFade', new THREE.Float32BufferAttribute(wFade, 1));
       wGeo.setIndex(wIdx); wGeo.computeVertexNormals();
       const bGeo = new THREE.BufferGeometry();
       bGeo.setAttribute('position', new THREE.Float32BufferAttribute(bVerts, 3));
       bGeo.setIndex(bIdx); bGeo.computeVertexNormals();
-      sumidaGroup.add(new THREE.Mesh(bGeo, sumidaBankMat), new THREE.Mesh(wGeo, sumidaWaterMat));
-    })();
+      return [new THREE.Mesh(bGeo, sumidaBankMat), new THREE.Mesh(wGeo, sumidaWaterMat)];
+    }
+    sumidaGroup.add(...createSeamlessRiverMeshes(sumidaCurve, 84, 0.78, 0.96));
 
     // Three Iconic Sumida River Bridges (Azumabashi Vermilion, Kiyosu Steel-Blue, Kachidoki Silver)
     [
@@ -5349,26 +6105,7 @@
     function buildUrbanRiver(pts, halfW, bankW, bridges = []) {
       const curve = new THREE.CatmullRomCurve3(pts);
       for (let s = 0; s <= 60; s++) extraRiverSamples.push(curve.getPointAt(s / 60));
-      const segs = 60, wVerts = [], wUvs = [], wIdx = [], bVerts = [], bIdx = [];
-      for (let i = 0; i <= segs; i++) {
-        const u = i / segs, p = curve.getPointAt(u), tan = curve.getTangentAt(u);
-        const nx = -tan.z, nz = tan.x, len = Math.hypot(nx, nz) || 1;
-        const rx = nx / len, rz = nz / len, wScale = 0.88 + u * 0.48;
-        const surfY = Math.max(getTerrainHeight(p.x, p.z), WATER_Y) + 0.082;
-        const bankY = surfY - 0.032;
-        wVerts.push(p.x - rx * halfW * wScale, surfY, p.z - rz * halfW * wScale, p.x + rx * halfW * wScale, surfY, p.z + rz * halfW * wScale);
-        wUvs.push(0, u, 1, u);
-        bVerts.push(p.x - rx * bankW * wScale, bankY, p.z - rz * bankW * wScale, p.x + rx * bankW * wScale, bankY, p.z + rz * bankW * wScale);
-        if (i < segs) { const a = i * 2; wIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); bIdx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-      }
-      const wGeo = new THREE.BufferGeometry();
-      wGeo.setAttribute('position', new THREE.Float32BufferAttribute(wVerts, 3));
-      wGeo.setAttribute('uv', new THREE.Float32BufferAttribute(wUvs, 2));
-      wGeo.setIndex(wIdx); wGeo.computeVertexNormals();
-      const bGeo = new THREE.BufferGeometry();
-      bGeo.setAttribute('position', new THREE.Float32BufferAttribute(bVerts, 3));
-      bGeo.setIndex(bIdx); bGeo.computeVertexNormals();
-      tokyoGroup.add(new THREE.Mesh(bGeo, sumidaBankMat), new THREE.Mesh(wGeo, sumidaWaterMat));
+      tokyoGroup.add(...createSeamlessRiverMeshes(curve, 60, halfW, bankW));
 
       bridges.forEach(({ u, col }) => {
         const bp = curve.getPointAt(u), bt = curve.getTangentAt(u);
@@ -5851,7 +6588,7 @@
       if (Math.hypot(bx - 81.5, bz + 39.5) < 4.8) return false;  // Ushiku Daibutsu
       if (Math.hypot(bx - 74.8, bz - 22.5) < 2.2) return false;  // Mt. Nokogiri Torii
       if (Math.hypot(bx + 33.5, bz - 29.3) < 2.7) return false;  // Shin-Fuji Station
-      if (Math.hypot(bx + 33.5, bz - 22.5) < 3.8) return false;  // Fujinomiya World Heritage
+      if (Math.hypot(bx + 36.2, bz - 20.0) < 3.8) return false;  // Fujinomiya World Heritage
       if (Math.hypot(bx - 15.0, bz - 28.5) < 5.0) return false;  // Atami Onsen
       if (Math.hypot(bx - 14.7, bz - 19.6) < 4.8) return false;  // Lake Ashi
       if (Math.hypot(bx - 30.5, bz - 31.5) < 4.5) return false;  // Enoshima
@@ -7740,17 +8477,74 @@
     addAnimal(-24.2, -15.8, '#5c4033', 0.9, 0.75, 1.25);
     addAnimal(-26.5, -12.8, '#78624c', 0.7, 0.65, 1.0);
 
+    // Sculpted Flapping Sky Birds (5 Japanese Red-Crowned Cranes 丹頂鶴 + 5 Soaring Eagles 蒼鷹!)
+    const birdWingShape = new THREE.Shape();
+    birdWingShape.moveTo(0, 0.14);
+    birdWingShape.quadraticCurveTo(0.24, 0.20, 0.56, 0.04);
+    birdWingShape.quadraticCurveTo(0.62, -0.02, 0.52, -0.09);
+    birdWingShape.quadraticCurveTo(0.28, -0.06, 0, -0.14);
+    birdWingShape.closePath();
+    const birdWingGeo = new THREE.ExtrudeGeometry(birdWingShape, { depth: 0.018, bevelEnabled: false });
+    birdWingGeo.rotateX(Math.PI / 2);
+
+    const birdTipShape = new THREE.Shape();
+    birdTipShape.moveTo(0.32, 0.13);
+    birdTipShape.quadraticCurveTo(0.48, 0.09, 0.58, 0.03);
+    birdTipShape.quadraticCurveTo(0.62, -0.02, 0.52, -0.09);
+    birdTipShape.lineTo(0.32, -0.07);
+    birdTipShape.closePath();
+    const birdTipGeo = new THREE.ExtrudeGeometry(birdTipShape, { depth: 0.021, bevelEnabled: false });
+    birdTipGeo.rotateX(Math.PI / 2);
+
+    const craneWhiteMat = new THREE.MeshStandardMaterial({ color: '#f8fafc', roughness: 0.58 });
+    const craneBlackMat = new THREE.MeshStandardMaterial({ color: '#1e293b', roughness: 0.65 });
+    const craneCrownMat = new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.45 });
+    const eagleBrownMat = new THREE.MeshStandardMaterial({ color: '#5c3d28', roughness: 0.65 });
+    const eagleDarkMat = new THREE.MeshStandardMaterial({ color: '#3b2416', roughness: 0.72 });
+    const birdBeakMat = new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 0.4 });
+
     const skyBirds = [];
     for (let i = 0; i < 10; i++) {
       const isCrane = i < 5;
       const bg = new THREE.Group();
-      const bMat = new THREE.MeshStandardMaterial({ color: isCrane ? '#f8fafc' : '#5c3d28', roughness: 0.6 });
-      const bBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.34, 4, 6), bMat); bBody.rotation.x = Math.PI / 2;
-      const wings = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.03, 0.24), bMat);
-      bg.add(bBody, wings); root.add(bg);
+      const bMat = isCrane ? craneWhiteMat : eagleBrownMat;
+      const tMat = isCrane ? craneBlackMat : eagleDarkMat;
+      // Sleek tapered body
+      const bBody = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 6), bMat);
+      bBody.scale.set(0.75, 0.68, 2.35);
+      // Neck + Head + Pointed Beak (longer graceful outstretched neck for Cranes!)
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.042, isCrane ? 0.24 : 0.11, 6), isCrane ? craneBlackMat : bMat);
+      neck.rotation.x = Math.PI / 2; neck.position.set(0, 0.02, isCrane ? 0.26 : 0.21);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.046, 7, 6), bMat);
+      head.position.set(0, 0.028, isCrane ? 0.37 : 0.26);
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.020, isCrane ? 0.14 : 0.09, 5), birdBeakMat);
+      beak.rotation.x = Math.PI / 2; beak.position.set(0, 0.022, isCrane ? 0.46 : 0.32);
+      if (isCrane) {
+        const crown = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 5), craneCrownMat);
+        crown.position.set(0, 0.062, 0.375); bg.add(crown);
+      }
+      // Fanned tail feathers
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 4), tMat);
+      tail.rotation.x = -Math.PI / 2; tail.scale.set(1.3, 1.0, 0.22); tail.position.set(0, 0.01, -0.26);
+      // Articulated Left & Right Flapping Wings
+      const rightWing = new THREE.Group(); rightWing.position.set(0.04, 0.02, 0.04);
+      const rMain = new THREE.Mesh(birdWingGeo, bMat);
+      const rTip = new THREE.Mesh(birdTipGeo, tMat);
+      rightWing.add(rMain, rTip);
+
+      const leftWing = new THREE.Group(); leftWing.position.set(-0.04, 0.02, 0.04);
+      const lMain = new THREE.Mesh(birdWingGeo, bMat); lMain.scale.x = -1;
+      const lTip = new THREE.Mesh(birdTipGeo, tMat); lTip.scale.x = -1;
+      leftWing.add(lMain, lTip);
+
+      bg.add(bBody, neck, head, beak, tail, leftWing, rightWing);
+      bg.scale.setScalar(isCrane ? 1.05 : 1.18);
+      root.add(bg);
       skyBirds.push({
-        mesh: bg, cx: isCrane ? -10.0 : 20.0, cz: isCrane ? -20.0 : 12.0,
-        y: isCrane ? 9.5 + i * 0.9 : 11.5 + (i - 5) * 1.0, r: 8.0 + (i % 3) * 3.0, a: i * 0.75, s: 0.28 + (i % 3) * 0.07
+        mesh: bg, leftWing, rightWing, isCrane,
+        cx: isCrane ? -10.0 : 20.0, cz: isCrane ? -20.0 : 12.0,
+        y: isCrane ? 9.5 + i * 0.9 : 11.5 + (i - 5) * 1.0, r: 8.0 + (i % 3) * 3.0,
+        a: i * 0.75, s: 0.24 + (i % 3) * 0.06, flapPhase: i * 1.37
       });
     }
 
@@ -7777,7 +8571,7 @@
       }
     });
 
-    const mapZones = [[-40.5, -28.0, 5.2, 48], [-29.0, 9.5, 4.4, 42], [3.0, -25.0, 3.6, 28], [41.2, 21.8, 3.5, 28], [15.0, 26.0, 4.4, 34], [82.5, 22.0, 6.0, 44]];
+    const mapZones = [[-40.5, -28.0, 5.2, 48], [-33.0, 9.5, 4.4, 42], [3.0, -25.0, 3.6, 28], [41.2, 21.8, 3.5, 28], [15.0, 26.0, 4.4, 34], [82.5, 22.0, 6.0, 44]];
     mapZones.forEach(([zx, zz, zr, zn]) => {
       for (let i = 0; i < zn; i++) {
         const a = rand() * 6.28, d = Math.sqrt(rand()) * zr;
@@ -7808,13 +8602,13 @@
       const ty = getTerrainHeight(tx, tz);
       const fr = Math.hypot(tx - FUJI_X, tz - FUJI_Z);
       if (ty < WATER_Y + 0.28 || ty > 5.8 || fr < 11.2) continue;
-      if (Math.hypot(tx - 14.5, tz - 4.5) < 5.2) continue;    // Speedway
+      if (Math.hypot(tx - 14.5, tz - 4.5) < 6.4) continue;    // Expanded 16-Turn Fuji Speedway & Grandstands
       if (Math.hypot(tx - 6.8, tz - 12.2) < 5.4) continue;    // Gotemba Outlets
       if (Math.hypot(tx - 8.5, tz - (Z_MAX - 0.2)) < 4.0) continue; // Submarine cutaway
       if (Math.hypot(tx - 45.1, tz - 53.8) < 1.95) continue;  // Izu Oshima Mt. Mihara volcanic crater!
       if (Math.hypot(tx - 5.8, tz + 11.4) < 3.6) continue;    // Oshino village
       if (Math.hypot(tx + 2.5, tz + 16.5) < 6.2) continue;    // Fuji-Q Highland
-      if (Math.hypot(tx + 33.5, tz - 22.5) < 5.2) continue;   // Fujinomiya Heritage
+      if (Math.hypot(tx + 36.2, tz - 20.0) < 5.2) continue;   // Fujinomiya Heritage
       if (Math.hypot(tx + 33.5, tz - 29.3) < 3.6) continue;   // Shin-Fuji Shinkansen Station
       if (Math.hypot(tx - 15.0, tz - 28.5) < 4.8) continue;   // Atami Onsen
       if (Math.hypot(tx - 41.2, tz - 23.0) < 3.4) continue;   // Kamakura Buddha
@@ -7857,7 +8651,7 @@
     const instCol = new THREE.Color();
     // foliageMaterials hoisted earlier so urban parks & forests share seasonal color transitions!
     function createInstancedTrees(pts, springHex, summerHex, autumnHex, winterHex, isPine) {
-      const clearPts = pts.filter(([tx, , tz]) => !nearShinkansen(tx, tz, 1.75) && !nearSkyliner(tx, tz, 1.45) && !nearSumidaRiver(tx, tz, 1.45));
+      const clearPts = pts.filter(([tx, , tz]) => !nearShinkansen(tx, tz, 1.75) && !nearSkyliner(tx, tz, 1.45) && !nearSumidaRiver(tx, tz, 1.45) && Math.hypot(tx + 2.5, tz + 16.5) > 7.6);
       if (!clearPts.length) return;
       const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.085, 0.56, 5), new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.92 }), clearPts.length);
       const crownMat = new THREE.MeshStandardMaterial({ color: springHex, roughness: 0.86, envMapIntensity: 0.35 });
@@ -8070,7 +8864,7 @@
       { x: 15.7, y: 5.5, z: 12.6, vx: 0.22, vy: 0.65, size: 1.15, count: 20 },           // Owakudani
       { x: -40.5, y: 2.3, z: -28.0, vx: 0.12, vy: 0.48, size: 0.8, count: 14 },          // Snow Monkey Onsen
       { x: 8.5, y: 5.0, z: 47.6, vx: 0.18, vy: 0.55, size: 0.9, count: 14 },            // Izu Volcanic Vent
-      { x: -31.0, y: fallPoolY + 0.5, z: 9.5, vx: -0.1, vy: 0.35, size: 1.0, count: 16 },// Shiraito Falls Mist
+      { x: -35.0, y: fallPoolY + 0.5, z: 9.5, vx: -0.1, vy: 0.35, size: 1.0, count: 16 },// Shiraito Falls Mist
       { x: 14.0, y: 2.2, z: 30.2, vx: 0.15, vy: 0.52, size: 1.05, count: 22 },           // Atami Onsen Geothermal Steam 1!
       { x: 16.5, y: 1.8, z: 30.5, vx: 0.15, vy: 0.48, size: 0.95, count: 16 }            // Atami Onsen Geothermal Steam 2!
     ];
@@ -8330,8 +9124,8 @@
       { label: '⛩️ 新倉山忠靈塔', pos: [4.5, 9.0, -24.5], cam: 'fujiQHighland' },
       { label: '🏡 忍野八海', pos: [5.8, 3.0, -11.4], cam: 'oshinoYamanaka' },
       { label: '💧 山中湖', pos: [13.0, 2.0, -4.5], cam: 'oshinoYamanaka' },
-      { label: '🌊 白糸之瀧', pos: [-30.5, 4.8, 9.5], cam: 'shiraitoFujinomiya' },
-      { label: '🏛️ 富士宮世界遺產中心', pos: [-33.5, 4.8, 22.5], cam: 'shiraitoFujinomiya' },
+      { label: '🌊 白糸之瀧', pos: [-34.5, 4.8, 9.5], cam: 'shiraitoFujinomiya' },
+      { label: '🏛️ 富士宮世界遺產中心', pos: [-36.2, 4.8, 20.0], cam: 'shiraitoFujinomiya' },
       { label: '🚄 新富士車站', pos: [-33.5, 4.2, 29.3], cam: 'shiraitoFujinomiya' },
       { label: '🛍️ 御殿場 OUTLET', pos: [6.8, 4.2, 12.2], cam: 'gotembaOutlet' },
       { label: '♨️ 熱海溫泉區', pos: [15.0, 5.2, 28.5], cam: 'atamiOnsen' },
@@ -8423,6 +9217,8 @@
         else if (followCamMode === 'passenger') ctEl.textContent = dict.hudPassTitle;
         else if (followCamMode === 'cruiseBow') ctEl.textContent = dict.hudBowTitle;
         else if (followCamMode === 'cruiseCabin') ctEl.textContent = dict.hudCabinTitle;
+        else if (followCamMode === 'raceDrive') ctEl.textContent = dict.hudRaceDriveTitle;
+        else if (followCamMode === 'coaster') ctEl.textContent = dict.hudCoasterTitle;
         else ctEl.textContent = dict.hudJetTitle;
       }
       const fbNameEl = document.getElementById('fb-name'), fbMsgEl = document.getElementById('fb-msg');
@@ -8667,6 +9463,10 @@
       const tokyoInt = tcDw.tokyoInt * wDwn + tcD.tokyoInt * wDay + tcS.tokyoInt * wSun + (tcN.tokyoInt * 0.90) * wNit + tcM.tokyoInt * wMid;
       tokyoGlowLight.intensity = tokyoInt;
       yokohamaGlowLight.intensity = tokyoInt * 0.75;
+      const swNightFactor = wDwn * 0.28 + wSun * 0.45 + wNit * 1.0 + wMid * 1.15;
+      for (let i = 0; i < speedwayLights.length; i++) speedwayLights[i].intensity = swNightFactor * 1.85;
+      speedwayPoolMat.opacity = Math.min(0.85, swNightFactor * 0.72);
+      speedwayHaloMat.opacity = Math.min(0.65, swNightFactor * 0.55);
       renderer.toneMappingExposure = tcDw.exp * wDwn + tcD.exp * wDay + tcS.exp * wSun + tcN.exp * wNit + tcM.exp * wMid;
 
       // 3. Smooth city & landmark night glow fade-in/out (Night building emissive reduced 10% for crisp non-blown-out skyline!)
@@ -8714,7 +9514,7 @@
       fujiQHighland:       { pos: [14, 15, -34],   target: [-1.0, 2.5, -18.0] },
       oshinoYamanaka:      { pos: [24, 14, -18],   target: [8.5, 2.0, -8.5] },
       aokigahara:          { pos: [-46, 16, -26],  target: [-26.5, 2.0, -16.5] },
-      shiraitoFujinomiya:  { pos: [-48, 14, 28],   target: [-31.5, 2.0, 15.5] },
+      shiraitoFujinomiya:  { pos: [-50, 14.5, 29], target: [-35.2, 2.0, 15.0] },
       gotembaOutlet:       { pos: [11, 10.5, 25],  target: [6.8, 1.8, 12.2] },
       atamiOnsen:          { pos: [24, 11.5, 42],  target: [15.0, 2.0, 29.0] },
       izuPeninsula:        { pos: [14, 28.0, 88],  target: [8.0, 2.0, 46.0] },
@@ -8733,7 +9533,7 @@
       bosoPeninsula:       { pos: [92, 26.0, 62],  target: [82.0, 2.0, 16.0] },
       naritaAirport:       { pos: [100, 16.5, -2], target: [83.5, 1.8, -23.5] },
       ushikuDaibutsu:      { pos: [85, 11.5, -19], target: [81.5, 4.2, -39.5] },
-      magmaVolcano:        { pos: [20, 4.5, 86],   target: [22.0, -5.5, 46.5] }
+      magmaVolcano:        { pos: [12, -1.5, 122],  target: [12.0, -6.6, 74.0] }
     };
 
     let camAnim = null;
@@ -8754,6 +9554,8 @@
     const btnWaterBusCam = document.getElementById('btn-waterbus-cam');
     const btnCruiseBowCam = document.getElementById('btn-cruise-bow-cam');
     const btnCruiseCabinCam = document.getElementById('btn-cruise-cabin-cam');
+    const btnRaceDriveCam = document.getElementById('btn-racedrive-cam');
+    const btnCoasterCam = document.getElementById('btn-coaster-cam');
     const btnExitCockpit = document.getElementById('btn-exit-cockpit');
     const cockpitEyeLocal = new THREE.Vector3(0, 0.48, 1.65);
     const cockpitLookLocal = new THREE.Vector3(0, -0.35, 18.0);
@@ -8764,6 +9566,18 @@
     const bowLookLocal = new THREE.Vector3(0, 0.95, 16.0);            // Looking forward over sharp bow
     const waterBusEyeLocal = new THREE.Vector3(0, 0.36, 0.28);        // Tokyo Water Bus panoramic bow deck
     const waterBusLookLocal = new THREE.Vector3(0, 0.42, 7.5);        // Looking forward along Sumida River & bridges
+    const raceChaseEyeLocal = new THREE.Vector3(0, 0.22, -0.54);      // Super GT500 Third-Person Chase Camera
+    const raceChaseLookLocal = new THREE.Vector3(0, 0.07, 1.35);
+    const raceHoodEyeLocal = new THREE.Vector3(0, 0.068, 0.032);      // Super GT500 Cockpit / Hood Camera
+    const raceHoodLookLocal = new THREE.Vector3(0, 0.045, 2.20);
+    function resetPlayerRaceCar() {
+      raceDriveState.x = -1.35; raceDriveState.z = 1.62;
+      raceDriveState.heading = -Math.PI / 2;
+      raceDriveState.speed = 0; raceDriveState.steer = 0;
+      raceDriveState.lapTime = 0; raceDriveState.checkpointMask = 0;
+      playerRaceCar.position.set(-1.35, 0.048, 1.62);
+      playerRaceCar.rotation.set(0, -Math.PI / 2, 0);
+    }
     const tmpFujiLocal = new THREE.Vector3();
     const cockpitEyeWorld = new THREE.Vector3();
     const cockpitLookWorld = new THREE.Vector3();
@@ -8792,6 +9606,28 @@
       } else if (mode === 'cruiseBow' || mode === 'cruiseCabin') {
         optAnim.checked = true;
         cockpitTitleEl.textContent = mode === 'cruiseBow' ? d.hudBowTitle : d.hudCabinTitle;
+      } else if (mode === 'raceDrive') {
+        optAnim.checked = true;
+        cockpitTitleEl.textContent = d.hudRaceDriveTitle;
+        camera.near = 0.02;
+        camera.updateProjectionMatrix();
+        raceDriveState.lap = 1;
+        resetPlayerRaceCar();
+        speedwayGroup.updateMatrixWorld(true);
+        const snapEye = raceDriveState.camView === 'hood' ? raceHoodEyeLocal : raceChaseEyeLocal;
+        const snapLook = raceDriveState.camView === 'hood' ? raceHoodLookLocal : raceChaseLookLocal;
+        camera.position.copy(snapEye); playerRaceCar.localToWorld(camera.position);
+        cockpitLookCurrent.copy(snapLook); playerRaceCar.localToWorld(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+      } else if (mode === 'coaster') {
+        optAnim.checked = true;
+        cockpitTitleEl.textContent = d.hudCoasterTitle;
+        camera.near = 0.08;
+        camera.updateProjectionMatrix();
+      }
+      if (mode !== 'raceDrive' && mode !== 'coaster' && camera.near !== 0.5) {
+        camera.near = 0.5;
+        camera.updateProjectionMatrix();
       }
       if (!isPlaying) {
         isPlaying = true;
@@ -8799,7 +9635,7 @@
         btnPauseAll.classList.remove('active');
       }
       orbit.enabled = false;
-      cockpitLookCurrent.copy(orbit.target);
+      if (mode !== 'raceDrive') cockpitLookCurrent.copy(orbit.target);
       cockpitUpCurrent.copy(camera.up);
       cockpitHudEl.classList.add('visible');
       btnCockpitCam.classList.toggle('active', mode === 'cockpit');
@@ -8809,6 +9645,8 @@
       btnWaterBusCam.classList.toggle('active', mode === 'waterBus');
       btnCruiseBowCam.classList.toggle('active', mode === 'cruiseBow');
       btnCruiseCabinCam.classList.toggle('active', mode === 'cruiseCabin');
+      btnRaceDriveCam.classList.toggle('active', mode === 'raceDrive');
+      btnCoasterCam.classList.toggle('active', mode === 'coaster');
       document.querySelectorAll('[data-cam]').forEach((b) => b.classList.remove('active'));
     }
 
@@ -8817,6 +9655,8 @@
       followCamMode = null;
       orbit.enabled = true;
       camera.up.set(0, 1, 0);
+      if (camera.near !== 0.5) { camera.near = 0.5; camera.updateProjectionMatrix(); }
+      raceKeys.up = raceKeys.down = raceKeys.left = raceKeys.right = false;
       cockpitHudEl.classList.remove('visible');
       btnCockpitCam.classList.remove('active');
       btnPassengerCam.classList.remove('active');
@@ -8825,6 +9665,8 @@
       btnWaterBusCam.classList.remove('active');
       btnCruiseBowCam.classList.remove('active');
       btnCruiseCabinCam.classList.remove('active');
+      btnRaceDriveCam.classList.remove('active');
+      btnCoasterCam.classList.remove('active');
       if (returnToPreset) flyTo(returnToPreset);
     }
 
@@ -8869,6 +9711,14 @@
     btnCruiseCabinCam.addEventListener('click', () => {
       if (followCamMode === 'cruiseCabin') exitFollowView('panorama');
       else enterFollowView('cruiseCabin');
+    });
+    btnRaceDriveCam.addEventListener('click', () => {
+      if (followCamMode === 'raceDrive') exitFollowView('speedwayShinkansen');
+      else enterFollowView('raceDrive');
+    });
+    btnCoasterCam.addEventListener('click', () => {
+      if (followCamMode === 'coaster') exitFollowView('fujiQHighland');
+      else enterFollowView('coaster');
     });
     btnExitCockpit.addEventListener('click', () => exitFollowView('panorama'));
     window.addEventListener('keydown', (e) => {
@@ -8994,7 +9844,7 @@
       }
     }
 
-    const RIDE_ORDER = ['cockpit', 'passenger', 'shinkansen', 'skyliner', 'waterBus', 'cruiseBow', 'cruiseCabin'];
+    const RIDE_ORDER = ['cockpit', 'passenger', 'shinkansen', 'skyliner', 'waterBus', 'cruiseBow', 'cruiseCabin', 'raceDrive', 'coaster'];
     function cycleRide(delta) {
       const idx = RIDE_ORDER.indexOf(followCamMode);
       const nextIdx = idx === -1 ? 0 : (idx + delta + RIDE_ORDER.length) % RIDE_ORDER.length;
@@ -9026,14 +9876,30 @@
     btnPrevRide.addEventListener('click', () => cycleRide(-1));
     btnNextRide.addEventListener('click', () => cycleRide(1));
 
-    // Keyboard Shortcuts: H (Photo Mode), R (Panorama), Space (Play/Pause), 1-7 (Rides)
+    // Keyboard Shortcuts: H (Photo Mode), R (Panorama or Reset Car), Space (Play/Pause or Brake), 1-8 (Rides), WASD/Arrows/C (Race Drive)
     window.addEventListener('keydown', (e) => {
       const tag = document.activeElement && document.activeElement.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (followCamMode === 'raceDrive') {
+        const k = e.key.toLowerCase();
+        if (k === 'w' || e.key === 'ArrowUp') { e.preventDefault(); raceKeys.up = true; return; }
+        if (k === 's' || e.key === 'ArrowDown' || e.code === 'Space') { e.preventDefault(); raceKeys.down = true; return; }
+        if (k === 'a' || e.key === 'ArrowLeft') { e.preventDefault(); raceKeys.left = true; return; }
+        if (k === 'd' || e.key === 'ArrowRight') { e.preventDefault(); raceKeys.right = true; return; }
+        if (k === 'c') { raceDriveState.camView = raceDriveState.camView === 'chase' ? 'hood' : 'chase'; return; }
+        if (k === 'r') { resetPlayerRaceCar(); return; }
+      }
       if (e.key === 'h' || e.key === 'H') setPhotoMode(!isPhotoMode);
       else if (e.key === 'r' || e.key === 'R') flyTo('panorama');
       else if (e.code === 'Space') { e.preventDefault(); isPlaying = !isPlaying; syncPlayButtons(); }
-      else if (e.key >= '1' && e.key <= '7') enterFollowView(RIDE_ORDER[parseInt(e.key, 10) - 1]);
+      else if (e.key >= '1' && e.key <= '9') enterFollowView(RIDE_ORDER[parseInt(e.key, 10) - 1]);
+    });
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || e.key === 'ArrowUp') raceKeys.up = false;
+      if (k === 's' || e.key === 'ArrowDown' || e.code === 'Space') raceKeys.down = false;
+      if (k === 'a' || e.key === 'ArrowLeft') raceKeys.left = false;
+      if (k === 'd' || e.key === 'ArrowRight') raceKeys.right = false;
     });
 
     // Auto-collapse left title card on compact mobile viewports so the 3D scene stays unobstructed
@@ -9075,8 +9941,10 @@
         orbit.update();
       }
 
-      // Smoothly adjust camera FOV between standard (40deg), cockpit (56deg) & Shinkansen driver (54deg)
-      const targetFov = followCamMode === 'cockpit' ? 56 : ((followCamMode === 'shinkansen' || followCamMode === 'skyliner') ? 54 : (followCamMode === 'waterBus' ? 52 : 40));
+      // Smoothly adjust camera FOV between standard (40deg), cockpit (56deg), rail/boat (52-54deg), coaster (68deg), and dynamic GT500 racing (60-71deg)
+      const targetFov = followCamMode === 'raceDrive'
+        ? (60 + Math.min(11, (Math.abs(raceDriveState.speed) / 1.325) * 11))
+        : (followCamMode === 'coaster' ? 68 : (followCamMode === 'cockpit' ? 56 : ((followCamMode === 'shinkansen' || followCamMode === 'skyliner') ? 54 : (followCamMode === 'waterBus' ? 52 : 40))));
       if (Math.abs(camera.fov - targetFov) > 0.05) {
         camera.fov += (targetFov - camera.fov) * (1 - Math.exp(-rawDt * 5.0));
         camera.updateProjectionMatrix();
@@ -9399,13 +10267,24 @@
             sb.mesh.lookAt(ap.x + (nx / nl) * sb.lane, by, ap.z + (nz / nl) * sb.lane);
           });
 
-          // 2. Fuji Speedway Race Cars
-          raceCars.forEach((rc, i) => {
-            const u = (t * (0.28 + i * 0.02) + rc.offset) % 1;
-            const pos = raceCurve.getPointAt(u), look = raceCurve.getPointAt((u + 0.02) % 1);
-            rc.mesh.position.set(pos.x, pos.y + 0.08, pos.z);
-            rc.mesh.lookAt(look.x, look.y + 0.08, look.z);
+          // 2. Fuji International Speedway: 6 Miniature AI Super GT500 Cars + 320 Cheering Grandstand Spectators!
+          raceCars.forEach((rc) => {
+            const u = (t * rc.speed + rc.offset) % 1;
+            const pos = raceCurve.getPointAt(u), tan = raceCurve.getTangentAt(u);
+            const nx = -tan.z, nz = tan.x, nl = Math.hypot(nx, nz) || 1;
+            const lx = (nx / nl) * rc.lane, lz = (nz / nl) * rc.lane;
+            const look = raceCurve.getPointAt((u + 0.012) % 1);
+            rc.mesh.position.set(pos.x + lx, pos.y + 0.004, pos.z + lz);
+            rc.mesh.lookAt(look.x + lx, look.y + 0.004, look.z + lz);
           });
+          for (let si = 0; si < SPEC_COUNT; si++) {
+            const sm = spectatorMeta[si];
+            const jump = Math.abs(Math.sin(t * 7.2 + sm.phase)) * 0.018;
+            specDummy.position.set(sm.x, sm.y + jump, sm.z);
+            specDummy.updateMatrix();
+            spectatorInst.setMatrixAt(si, specDummy.matrix);
+          }
+          spectatorInst.instanceMatrix.needsUpdate = true;
 
           // 3. Owakudani Ropeway & Mt. Koya Cable Car
           gondolas.forEach((gd) => {
@@ -9424,11 +10303,12 @@
           cosmoRotor.rotation.z += dt * 0.28;
           if (waterWheelMesh) waterWheelMesh.rotation.x += dt * 1.4;
 
-          const cu = (t * 0.16) % 1;
+          const cu = (t * 0.095) % 1;
+          coasterLeadU = cu;
           coasterCars.forEach((car, idx) => {
-            const u = (cu - idx * 0.025 + 1) % 1;
+            const u = (cu - idx * 0.015 + 1) % 1;
             car.position.copy(coasterCurve.getPointAt(u));
-            car.lookAt(coasterCurve.getPointAt((u + 0.015) % 1));
+            car.lookAt(coasterCurve.getPointAt((u + 0.012) % 1));
           });
           const dtCycle = (t * 0.28) % 1;
           dropGondola.position.y = dtCycle < 0.62 ? 0.55 + (dtCycle / 0.62) * 3.45 : dtCycle < 0.78 ? 4.0 : 4.0 - Math.pow((dtCycle - 0.78) / 0.22, 2) * 3.45;
@@ -9540,6 +10420,43 @@
             if (f.tail) f.tail.rotation.y = Math.sin(t * 8.5 + f.a) * f.wobble;
           });
           caveKoi.forEach((k) => { k.angle += dt * 0.9; k.mesh.position.set(15.5 + Math.cos(k.angle) * k.r * 1.8, -7.45, Z_MAX - 1.0 + Math.sin(k.angle) * 0.55); k.mesh.rotation.y = -k.angle; });
+          // Animated Digging Moles (scraping paws, flying dirt clods, patrolling & peek-a-boo) + Soil Earthworms!
+          diggingCreatures.forEach((dc) => {
+            if (dc.mode === 'dig') {
+              const p = t * dc.speed + dc.phase;
+              dc.leftPaw.rotation.x = -0.35 + Math.sin(p) * 0.72;
+              dc.rightPaw.rotation.x = -0.35 - Math.sin(p) * 0.72;
+              dc.group.position.y = dc.basePos.y + Math.abs(Math.sin(p)) * 0.045;
+              dc.group.rotation.z = Math.sin(p) * 0.08;
+              dc.clods.forEach((cl) => {
+                const cy = (t * 2.1 + cl.phase + dc.phase) % 1.0;
+                cl.mesh.position.set(cl.side, 0.14 + Math.sin(cy * Math.PI) * 0.52, -0.25 - cy * 0.95);
+                cl.mesh.rotation.set(t * 6, t * 5, 0);
+                cl.mesh.scale.setScalar(Math.max(0.01, 1.0 - cy * 0.85));
+              });
+            } else if (dc.mode === 'patrol') {
+              const s = Math.sin(t * dc.speed + dc.phase);
+              const dir = Math.cos(t * dc.speed + dc.phase) >= 0 ? 1 : -1;
+              dc.group.position.x = dc.basePos.x + s * dc.range;
+              dc.group.position.y = dc.basePos.y + Math.abs(Math.sin(t * 7.5 + dc.phase)) * 0.05;
+              dc.group.rotation.y = dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+              dc.leftPaw.rotation.x = Math.sin(t * 8.0) * 0.4;
+              dc.rightPaw.rotation.x = -Math.sin(t * 8.0) * 0.4;
+              dc.clods.forEach((cl) => { cl.mesh.visible = false; });
+            } else if (dc.mode === 'peek') {
+              const pop = Math.max(0, Math.sin(t * dc.speed + dc.phase));
+              dc.group.position.y = dc.basePos.y - 0.36 + pop * 0.62;
+              dc.group.rotation.y = 0.2 + Math.sin(t * 2.4 + dc.phase) * 0.55;
+              dc.leftPaw.rotation.x = -0.4 + Math.sin(t * 5) * 0.2;
+              dc.rightPaw.rotation.x = -0.4 - Math.sin(t * 5) * 0.2;
+              dc.clods.forEach((cl) => { cl.mesh.visible = false; });
+            }
+          });
+          caveWorms.forEach((cw) => {
+            cw.segs.forEach((sm, si) => {
+              sm.position.y = Math.sin(t * 3.8 + cw.phase + si * 0.75) * 0.085;
+            });
+          });
 
           // 7. Birds, Drifting 3D Sky Clouds, Animated Voronoi Water Caustics, Ocean Whirlpools & Steam Plumes
           waterNormalTex.offset.x += dt * 0.016;
@@ -9652,7 +10569,17 @@
             }
             hailInst.instanceMatrix.needsUpdate = true;
           }
-          skyBirds.forEach((b) => { b.a += dt * b.s; b.mesh.position.set(b.cx + Math.cos(b.a) * b.r, b.y + Math.sin(t * 2 + b.a) * 0.28, b.cz + Math.sin(b.a) * b.r); b.mesh.rotation.y = -b.a; });
+          skyBirds.forEach((b) => {
+            b.a += dt * b.s;
+            // Realistic flap-and-glide cadence (cranes flap steadily, eagles alternate flapping & soaring glides)
+            const glideWave = b.isCrane ? 1.0 : (0.35 + 0.65 * Math.max(0, Math.sin(t * 0.65 + b.flapPhase)));
+            const flap = Math.sin(t * (b.isCrane ? 6.2 : 5.0) + b.flapPhase) * 0.52 * glideWave;
+            b.leftWing.rotation.z = -flap;
+            b.rightWing.rotation.z = flap;
+            b.mesh.position.set(b.cx + Math.cos(b.a) * b.r, b.y + Math.sin(t * 2 + b.a) * 0.28 - flap * 0.08, b.cz + Math.sin(b.a) * b.r);
+            b.mesh.rotation.y = -b.a;
+            b.mesh.rotation.z = 0.14; // Gentle bank into circular soaring turn!
+          });
           for (let i = 0; i < steamParticles.length; i++) {
             const sp = steamParticles[i], s = sp.src;
             sp.age = (sp.age + dt * 0.28) % 1;
@@ -9811,6 +10738,114 @@
         orbit.target.copy(cockpitLookCurrent);
         const cabDisp = (I18N_UI[currentLang] || I18N_UI.zh).hudCruiseCabinPhase;
         if (cockpitPhaseEl.textContent !== cabDisp) cockpitPhaseEl.textContent = cabDisp;
+      } else if (followCamMode === 'raceDrive') {
+        // Playable Super GT500 Physics on Fuji International Speedway 16-Turn Circuit!
+        const st = raceDriveState;
+        const prevX = st.x;
+        // 1. Check whether car is on asphalt or in gravel runoff
+        let minDistSq = 999;
+        for (let i = 0; i < raceSamples.length; i++) {
+          const sp = raceSamples[i];
+          const dx = st.x - sp.x, dz = st.z - sp.z;
+          const d2 = dx * dx + dz * dz;
+          if (d2 < minDistSq) minDistSq = d2;
+        }
+        const offTrack = minDistSq > 0.28 * 0.28;
+        const maxFwd = offTrack ? 0.52 : 1.325; // Top speed halved for tighter cornering & true-to-scale pacing!
+        const maxRev = -0.35;
+
+        // 2. Acceleration, Braking & Aerodynamic Drag
+        const braking = raceKeys.down && st.speed > 0.04;
+        if (raceKeys.up) {
+          st.speed += (offTrack ? 0.85 : 1.35) * rawDt;
+        } else if (raceKeys.down) {
+          st.speed -= (st.speed > 0 ? 2.4 : 0.85) * rawDt;
+        } else {
+          // Natural engine braking & rolling resistance
+          const drag = (offTrack ? 1.6 : 0.55) * rawDt;
+          if (Math.abs(st.speed) <= drag) st.speed = 0;
+          else st.speed -= Math.sign(st.speed) * drag;
+        }
+        if (offTrack && st.speed > maxFwd) st.speed -= 1.8 * rawDt;
+        st.speed = Math.max(maxRev, Math.min(maxFwd, st.speed));
+        playerBrakeMat.emissiveIntensity = braking ? 4.4 : 1.1;
+
+        // 3. Speed-Sensitive Steering (Responsive at hairpins, stable at top speed!)
+        const steerIn = (raceKeys.left ? 1 : 0) - (raceKeys.right ? 1 : 0);
+        st.steer += (steerIn - st.steer) * Math.min(1, rawDt * 10.0);
+        const absSpd = Math.abs(st.speed);
+        if (absSpd > 0.015) {
+          const turnGrip = Math.min(1.0, absSpd / 0.25) * (2.55 - Math.min(0.75, absSpd * 0.45));
+          st.heading += st.steer * turnGrip * (st.speed >= 0 ? 1 : -1) * rawDt;
+        }
+
+        // 4. Integrate Position inside Speedway Plateau Bounds
+        st.x = Math.max(-5.35, Math.min(5.20, st.x + Math.sin(st.heading) * st.speed * rawDt));
+        st.z = Math.max(-3.05, Math.min(2.95, st.z + Math.cos(st.heading) * st.speed * rawDt));
+        const rumble = offTrack && absSpd > 0.25 ? Math.sin(t * 48) * 0.0045 : 0;
+        playerRaceCar.position.set(st.x, 0.048 + rumble, st.z);
+        playerRaceCar.rotation.set(0, st.heading, -st.steer * Math.min(0.075, absSpd * 0.032));
+
+        // 5. Sector Checkpoints & Lap Timer (Main Straight runs right-to-left: prevX > -1.35 -> st.x <= -1.35)
+        if (absSpd > 0.05 || st.lapTime > 0) st.lapTime += rawDt;
+        if (st.x < -1.0 && st.z < -0.4) st.checkpointMask |= 1; // Sector 1: T1..100R
+        if (st.x > 1.8 && st.z < -0.6) st.checkpointMask |= 2;  // Sector 2: 300R..Dunlop
+        if (st.x > 2.2 && st.z > 0.3) st.checkpointMask |= 4;   // Sector 3: Netz..Panasonic
+        if (prevX > -1.35 && st.x <= -1.35 && Math.abs(st.z - 1.62) < 0.48 && st.checkpointMask === 7) {
+          if (st.bestLap === null || st.lapTime < st.bestLap) st.bestLap = st.lapTime;
+          st.lap += 1;
+          st.lapTime = 0;
+          st.checkpointMask = 0;
+        }
+
+        // 6. Chase / Hood Camera Mount
+        speedwayGroup.updateMatrixWorld(true);
+        const isHood = st.camView === 'hood';
+        cockpitEyeWorld.copy(isHood ? raceHoodEyeLocal : raceChaseEyeLocal);
+        playerRaceCar.localToWorld(cockpitEyeWorld);
+        cockpitLookWorld.copy(isHood ? raceHoodLookLocal : raceChaseLookLocal);
+        playerRaceCar.localToWorld(cockpitLookWorld);
+        const posDamp = 1 - Math.exp(-rawDt * (isHood ? 24.0 : 12.5));
+        const lookDamp = 1 - Math.exp(-rawDt * (isHood ? 24.0 : 14.0));
+        camera.position.lerp(cockpitEyeWorld, posDamp);
+        cockpitLookCurrent.lerp(cockpitLookWorld, lookDamp);
+        cockpitUpCurrent.lerp(worldUpVec, lookDamp).normalize();
+        camera.up.copy(cockpitUpCurrent);
+        camera.lookAt(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+
+        // 7. Live Telemetry Readout (km/h · LAP · TIME · Controls)
+        const kmh = Math.round(absSpd * 234);
+        const mins = Math.floor(st.lapTime / 60);
+        const secs = (st.lapTime % 60).toFixed(1).padStart(4, '0');
+        const bestStr = st.bestLap !== null ? ` · BEST ${Math.floor(st.bestLap / 60)}:${(st.bestLap % 60).toFixed(1).padStart(4, '0')}` : '';
+        const offStr = offTrack ? (currentLang === 'en' ? ' · [GRAVEL]' : (currentLang === 'ja' ? ' · [グラベル]' : ' · [砂石區]')) : '';
+        const viewStr = isHood ? (currentLang === 'en' ? 'HOOD' : (currentLang === 'ja' ? '車載' : '車頭')) : (currentLang === 'en' ? 'CHASE' : (currentLang === 'ja' ? '追尾' : '追尾'));
+        const hudStr = `${kmh} km/h · LAP ${st.lap} · ${mins}:${secs}${bestStr}${offStr} · WASD/↑↓←→ · C:${viewStr} · R`;
+        if (cockpitPhaseEl.textContent !== hudStr) cockpitPhaseEl.textContent = hudStr;
+      } else if (followCamMode === 'coaster') {
+        // FUJIYAMA Roller Coaster Front-Seat Rider POV!
+        fujiQ.updateMatrixWorld(true);
+        const leadCar = coasterCars[0];
+        cockpitEyeWorld.set(0, 0.25, 0.06);
+        leadCar.localToWorld(cockpitEyeWorld);
+        cockpitLookWorld.copy(coasterCurve.getPointAt((coasterLeadU + 0.042) % 1));
+        cockpitLookWorld.y += 0.14;
+        fujiQ.localToWorld(cockpitLookWorld);
+
+        const posDamp = 1 - Math.exp(-rawDt * 18.0);
+        const lookDamp = 1 - Math.exp(-rawDt * 11.0);
+        camera.position.lerp(cockpitEyeWorld, posDamp);
+        cockpitLookCurrent.lerp(cockpitLookWorld, lookDamp);
+        cockpitUpCurrent.lerp(worldUpVec, lookDamp).normalize();
+        camera.up.copy(cockpitUpCurrent);
+        camera.lookAt(cockpitLookCurrent);
+        orbit.target.copy(cockpitLookCurrent);
+
+        const curAltM = Math.round(leadCar.position.y * 17.0);
+        const estKmh = Math.round(Math.max(38, 132 - leadCar.position.y * 16.5));
+        const cPhase = `${estKmh} km/h · ${curAltM}m · ${(I18N_UI[currentLang] || I18N_UI.zh).hudCoasterPhase}`;
+        if (cockpitPhaseEl.textContent !== cPhase) cockpitPhaseEl.textContent = cPhase;
       }
 
       if (optLabels.checked && !isPhotoMode) {
